@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat subjekt{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat subjekt</h1>
+    <p>Subjekt: <strong>{{ item.company_name }}</strong></p>
+    <p>IČO: {{ item.ico.value|default:"-" }}</p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:name_list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Číselníky{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'catalogs/css/catalog_index.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Číselníky</h1>
+    <p>Každá hodnota průvodky je spravovaná samostatně. V přehledu níže otevřete <strong>seznam</strong> — v něm u jednotlivých řádků najdete <strong>úpravu a smazání</strong>. Tlačítkem <strong>Nová položka</strong> přejdete rovnou na založení záznamu.</p>
+</div>
+<div class="card catalog-index">
+    {% if not catalog_sections %}
+    <p><small>Podle vašeho účtu nejsou v tomto přehledu zobrazeny žádné číselníky. Požádejte správce o úpravu přístupu v části Uživatelé.</small></p>
+    {% endif %}
+    {% for section in catalog_sections %}
+    <section class="catalog-index__section"{% if section.title %} aria-labelledby="catalog-sec-title-{{ forloop.counter }}"{% endif %}>
+        {% if section.title %}
+        <h2 class="catalog-index__section-title" id="catalog-sec-title-{{ forloop.counter }}">{{ section.title }}</h2>
+        {% endif %}
+        <div class="catalog-index__grid" role="list">
+            {% for row in section.rows %}
+            <div class="catalog-index__item" role="listitem">
+                <span class="catalog-index__label">{{ row.label }}</span>
+                <div class="catalog-index__actions">
+                    {% include "catalogs/partials/catalog_index_row_actions.html" with row=row %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

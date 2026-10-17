@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Pasport kontejnerů{% endblock %}
+
+{% block extra_head %}
+<style>
+    .cp-photo-thumb {
+        width: 42px;
+        height: 42px;
+        object-fit: cover;
+        border-radius: 6px;
+        border: 1px solid var(--color-border);
+        vertical-align: middle;
+        margin-right: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Pasport kontejnerů</h1>
+    <p>Druh vozidla odpovídá číselníku <a href="{% url 'catalogs:vehicle_kind_list' %}">Druhy vozidel</a>. Fotografie: JPEG, PNG nebo WebP (max. 8&nbsp;MB).</p>
+    <form method="get" id="container-passport-filter-form" style="margin-top: 12px;">
+        <div class="form-grid form-grid--wide" style="align-items: end;">
+            <div class="field-row">
+                <label for="cp-cislo">Číslo kontejneru</label>
+                <div class="field-input">
+                    <input type="search" name="cislo" id="cp-cislo" value="{{ filter_cislo|default:'' }}" placeholder="Část čísla…" autocomplete="off">
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="cp-stredisko">Středisko</label>
+                <div class="field-input">
+                    <select name="stredisko" id="cp-stredisko">
+                        <option value="">— všechna —</option>
+                        {% for s in stredisko_options %}
+                        <option value="{{ s.pk }}"{% if filter_stredisko_id == s.pk %} selected{% endif %}>{{ s.code }}{% if s.name %} — {{ s.name }}{% endif %}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="cp-druh">Druh vozidla</label>
+                <div class="field-input">
+                    <select name="vehicle_kind" id="cp-druh">
+                        <option value="">— všechny —</option>
+                        {% for vk in vehicle_kind_options %}
+                        <option value="{{ vk.pk }}"{% if filter_vehicle_kind_id == vk.pk %} selected{% endif %}>{{ vk.display_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="field-row" style="align-self: end;">
+                <div class="field-input actions" style="gap: 8px;">
+                    <button type="submit" class="btn">Filtrovat</button>
+                    {% if has_filters %}
+                    <a class="btn secondary" href="{% url 'catalogs:container_passport_list' %}">Zrušit filtry</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+    {% if request.user.is_superuser %}
+    <p class="actions" style="margin-top: 12px;">
+        <a class="btn secondary" href="{% url 'catalogs:container_passport_create' %}{% if create_querystring %}?{{ create_querystring }}{% endif %}">Nový pasport</a>
+        <a class="btn secondary" href="{% url 'catalogs:pasport_stredisko_list' %}">Střediska</a>
+    </p>
+    {% else %}
+    <p><small>Úpravy a zakládání záznamů je jen pro administrátora (superuser).</small></p>
+    {% endif %}
+</div>
+
+<div class="card">
+    {% if not items %}
+    {% if has_filters %}
+    <p>Žádný pasport neodpovídá zadaným kritériím.</p>
+    {% else %}
+    <p>Zatím žádné pasporty kontejnerů.</p>
+    {% endif %}
+    {% else %}
+    <p><small>Zobrazeno záznamů: {{ results_count }}</small></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Druh</th>
+                <th>Číslo</th>
+                <th>Středisko</th>
+                <th>Objem (m³)</th>
+                <th>Velikost (′)</th>
+                <th>Požadavek</th>
+                <th>Barva</th>
+                <th>Rok</th>
+                <th>Foto</th>
+                <th>Naposledy jízda</th>
+                {% if request.user.is_superuser %}<th>Akce</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in items %}
+            <tr>
+                <td>{{ row.vehicle_kind.name }}</td>
+                <td><strong>{{ row.container_number }}</strong></td>
+                <td>{% if row.stredisko %}{{ row.stredisko.code }}{% else %}—{% endif %}</td>
+                <td>{% if row.volume_m3 is not None %}{{ row.volume_m3|floatformat:2 }}{% else %}—{% endif %}</td>
+                <td>{% if row.container_size_ft %}{{ row.get_container_size_ft_display }}{% else %}—{% endif %}</td>
+                <td>{{ row.vehicle_requirement_note|default:"—" }}</td>
+                <td>{{ row.color }}</td>
+                <td>{{ row.year_manufactured|default:"—" }}</td>
+                <td>
+                    {% if row.photo_1 %}<img class="cp-photo-thumb" src="{{ row.photo_1.url }}" alt="">{% endif %}
+                    {% if row.photo_2 %}<img class="cp-photo-thumb" src="{{ row.photo_2.url }}" alt="">{% endif %}
+                    {% if row.photo_3 %}<img class="cp-photo-thumb" src="{{ row.photo_3.url }}" alt="">{% endif %}
+                </td>
+                <td>
+                    {% if row.latest_ride %}
+                        <a href="{% url 'waste_docs:detail' row.latest_ride.pk %}">#{{ row.latest_ride.pk }}</a>
+                        · {{ row.latest_ride.drive_date|date:"j.n.Y" }}
+                        · {{ row.latest_ride.name_snapshot|truncatechars:28 }}
+                    {% else %}
+                        —
+                    {% endif %}
+                    <div style="margin-top:6px;">
+                        <a class="btn secondary" href="{% url 'catalogs:container_passport_history' row.pk %}">Historie</a>
+                    </div>
+                </td>
+                {% if request.user.is_superuser %}
+                <td class="actions">
+                    <a class="btn" href="{% url 'catalogs:container_passport_edit' row.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'catalogs:container_passport_delete' row.pk %}">Smazat</a>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

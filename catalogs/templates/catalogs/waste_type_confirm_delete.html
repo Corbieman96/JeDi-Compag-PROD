@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat odpad{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat odpad</h1>
+    <p>
+        {% if item.code_display %}<strong><code>{{ item.code_display }}</code></strong>{% endif %}
+        {% if item.code_display and item.value_display %}<br>{% endif %}
+        {% if item.value_display %}<span>{{ item.value_display }}</span>{% endif %}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:waste_type_list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

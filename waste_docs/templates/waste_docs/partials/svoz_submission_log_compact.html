@@ -1,0 +1,21 @@
+<ul class="svoz-log-list">
+    {% for row in submission_rows %}
+    <li class="svoz-log-row"
+        title="{{ row.waste_suffix_label }}{% if row.yard_contact_note %} · {{ row.yard_contact_note }}{% endif %} · {{ row.vehicle_kind_label }} · {{ row.created_by_label }}">
+        <span class="svoz-log-row__time">{{ row.submitted_at_display }}</span>
+        <span class="svoz-log-row__main">
+            <span class="svoz-log-row__label">{{ row.display_label }}</span>
+            {% if row.is_hazardous %}
+            <span class="svoz-submission-hazard-badge">Nebezpečný</span>
+            {% endif %}
+            <span class="svoz-log-row__containers">· k. {{ row.container_numbers }}</span>
+            {% if row.yard_contact_note %}
+            <span class="svoz-log-row__note">· „{{ row.yard_contact_note|truncatechars:40 }}“</span>
+            {% endif %}
+        </span>
+        <span class="svoz-log-row__meta">{{ row.vehicle_kind_label }} · {{ row.created_by_label }}</span>
+    </li>
+    {% empty %}
+    <li class="svoz-log-row dash-muted">Žádné záznamy.</li>
+    {% endfor %}
+</ul>

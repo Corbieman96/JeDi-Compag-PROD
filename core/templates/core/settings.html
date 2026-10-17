@@ -1,0 +1,463 @@
+{% extends "base.html" %}
+
+{% block title %}Nastavení{% endblock %}
+
+{% block extra_head %}
+<style>
+    .settings-intro {
+        max-width: 40rem;
+        font-size: 0.95rem;
+        color: var(--color-text);
+        line-height: 1.45;
+        margin: 0 0 10px;
+    }
+    .settings-panel {
+        margin: 0 0 16px;
+        padding: 14px 16px;
+        border: 1px solid #d4dccf;
+        border-radius: 10px;
+        background: #f8fcf8;
+        max-width: 760px;
+    }
+    .settings-panel--wide {
+        max-width: 920px;
+    }
+    .settings-fields {
+        display: grid;
+        gap: 14px;
+    }
+    .settings-fields--2col {
+        grid-template-columns: 1fr;
+    }
+    @media (min-width: 641px) {
+        .settings-fields--2col {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+    .settings-field label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: #264e2d;
+    }
+    .settings-field input:not([type="checkbox"]):not([type="radio"]),
+    .settings-field select,
+    .settings-field textarea {
+        width: 100%;
+        max-width: 12rem;
+        box-sizing: border-box;
+    }
+    .settings-matrix input[type="date"],
+    .settings-matrix input[type="text"] {
+        width: 100%;
+        max-width: 12rem;
+        box-sizing: border-box;
+    }
+    .settings-field--latlng input:not([type="checkbox"]):not([type="radio"]) {
+        max-width: 14rem;
+    }
+    .settings-field small {
+        display: block;
+        color: var(--color-muted);
+        margin-top: 6px;
+        line-height: 1.4;
+        max-width: 36rem;
+    }
+    .settings-map-actions {
+        margin: 2px 0 0;
+    }
+    .settings-checkbox-field {
+        margin: 0 0 14px;
+        min-height: 2rem;
+    }
+    .settings-checkbox-field:last-child {
+        margin-bottom: 0;
+    }
+    .settings-checkbox-field label {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        cursor: pointer;
+        font-weight: 600;
+        color: #264e2d;
+        line-height: 1.35;
+    }
+    .settings-checkbox-field input[type="checkbox"] {
+        width: 1.15rem;
+        height: 1.15rem;
+        max-width: none;
+        margin: 0.15rem 0 0;
+        flex-shrink: 0;
+        accent-color: var(--color-primary);
+    }
+    .settings-checkbox-field small {
+        display: block;
+        color: var(--color-muted);
+        margin-top: 8px;
+        margin-left: calc(1.15rem + 12px);
+        line-height: 1.4;
+        max-width: 36rem;
+    }
+    .settings-matrix-wrap {
+        overflow-x: auto;
+        margin: 0;
+        max-width: 100%;
+    }
+    .settings-matrix {
+        width: 100%;
+        max-width: 56rem;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+        background: var(--color-surface);
+    }
+    .settings-matrix th,
+    .settings-matrix td {
+        border: 1px solid var(--color-border);
+        padding: 8px 10px;
+        vertical-align: middle;
+    }
+    .settings-matrix thead th {
+        background: #eef6ef;
+        text-align: center;
+    }
+    .settings-matrix thead th:first-child,
+    .settings-matrix tbody th {
+        text-align: left;
+        font-weight: 600;
+    }
+    .settings-matrix tbody td {
+        text-align: center;
+        padding: 6px;
+    }
+    .settings-matrix input[type="checkbox"] {
+        width: 1.05rem;
+        height: 1.05rem;
+        max-width: none;
+        margin: 0;
+        accent-color: var(--color-primary);
+    }
+    .settings-panel .settings-note {
+        margin: 10px 0 0;
+        font-size: 0.88rem;
+        color: var(--color-muted);
+        line-height: 1.4;
+        max-width: 40rem;
+    }
+    .settings-form-actions {
+        position: sticky;
+        bottom: 0;
+        z-index: 20;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+        padding: 12px 0 4px;
+        background: linear-gradient(to top, var(--color-surface) 70%, rgba(255, 255, 255, 0));
+        border-top: 1px solid #d4dccf;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Nastavení</h1>
+    <form method="post">
+        {% csrf_token %}
+
+        <h2 class="form-section-title">Mapa</h2>
+        <p class="settings-intro">
+            Výchozí střed modálního okna <strong>Výběr polohy</strong>, když na formuláři ještě nejsou souřadnice.
+        </p>
+        <div class="settings-panel">
+            <div class="settings-fields settings-fields--2col">
+                <div class="settings-field settings-field--latlng">
+                    <label for="{{ form.default_map_lat.id_for_label }}">{{ form.default_map_lat.label }}</label>
+                    {{ form.default_map_lat }}
+                    {{ form.default_map_lat.errors }}
+                </div>
+                <div class="settings-field settings-field--latlng">
+                    <label for="{{ form.default_map_lng.id_for_label }}">{{ form.default_map_lng.label }}</label>
+                    {{ form.default_map_lng }}
+                    {{ form.default_map_lng.errors }}
+                </div>
+            </div>
+            <p class="settings-map-actions">
+                <button type="button" class="btn secondary" id="settings-map-open-btn">Vybrat místo na mapě</button>
+            </p>
+        </div>
+
+        <h2 class="form-section-title">Jízdy</h2>
+        <p class="settings-intro">
+            Výchozí rozsah filtru Od/Do na stránce jízd (<code>/waste-docs/</code>).
+        </p>
+        <div class="settings-panel">
+            <div class="settings-fields">
+                <div class="settings-field">
+                    <label for="{{ form.waste_docs_default_range_days.id_for_label }}">{{ form.waste_docs_default_range_days.label }}</label>
+                    {{ form.waste_docs_default_range_days }}
+                    {{ form.waste_docs_default_range_days.errors }}
+                </div>
+            </div>
+        </div>
+
+        <h2 class="form-section-title">Svozy ze sběrného dvora (testování)</h2>
+        <p class="settings-intro">
+            Matice svozů ze dvora jde odeslat <strong>jednou denně</strong>
+            (<a href="{% url 'waste_docs:svoz_request' %}">Požadavek na svoz</a>). Testovací přepínač limit vypíná — po zkouškách znovu vypněte a uložte.
+        </p>
+        <div class="settings-panel">
+            <div class="settings-checkbox-field">
+                <label>
+                    {{ form.svoz_disable_yard_daily_submit_limit }}
+                    <span>{{ form.svoz_disable_yard_daily_submit_limit.label }}</span>
+                </label>
+                {% if form.svoz_disable_yard_daily_submit_limit.help_text %}
+                <small>{{ form.svoz_disable_yard_daily_submit_limit.help_text }}</small>
+                {% endif %}
+                {% if form.svoz_disable_yard_daily_submit_limit.errors %}
+                <span class="form-errors" style="display:block;margin-top:8px;">{{ form.svoz_disable_yard_daily_submit_limit.errors }}</span>
+                {% endif %}
+            </div>
+            <div class="settings-checkbox-field">
+                <label>
+                    {{ form.enforce_container_passport_move_check }}
+                    <span>{{ form.enforce_container_passport_move_check.label }}</span>
+                </label>
+                {% if form.enforce_container_passport_move_check.help_text %}
+                <small>{{ form.enforce_container_passport_move_check.help_text }}</small>
+                {% endif %}
+                {% if form.enforce_container_passport_move_check.errors %}
+                <span class="form-errors" style="display:block;margin-top:8px;">{{ form.enforce_container_passport_move_check.errors }}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <h2 class="form-section-title">Požadavky zákazníků</h2>
+        <p class="settings-intro">
+            Po zadaném čase se uzavře zadávání na <strong>následující den</strong>. Prázdné = vypnuto.
+        </p>
+        <div class="settings-panel">
+            <div class="settings-fields">
+                <div class="settings-field">
+                    <label for="{{ form.customer_request_daily_cutoff_time.id_for_label }}">{{ form.customer_request_daily_cutoff_time.label }}</label>
+                    {{ form.customer_request_daily_cutoff_time }}
+                    <small>Lokální čas serveru (např. dnes 13:00 uzavře zítřek). Dispečer může den ručně otevřít/zavřít u kalendáře na dashboardu.</small>
+                    {{ form.customer_request_daily_cutoff_time.errors }}
+                </div>
+            </div>
+        </div>
+
+        <h2 class="form-section-title">Dny bez svozu</h2>
+        <p class="settings-intro">
+            V tyto dny se nejezdí. Nový požadavek i odeslání matice ze sběrného dvora
+            se posunou na další provozní den, nebo na den ve sloupci <strong>Přesunout na</strong>.
+            Staré požadavky a už odeslané úkoly se samy neposunou.
+        </p>
+        <div class="settings-panel settings-panel--wide">
+            <div class="settings-checkbox-field">
+                <label>
+                    {{ form.no_service_on_saturday }}
+                    <span>{{ form.no_service_on_saturday.label }}</span>
+                </label>
+                {% if form.no_service_on_saturday.help_text %}
+                <small>{{ form.no_service_on_saturday.help_text }}</small>
+                {% endif %}
+            </div>
+            <div class="settings-checkbox-field">
+                <label>
+                    {{ form.no_service_on_sunday }}
+                    <span>{{ form.no_service_on_sunday.label }}</span>
+                </label>
+                {% if form.no_service_on_sunday.help_text %}
+                <small>{{ form.no_service_on_sunday.help_text }}</small>
+                {% endif %}
+            </div>
+            {{ no_service_formset.management_form }}
+            {% if no_service_formset.non_form_errors %}
+            <p class="form-errors">{{ no_service_formset.non_form_errors }}</p>
+            {% endif %}
+            <div class="table-wrap">
+                <table class="settings-matrix">
+                    <thead>
+                        <tr>
+                            <th>Den bez svozu</th>
+                            <th>Přesunout na</th>
+                            <th>Poznámka</th>
+                            <th>Smazat</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in no_service_formset %}
+                        <tr>
+                            <td>
+                                {% for hidden in row.hidden_fields %}{{ hidden }}{% endfor %}
+                                {{ row.closed_date }}
+                                {% if row.closed_date.errors %}
+                                <span class="form-errors" style="display:block;margin-top:6px;color:#b42318;">{{ row.closed_date.errors }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ row.redirect_date }}
+                                {% if row.redirect_date.errors %}
+                                <span class="form-errors" style="display:block;margin-top:6px;color:#b42318;">{{ row.redirect_date.errors }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {{ row.note }}
+                                {% if row.note.errors %}
+                                <span class="form-errors" style="display:block;margin-top:6px;color:#b42318;">{{ row.note.errors }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if row.DELETE %}{{ row.DELETE }}{% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="settings-note">Svátky sem dopište ručně (např. 28. 9. 2026). Prázdné Přesunout na = první den, kdy se jezdí.</p>
+        </div>
+
+        <h2 class="form-section-title">Přihlášení a bezpečnost</h2>
+        <p class="settings-intro">
+            Po nečinnosti se uživatel odhlásí na dashboardu i na sběrném dvoře.
+        </p>
+        <div class="settings-panel">
+            <div class="settings-fields">
+                <div class="settings-field">
+                    <label for="{{ form.session_idle_timeout_minutes.id_for_label }}">{{ form.session_idle_timeout_minutes.label }}</label>
+                    {{ form.session_idle_timeout_minutes }}
+                    {% if form.session_idle_timeout_minutes.help_text %}
+                    <small>{{ form.session_idle_timeout_minutes.help_text }}</small>
+                    {% else %}
+                    <small>Po opětovném přihlášení návrat na původní stránku (pokud na ni má právo).</small>
+                    {% endif %}
+                    {{ form.session_idle_timeout_minutes.errors }}
+                </div>
+            </div>
+        </div>
+
+        <h2 class="form-section-title">Popelář — výpočet hodin a nákladů</h2>
+        <p class="settings-intro">
+            Report <strong>Řidiči a absence</strong>: dny Popelář × hodiny × sazba. Půlden = polovina.
+        </p>
+        <div class="settings-panel">
+            <div class="settings-fields settings-fields--2col">
+                <div class="settings-field">
+                    <label for="{{ form.popelar_hours_per_day.id_for_label }}">{{ form.popelar_hours_per_day.label }}</label>
+                    {{ form.popelar_hours_per_day }}
+                    {% if form.popelar_hours_per_day.help_text %}
+                    <small>{{ form.popelar_hours_per_day.help_text }}</small>
+                    {% endif %}
+                    {{ form.popelar_hours_per_day.errors }}
+                </div>
+                <div class="settings-field">
+                    <label for="{{ form.popelar_hourly_rate_czk.id_for_label }}">{{ form.popelar_hourly_rate_czk.label }}</label>
+                    {{ form.popelar_hourly_rate_czk }}
+                    {% if form.popelar_hourly_rate_czk.help_text %}
+                    <small>{{ form.popelar_hourly_rate_czk.help_text }}</small>
+                    {% endif %}
+                    {{ form.popelar_hourly_rate_czk.errors }}
+                </div>
+            </div>
+        </div>
+
+        <h2 class="form-section-title">Horní lišta — výchozí podle rolí</h2>
+        <p class="settings-intro">
+            Platí při <strong>„Dědit z role“</strong> v úpravě uživatele. Admin vidí celé menu vždy.
+        </p>
+        <div class="settings-panel settings-panel--wide">
+            <div class="settings-matrix-wrap">
+                <table class="settings-matrix" title="Sloupec Jízdy řídí menu i přístup na /waste-docs/">
+                    <thead>
+                        <tr>
+                            <th scope="col">Role</th>
+                            {% for key, label in form.role_nav_header %}
+                            <th scope="col">{{ label }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in form.role_nav_table %}
+                        <tr>
+                            <th scope="row">{{ row.role }}</th>
+                            {% for key, field in row.cells %}
+                            <td>{{ field }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="settings-note">
+                „Vždy zobrazit“ / „Skrýt“ u uživatele má přednost. Sloupec <strong>Jízdy</strong> řídí menu i <code>/waste-docs/</code> (u Zadavatele výchozí vypnuto).
+            </p>
+        </div>
+
+        <h2 class="form-section-title">Oprávnění — výchozí podle rolí</h2>
+        <p class="settings-intro">
+            Platí při <strong>„Dědit z role“</strong> u oprávnění PIO. Admin má PIO vždy povoleno.
+        </p>
+        <div class="settings-panel settings-panel--wide">
+            <div class="settings-matrix-wrap">
+                <table class="settings-matrix">
+                    <thead>
+                        <tr>
+                            <th scope="col">Role</th>
+                            {% for key, label in form.role_permission_header %}
+                            <th scope="col">{{ label }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in form.role_permission_table %}
+                        <tr>
+                            <th scope="row">{{ row.role }}</th>
+                            {% for key, field in row.cells %}
+                            <td>{{ field }}</td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <p class="settings-note">
+                „Vždy povolit“ / „Vypnout“ u konkrétního uživatele má přednost před tabulkou.
+            </p>
+        </div>
+
+        <div class="form-actions settings-form-actions">
+            <button type="submit" class="btn">Uložit</button>
+        </div>
+    </form>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const openBtn = document.getElementById("settings-map-open-btn");
+        const latInput = document.getElementById("id_default_map_lat");
+        const lngInput = document.getElementById("id_default_map_lng");
+
+        if (!openBtn || !latInput || !lngInput) {
+            return;
+        }
+
+        openBtn.addEventListener("click", () => {
+            if (!window.MapModal) {
+                alert("Mapa ještě není připravená. Obnovte stránku.");
+                return;
+            }
+            const lat = parseFloat(latInput.value || "{{ app_default_map_lat_js }}");
+            const lng = parseFloat(lngInput.value || "{{ app_default_map_lng_js }}");
+            window.MapModal.open({
+                lat,
+                lng,
+                onSave: (point) => {
+                    latInput.value = point.lat.toFixed(7);
+                    lngInput.value = point.lng.toFixed(7);
+                },
+            });
+        });
+    });
+</script>
+{% endblock %}

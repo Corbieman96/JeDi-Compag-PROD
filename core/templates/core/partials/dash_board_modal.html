@@ -1,0 +1,25 @@
+<div
+    class="dash-rides-modal"
+    id="dash-rides-modal"
+    hidden
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dash-rides-modal-title"
+>
+    <div class="dash-rides-modal__backdrop" data-dash-rides-modal-close aria-hidden="true"></div>
+    <div class="dash-rides-modal__panel">
+        <header class="dash-rides-modal__header">
+            <div>
+                <h2 id="dash-rides-modal-title">Jízdy — {{ selected_date|date:"l j. n. Y" }}</h2>
+            </div>
+            <button type="button" class="dash-rides-modal__close" data-dash-rides-modal-close>Zavřít (Esc)</button>
+        </header>
+        <div class="dash-rides-modal__body">
+            {% include "core/partials/dash_rides_modal_yard_strip.html" %}
+            <div class="dash-rides-modal__body-main">
+                {% include "core/partials/dash_rides_columns.html" %}
+            </div>
+        </div>
+    </div>
+</div>

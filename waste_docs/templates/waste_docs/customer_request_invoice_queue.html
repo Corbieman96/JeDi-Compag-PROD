@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}Schvalování záloh | JeDiS{% endblock %}
+
+{% block content %}
+<section class="card">
+    <h1>Schvalování záloh</h1>
+    <p>
+        Dnes ke kontrole: <strong>{{ count_today }}</strong> ·
+        Po termínu: <strong>{{ count_overdue }}</strong> ·
+        Celkem ve frontě: <strong>{{ count_total }}</strong>
+    </p>
+    <form method="get" class="actions" style="margin-bottom:10px;">
+        <input type="text" name="q" value="{{ q }}" placeholder="Hledat ID / subjekt / zadavatel" style="max-width:20rem;">
+        <button class="btn secondary" type="submit">Filtrovat</button>
+        <a class="btn secondary" href="{% url 'waste_docs:customer_request_invoice_queue' %}">Reset</a>
+    </form>
+
+    <h3>Dnes ke kontrole</h3>
+    {% include "waste_docs/partials/customer_request_invoice_rows.html" with rows=rows_today %}
+
+    <h3>Po termínu</h3>
+    {% include "waste_docs/partials/customer_request_invoice_rows.html" with rows=rows_overdue %}
+
+    <h3>Budoucí</h3>
+    {% include "waste_docs/partials/customer_request_invoice_rows.html" with rows=rows_future %}
+</section>
+{% endblock %}

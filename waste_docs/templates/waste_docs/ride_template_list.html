@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Šablony jízd{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Šablony jízd</h1>
+    <p><small>Správa šablon pro rychlé založení nové jízdy.</small></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Název</th>
+                <th>Druhy vozidel</th>
+                <th>Činnost</th>
+                <th>Subjekt</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.title }}</td>
+                <td>
+                    {% with ks=item.applicable_vehicle_kinds.all %}
+                        {% if ks %}
+                            {% for k in ks %}{% if not forloop.first %}, {% endif %}{{ k.shortcut }}{% endfor %}
+                        {% else %}
+                            {{ item.vehicle_kind }}
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>{{ item.activity|default:"-" }}</td>
+                <td>{{ item.name }}</td>
+                <td class="actions">
+                    <a class="btn secondary" href="{% url 'waste_docs:ride_template_edit' item.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'waste_docs:ride_template_delete' item.pk %}">Smazat</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">Zatím nejsou uložené žádné šablony.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

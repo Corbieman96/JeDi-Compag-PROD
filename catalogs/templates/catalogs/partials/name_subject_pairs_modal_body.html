@@ -1,0 +1,25 @@
+<div class="name-subject-pairs-modal-body">
+    <div class="name-subject-pairs-modal-body__head" style="margin-bottom: 12px;">
+        <p style="margin: 0 0 6px;">
+            <strong>{{ item.company_name }}</strong>
+            {% if item.ico %}<span class="dash-muted"> · IČO {{ item.ico.value }}</span>{% endif %}
+        </p>
+        <p style="margin: 0; font-size: 0.92rem;">
+            <a href="{{ full_edit_url }}" target="_blank" rel="noopener noreferrer">Otevřít celý subjekt v číselníku</a>
+        </p>
+    </div>
+    <form
+        id="jedis-name-subject-pairs-modal-form"
+        class="name-subject-pairs-modal-form"
+        method="post"
+        enctype="multipart/form-data"
+        action="{% url 'catalogs:name_pairs_modal' item.pk %}"
+    >
+        {% csrf_token %}
+        {% include "catalogs/partials/name_subject_form_pairs_wrapper.html" with show_dispatch_plan_fields=show_dispatch_plan_fields %}
+        <div class="form-errors jedis-pairs-modal-errors" id="jedis-pairs-modal-errors" hidden></div>
+    </form>
+</div>
+
+{{ waste_type_combo_meta|json_script:"name-subject-waste-meta" }}
+{{ zpo_url_by_id|json_script:"name-subject-zpo-urls-modal" }}

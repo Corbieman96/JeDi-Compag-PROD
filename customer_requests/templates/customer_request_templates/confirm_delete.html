@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat šablonu{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat šablonu</h1>
+    <p>Opravdu smazat šablonu <strong>{{ item.title }}</strong> ({{ item.name }})?</p>
+    <form method="post" class="form-actions">
+        {% csrf_token %}
+        <button type="submit" class="btn danger">Smazat</button>
+        <a class="btn secondary" href="{% url 'customer_request_templates:list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

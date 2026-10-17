@@ -1,0 +1,81 @@
+<div
+    class="dash-rides-modal dash-ride-email-modal"
+    id="dash-ride-email-modal"
+    hidden
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dash-ride-email-modal-title"
+    data-prepare-url="{% url 'waste_docs:ride_group_email_prepare' %}"
+    data-cancel-url="{% url 'waste_docs:ride_group_email_cancel' %}"
+    data-recipients-url="{% url 'waste_docs:ride_email_recipients_list' %}"
+    data-recipients-add-url="{% url 'waste_docs:ride_email_recipient_add' %}"
+    data-recipients-delete-url-pattern="{% url 'waste_docs:ride_email_recipient_delete' pk=0 %}"
+>
+    <div class="dash-rides-modal__backdrop" data-dash-ride-email-modal-close aria-hidden="true"></div>
+    <div class="dash-rides-modal__panel">
+        <header class="dash-rides-modal__header">
+            <div>
+                <h2 id="dash-ride-email-modal-title">Poslat jízdu e-mailem</h2>
+                <p class="dash-muted dash-ride-email-modal__summary" id="dash-ride-email-summary" style="margin:4px 0 0;font-size:0.92rem;"></p>
+            </div>
+            <button type="button" class="dash-rides-modal__close" data-dash-ride-email-modal-close>Zavřít (Esc)</button>
+        </header>
+        <div class="dash-rides-modal__body">
+            <form id="dash-ride-email-form" class="dash-ride-email-form">
+                {% csrf_token %}
+                <input type="hidden" name="date" id="dash-ride-email-date" value="">
+                <input type="hidden" name="vehicle_rz_id" id="dash-ride-email-rz-id" value="">
+                <input type="hidden" name="driver_id" id="dash-ride-email-driver-id" value="">
+                <input type="hidden" name="filter_pks" id="dash-ride-email-filter-pks" value="">
+                <div class="field-row">
+                    <label for="dash-ride-email-sender-preview">Odesílatel</label>
+                    <div class="field-input">
+                        <input
+                            type="text"
+                            id="dash-ride-email-sender-preview"
+                            readonly
+                            class="dash-input-readonly"
+                            value="Účet přihlášený v Outlooku{% if request.user.email %} (odpovědi: {{ request.user.email }}){% endif %}"
+                        >
+                    </div>
+                </div>
+                <div class="field-row">
+                    <label for="dash-ride-email-recipient-preset">Uložená adresa</label>
+                    <div class="field-input">
+                        <select id="dash-ride-email-recipient-preset">
+                            <option value="">— vyberte nebo napište novou —</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <label for="dash-ride-email-recipient">E-mail příjemce</label>
+                    <div class="field-input dash-ride-email-recipient-row">
+                        <input type="email" id="dash-ride-email-recipient" name="recipient_email" required maxlength="254" autocomplete="email" placeholder="prijemce@firma.cz">
+                        <button type="button" class="btn secondary dash-ride-email-save-preset-btn" id="dash-ride-email-save-preset">Uložit do seznamu</button>
+                    </div>
+                </div>
+                <div class="dash-ride-email-saved-list" id="dash-ride-email-saved-list" hidden>
+                    <p class="dash-muted dash-ride-email-saved-list__title">Uložené adresy (společné pro všechny uživatele)</p>
+                    <ul class="dash-ride-email-saved-items" id="dash-ride-email-saved-items"></ul>
+                </div>
+                <div class="field-row">
+                    <label for="dash-ride-email-subject-preview">Předmět</label>
+                    <div class="field-input">
+                        <input type="text" id="dash-ride-email-subject-preview" readonly class="dash-input-readonly">
+                    </div>
+                </div>
+                <p class="dash-muted dash-ride-email-modal__hint" style="margin:8px 0 0;font-size:0.88rem;">
+                    Otevře se nový e-mail v Outlooku s příjemcem, předmětem a PDF přílohami (průvodky a/nebo ZPO, protokol).
+                    U činností bez Excel průvodky může být v e-mailu jen ZPO a protokol.
+                    Před odesláním zkontrolujte pole <strong>Od</strong> a <strong>Komu</strong>, poté klikněte <strong>Odeslat</strong>.
+                </p>
+                <p class="dash-ride-email-modal__error dash-text-danger" id="dash-ride-email-error" hidden role="alert"></p>
+                <div class="dash-ride-email-modal__actions">
+                    <button type="submit" class="btn" id="dash-ride-email-submit">Otevřít v Outlooku</button>
+                    <button type="button" class="btn secondary" data-dash-ride-email-modal-close>Zrušit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

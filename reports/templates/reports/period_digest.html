@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% include "reports/partials/report_styles.html" %}
+
+<div class="card">
+    <h1>Výcuc období (TXT)</h1>
+    <p>
+        Úplná textová záloha pro plánování a obnovu: <strong>jízdy</strong>, <strong>požadavky</strong>
+        a <strong>poznámky</strong> v zvoleném období (den, kde, kdo, co a související pole).
+        Dostupné jen pro Admin.
+    </p>
+    {% include "reports/partials/date_filter.html" %}
+    <p style="margin-top:14px;">
+        <a class="btn" href="{{ download_url }}">Stáhnout TXT</a>
+    </p>
+    <p class="dash-muted" style="margin-top:10px;font-size:0.9rem;">
+        Max. 92 dní období · max. 10&nbsp;000 položek na sekci · přílohy jen jako názvy souborů.
+    </p>
+</div>
+{% endblock %}

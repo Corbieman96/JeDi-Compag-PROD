@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}Činnosti{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Činnosti</h1>
+    <a class="btn" href="{% url 'catalogs:activity_create' %}">Nová činnost</a>
+</div>
+<div class="card">
+    <table>
+        <thead><tr><th>Druh činnosti</th><th>Min</th><th>Návazná činnost</th><th>Nitropodnik</th><th>Druhy vozidel</th><th>Akce</th></tr></thead>
+        <tbody>
+        {% for item in items %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{% if item.default_service_minutes %}{{ item.default_service_minutes }}{% else %}—{% endif %}</td>
+                <td>{% for fu in item.follow_up_activities.all %}{{ fu.name }}{% if not forloop.last %}, {% endif %}{% empty %}{% if item.follow_up_activity %}{{ item.follow_up_activity.name }}{% else %}—{% endif %}{% endfor %}</td>
+                <td>{% if item.require_nitropodnikovy_subjekt %}ano{% else %}ne{% endif %}</td>
+                <td>{% for vk in item.vehicle_kinds.all %}{{ vk.name }} ({{ vk.shortcut }}){% if not forloop.last %}, {% endif %}{% empty %}-{% endfor %}</td>
+                <td class="actions">
+                    <a class="btn" href="{% url 'catalogs:activity_edit' item.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'catalogs:activity_delete' item.pk %}">Smazat</a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">Zatím bez činností.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

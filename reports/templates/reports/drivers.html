@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% include "reports/partials/report_styles.html" %}
+
+<div class="card">
+    <h1>Řidiči a absence</h1>
+    {% include "reports/partials/date_filter.html" with export_url_name="reports:drivers_xlsx" %}
+</div>
+
+<div class="reports-kpi-grid">
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.total_rides }}</div>
+        <div class="reports-kpi__label">Jízd s řidičem</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.driver_completed_count }}</div>
+        <div class="reports-kpi__label">Dokončené řidičem</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.avg_rides_per_driver_day }}</div>
+        <div class="reports-kpi__label">Průměr jízd / řidič-den</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.drivers_with_absence_and_rides }}</div>
+        <div class="reports-kpi__label">Řidič s jízdou i absencí</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.popelar.hours }}</div>
+        <div class="reports-kpi__label">Popelář — hodin</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.popelar.total_czk }}</div>
+        <div class="reports-kpi__label">Popelář — Kč</div>
+    </div>
+</div>
+
+<div class="card" id="day-rz">
+    <h2>Vytížení řidičů (den / RZ)</h2>
+    <p class="dash-muted" style="margin:0 0 12px;font-size:0.9rem;">
+        Ve zvoleném období: který den řidič jel kterou RZ. Řazení podle data; více vozidel / řidičů za den pod sebou.
+    </p>
+    {% if summary.day_rz_rows %}
+    <table class="reports-table">
+        <thead>
+            <tr>
+                <th>Řidič</th>
+                <th>Den</th>
+                <th>Druh vozidla</th>
+                <th>RZ</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in summary.day_rz_rows %}
+            <tr>
+                <td>{{ row.driver_label }}</td>
+                <td>{{ row.date_label }}</td>
+                <td>{{ row.vehicle_type }}</td>
+                <td>{{ row.rz }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="reports-empty">V období nejsou jízdy s řidičem a RZ.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Jízd na řidiče</h2>
+    {% with rows=summary.rides_by_driver show_share=True label_col="Řidič" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Nepřítomnosti podle typu</h2>
+    {% with rows=summary.absences_by_type show_share=True label_col="Typ" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Nepřítomnosti podle řidiče</h2>
+    {% with rows=summary.absences_by_driver show_share=True label_col="Řidič / typ" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+{% if summary.absences_other %}
+<div class="card">
+    <h2>Jiné (s poznámkou)</h2>
+    <p class="dash-muted" style="margin:0 0 12px;font-size:0.9rem;">Nepřítomnosti typu Jiné — poznámka ukazuje důvod.</p>
+    <table class="reports-table">
+        <thead>
+            <tr>
+                <th>Řidič</th>
+                <th>Období</th>
+                <th>Dní</th>
+                <th>Poznámka</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in summary.absences_other %}
+            <tr>
+                <td>{{ row.driver_label }}</td>
+                <td>{{ row.range_label }}</td>
+                <td>{{ row.days }}</td>
+                <td>{% if row.note %}{{ row.note }}{% else %}<span class="dash-muted">—</span>{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+
+{% include "reports/partials/popelar_cost_card.html" %}
+{% endblock %}

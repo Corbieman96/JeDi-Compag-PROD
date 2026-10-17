@@ -1,0 +1,69 @@
+<style>
+    #day-rem-dialog-print .day-rem-print-modal__opts {
+        display: grid;
+        gap: 8px;
+        margin: 0 0 14px;
+    }
+    #day-rem-dialog-print .day-rem-print-modal__opt {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 32px;
+        padding: 6px 10px;
+        border: 1px solid var(--color-border, #bfd0c1);
+        border-radius: 8px;
+        background: #fff;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+    }
+    #day-rem-dialog-print .day-rem-print-modal__opt input[type="radio"] {
+        width: 16px;
+        height: 16px;
+        max-width: none;
+        margin: 0;
+        flex: 0 0 auto;
+        accent-color: var(--color-primary, #2d7c42);
+    }
+    #day-rem-dialog-print .day-rem-print-modal__legend {
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+        color: var(--color-muted, #666);
+    }
+    #day-rem-dialog-print .day-rem-print-modal__acts {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+</style>
+<dialog id="day-rem-dialog-print" class="day-rem-dialog" style="max-width: 28rem; width: calc(100vw - 2rem); border: 1px solid var(--color-border, #ccc); border-radius: 8px; padding: 0; background: var(--color-bg, #fff); color: var(--color-text, #111);">
+    <div style="padding: 14px 16px; border-bottom: 1px solid var(--color-border, #eee); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <strong id="day-rem-dialog-print-title">Tisk poznámek</strong>
+        <button type="button" class="btn secondary" id="day-rem-dialog-print-close" style="padding: 6px 12px;">Zavřít</button>
+    </div>
+    <div style="padding: 16px;">
+        <form method="get" action="{% url 'day_reminders:print_day' %}" target="_blank">
+            <input type="hidden" name="date" value="{{ selected_date_iso }}" />
+            <input type="hidden" name="auto" value="1" />
+            <p class="day-rem-print-modal__legend">Co vytisknout · vytiskne se název i text každé poznámky</p>
+            <div class="day-rem-print-modal__opts">
+                <label class="day-rem-print-modal__opt">
+                    <input type="radio" name="scope" value="request" />
+                    <span>Požadavek</span>
+                </label>
+                <label class="day-rem-print-modal__opt">
+                    <input type="radio" name="scope" value="other" />
+                    <span>Ostatní</span>
+                </label>
+                <label class="day-rem-print-modal__opt">
+                    <input type="radio" name="scope" value="all" checked />
+                    <span>Vše</span>
+                </label>
+            </div>
+            <div class="day-rem-print-modal__acts">
+                <button type="submit" class="btn">Tisk</button>
+            </div>
+        </form>
+    </div>
+</dialog>

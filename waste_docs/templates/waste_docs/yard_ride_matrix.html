@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Založit průvodku — sběrný dvůr{% endblock %}
+
+{% block extra_head %}
+<style>
+
+    .yard-input {
+        width: 100%;
+        max-width: 220px;
+        padding: 7px 8px;
+        border: 1px solid #bfd0c1;
+        border-radius: 8px;
+        font: inherit;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+    }
+    .yard-field-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .yard-field-group {
+        display: flex;
+        flex-direction: column;
+    }
+    .yard-field-spacer {
+        min-height: 1.35rem;
+        flex-shrink: 0;
+    }
+    .yard-ride-table td,
+    .yard-ride-table th {
+        padding: 8px;
+        border-bottom: 1px solid var(--color-border);
+        vertical-align: top;
+        text-align: left;
+    }
+    .yard-ride-table thead tr { background: #eef6ef; }
+
+    .svoz-select, .yard-input { width: 100%; max-width: 220px; padding: 7px 8px; border: 1px solid #bfd0c1; border-radius: 8px; font: inherit; font-size: 0.9rem; }
+    .yard-field-label {
+        display: block;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--color-muted);
+        margin-bottom: 4px;
+    }
+    .yard-rz-empty-hint {
+        display: block;
+        margin-top: 4px;
+        font-size: 0.88em;
+        color: #9b1c1c;
+    }
+        .yard-driver-select:disabled {
+        background: #f0f4f1;
+        color: #888;
+    }
+    .yard-driver-hint {
+        display: block;
+        margin-top: 2px;
+        min-height: 1.35rem;
+        font-size: 0.88em;
+        color: var(--color-muted);
+        font-style: italic;
+    }
+    .yard-driver-hint.is-error { color: #9b1c1c; font-style: normal; }
+    .yard-ride-sticky-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #f4faf5;
+        border-top: 2px solid var(--color-border);
+        padding: 14px 24px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+    }
+    .yard-ride-form {
+        padding-bottom: 70px;
+    }
+    .yard-ride-container-feedback {
+        font-size: 0.88em;
+        margin-top: 4px;
+        line-height: 1.45;
+        max-width: 220px;
+        min-height: 1.35rem;
+    }
+    .yard-ride-container-feedback.is-error { color: #9b1c1c; }
+    .yard-ride-container-feedback.is-ok { color: var(--color-muted); }
+    .yard-ride-container-feedback.is-pending { color: var(--color-muted); font-style: italic; }
+    .yard-ride-container.is-invalid {
+        border-color: #c45a5a !important;
+        box-shadow: 0 0 0 2px rgba(196, 90, 90, 0.2);
+    }
+    .yard-ride-container.is-valid {
+        border-color: #7cb88a !important;
+    }
+    .yard-today-rides {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px dashed #d4e0d6;
+    }
+    .yard-today-rides__title {
+        display: block;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--color-muted);
+        margin-bottom: 6px;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+    }
+    .yard-today-rides__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .yard-today-rides__item {
+        margin: 0;
+    }
+    .yard-today-rides__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.88rem;
+        color: #1f5d33;
+        text-decoration: none;
+        line-height: 1.35;
+    }
+    .yard-today-rides__link:hover {
+        text-decoration: underline;
+    }
+    .yard-today-rides__pdf-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem;
+        padding: 2px 6px;
+        border-radius: 5px;
+        background: #e8f3ea;
+        border: 1px solid #9bb8a4;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f5d33;
+        flex-shrink: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 1000px;">
+    <h1>Založit průvodku</h1>
+    <p class="dash-muted" style="margin-top:0;">Subjekt: <strong>{{ subject.company_name }}</strong> · Datum: <strong>{{ today|date:"d.m.Y" }}</strong></p>
+    <p style="font-size:0.95rem;">Vyberte <strong>RZ vozidla</strong>, <strong>řidiče z denního plánu</strong> u tohoto vozidla a zadejte číslo kontejneru u jednoho řádku. Řidič se předvyplní jen pokud je u vozidla v plánu právě jeden. Lze založit pouze jednu průvodku najednou.</p>
+
+    {% if not rows_payload %}
+    <div class="dash-muted" style="line-height: 1.55;">
+        <p><strong>Matice je prázdná.</strong></p>
+        {% if matrix_stats.waste_pair_total == 0 %}
+        <p>U tohoto subjektu zatím <strong>nejsou žádné řádky</strong> odpad + koncovka.</p>
+        {% elif matrix_stats.pruvodka_enabled_count == 0 %}
+        <p>Máte <strong>{{ matrix_stats.waste_pair_total }}</strong> řádků odpad–koncovka, ale <strong>nikde není zapnutá „Průvodka z dvora“</strong> (číselník F/P u příslušného řádku).</p>
+        {% elif matrix_stats.pruvodka_missing_vehicle_kind > 0 %}
+        <p>U <strong>{{ matrix_stats.pruvodka_missing_vehicle_kind }}</strong> řádků s průvodkou z dvora <strong>chybí druh vozidla</strong>.</p>
+        {% elif matrix_stats.pruvodka_missing_activity > 0 %}
+        <p>U <strong>{{ matrix_stats.pruvodka_missing_activity }}</strong> řádků s průvodkou z dvora <strong>chybí činnost</strong> (průvodka nebo svoz).</p>
+        {% endif %}
+        <p><a class="btn secondary" href="{% url 'catalogs:name_edit' subject.pk %}">Otevřít úpravu subjektu v číselníku F/P</a></p>
+    </div>
+    {% else %}
+    <form method="post" class="form-grid yard-ride-form" style="max-width: 100%;"
+          data-validate-url="{% url 'waste_docs:yard_ride_validate_container' %}">
+        {% csrf_token %}
+        {% if errors %}
+        <div class="form-errors">
+            {% for e in errors %}<p>{{ e }}</p>{% endfor %}
+        </div>
+        {% endif %}
+        <div style="overflow-x: auto;">
+            <table class="name-subject-pairs__table yard-ride-table" style="min-width: 720px; width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #eef6ef;">
+                        <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Odpad / koncovka</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">RZ vozidla / řidič</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Kontejner</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Hmotnost</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in rows_payload %}
+                    {% with pair=row.pair rz_options=row.rz_options today_rides=row.today_rides %}
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                            {% if pair.yard_svoz_display_label %}
+                            <strong>{{ pair.yard_svoz_display_label }}</strong>
+                            <br><span class="dash-muted" style="font-size:0.88em;">{{ pair.waste_type.value }}{% if pair.waste_type.code %} ({{ pair.waste_type.code }}){% endif %} · {{ pair.suffix.value }}</span>
+                            {% else %}
+                            <strong>{{ pair.waste_type.value }}</strong>
+                            {% if pair.waste_type.code %}<span class="dash-muted">({{ pair.waste_type.code }})</span>{% endif %}
+                            <br><span class="dash-muted">Koncovka: {{ pair.suffix.value }}</span>
+                            {% endif %}
+                            {% if pair.yard_container_kind %}
+                            <br><small class="dash-muted">Kontejner: {{ pair.get_yard_container_kind_display }}</small>
+                            {% endif %}
+                            {% if today_rides %}
+                            <div class="yard-today-rides">
+                                <span class="yard-today-rides__title">Vaše dnes založené</span>
+                                <ul class="yard-today-rides__list">
+                                    {% for ride in today_rides %}
+                                    <li class="yard-today-rides__item">
+                                        <a class="yard-today-rides__link"
+                                           href="{% if ride.has_pdf %}{{ ride.pdf_url }}{% else %}{{ ride.reprint_url }}{% endif %}"
+                                           target="_blank"
+                                           rel="noopener"
+                                           title="{% if ride.has_pdf %}Otevřít průvodku (PDF){% else %}Otevřít tisk průvodky{% endif %} — {{ ride.label }}">
+                                            <span class="yard-today-rides__pdf-icon">PDF</span>
+                                            <span>{{ ride.label }}</span>
+                                        </a>
+                                    </li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+                            <input type="hidden" name="pair_pk" value="{{ pair.pk }}">
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                            <div class="yard-field-stack">
+                                <div class="yard-field-group">
+                                    <label class="yard-field-label" for="vehicle_rz_{{ pair.pk }}">RZ vozidla</label>
+                                    <select id="vehicle_rz_{{ pair.pk }}" name="vehicle_rz_{{ pair.pk }}" class="yard-input svoz-rz-select" data-pair-pk="{{ pair.pk }}">
+                                        <option value="">— vyberte RZ —</option>
+                                        {% for rz in rz_options %}
+                                        <option value="{{ rz.pk }}">{{ rz.value }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if not rz_options %}
+                                    <span class="yard-rz-empty-hint">Pro tento odpad není k dispozici RZ (druh vozidla u páru F/P a plán svozů na dnešek).</span>
+                                    {% endif %}
+                                </div>
+                                <div class="yard-field-group">
+                                    <label class="yard-field-label" for="yard-driver-{{ pair.pk }}">Řidič (dnešní den)</label>
+                                    <select id="yard-driver-{{ pair.pk }}"
+                                            name="driver_{{ pair.pk }}"
+                                            class="yard-input yard-driver-select"
+                                            data-pair-pk="{{ pair.pk }}"
+                                            disabled>
+                                        <option value="">— nejdříve vyberte RZ —</option>
+                                    </select>
+                                    <span class="yard-driver-hint" data-pair-pk="{{ pair.pk }}"></span>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                            <div class="yard-field-stack">
+                                <div class="yard-field-spacer" aria-hidden="true"></div>
+                                <div class="yard-field-group">
+                                    <label class="yard-field-label" for="container_{{ pair.pk }}">Kontejner</label>
+                                    <input type="text"
+                                           id="container_{{ pair.pk }}"
+                                           name="container_{{ pair.pk }}"
+                                           maxlength="50"
+                                           autocomplete="off"
+                                           class="yard-input yard-ride-container"
+                                           data-pair-pk="{{ pair.pk }}"
+                                           placeholder="číslo kontejneru"
+                                           aria-describedby="yard-container-feedback-{{ pair.pk }}">
+                                    <div id="yard-container-feedback-{{ pair.pk }}" class="yard-ride-container-feedback" role="status" aria-live="polite"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                            <div class="yard-field-stack">
+                                <div class="yard-field-spacer" aria-hidden="true"></div>
+                                <div class="yard-field-group">
+                                    <label class="yard-field-label" for="weight_{{ pair.pk }}">Hmotnost (t)</label>
+                                    <input type="text"
+                                           id="weight_{{ pair.pk }}"
+                                           name="weight_{{ pair.pk }}"
+                                           maxlength="16"
+                                           inputmode="decimal"
+                                           autocomplete="off"
+                                           class="yard-input yard-ride-weight"
+                                           data-pair-pk="{{ pair.pk }}"
+                                           placeholder="např. 10,36"
+                                           title="Povinné — hmotnost v tunách, větší než 0">
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endwith %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="yard-ride-sticky-bar">
+            <button type="submit" class="btn" id="yard-ride-submit-btn">Založit průvodku</button>
+            <a href="{% url 'waste_docs:yard_hub' %}" class="btn secondary">Zpět</a>
+        </div>
+    </form>
+    {{ rz_drivers_map|json_script:"yard-ride-rz-drivers" }}
+    <script>
+    (function() {
+        var rzDriversEl = document.getElementById("yard-ride-rz-drivers");
+        var rzDriversData = rzDriversEl ? JSON.parse(rzDriversEl.textContent) : {};
+
+        function getRowEls(pairPk) {
+            return {
+                rz: document.querySelector('.svoz-rz-select[data-pair-pk="' + pairPk + '"]'),
+                driverSelect: document.querySelector('.yard-driver-select[data-pair-pk="' + pairPk + '"]'),
+                hint: document.querySelector('.yard-driver-hint[data-pair-pk="' + pairPk + '"]'),
+            };
+        }
+
+        function setDriverSelectOptions(select, drivers, placeholder) {
+            if (!select) return;
+            select.innerHTML = "";
+            var empty = document.createElement("option");
+            empty.value = "";
+            empty.textContent = placeholder || "— vyberte řidiče —";
+            select.appendChild(empty);
+            (drivers || []).forEach(function(d) {
+                var opt = document.createElement("option");
+                opt.value = String(d.id);
+                opt.textContent = d.label;
+                select.appendChild(opt);
+            });
+        }
+
+        function updateDriverUiForRow(pairPk, rzId) {
+            var els = getRowEls(pairPk);
+            if (!els.driverSelect) return;
+
+            if (!rzId) {
+                els.driverSelect.disabled = true;
+                setDriverSelectOptions(els.driverSelect, [], "— nejdříve vyberte RZ —");
+                if (els.hint) {
+                    els.hint.textContent = "";
+                    els.hint.classList.remove("is-error");
+                }
+                return;
+            }
+
+            var drivers = rzDriversData[rzId] || [];
+            els.driverSelect.disabled = false;
+            setDriverSelectOptions(els.driverSelect, drivers, "— vyberte řidiče —");
+
+            if (drivers.length === 0) {
+                els.driverSelect.disabled = true;
+                if (els.hint) {
+                    els.hint.textContent = "U tohoto vozidla není na dnešní den přiřazen žádný řidič (plán ani jízdy).";
+                    els.hint.classList.add("is-error");
+                }
+                return;
+            }
+
+            if (drivers.length === 1) {
+                els.driverSelect.value = String(drivers[0].id);
+                if (els.hint) {
+                    els.hint.textContent = "Jediný řidič pro tento den — předvyplněno.";
+                    els.hint.classList.remove("is-error");
+                }
+                return;
+            }
+
+            els.driverSelect.value = "";
+            if (els.hint) {
+                els.hint.textContent = "Vyberte řidiče z dnešního dne (více možností).";
+                els.hint.classList.remove("is-error");
+            }
+        }
+
+        document.querySelectorAll('.svoz-rz-select').forEach(function(sel) {
+            var pairPk = sel.dataset.pairPk;
+            sel.addEventListener('change', function() {
+                updateDriverUiForRow(pairPk, this.value || "");
+            });
+        });
+
+        var form = document.querySelector('.yard-ride-form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                var filledPk = null;
+                var filled = 0;
+                document.querySelectorAll('.svoz-rz-select').forEach(function(sel) {
+                    var pk = sel.dataset.pairPk;
+                    var container = (document.querySelector('input[name="container_' + pk + '"]') || {}).value || '';
+                    if (sel.value && container.trim()) {
+                        filled++;
+                        filledPk = pk;
+                    }
+                });
+                if (filled === 0) {
+                    e.preventDefault();
+                    alert('Vyplňte RZ vozidla a číslo kontejneru u jednoho řádku.');
+                    return;
+                }
+                if (filled > 1) {
+                    e.preventDefault();
+                    alert('Lze založit pouze jednu průvodku najednou. Vyplňte pouze jeden řádek.');
+                    return;
+                }
+                var driverSelect = document.querySelector('.yard-driver-select[data-pair-pk="' + filledPk + '"]');
+                if (!driverSelect || !(driverSelect.value || "").trim()) {
+                    e.preventDefault();
+                    alert('Vyberte řidiče přiřazeného k vozidlu na dnešní den.');
+                    return;
+                }
+                var weightInput = document.querySelector('input[name="weight_' + filledPk + '"]');
+                var weightRaw = weightInput ? String(weightInput.value || "").trim().replace(",", ".") : "";
+                var weightNum = weightRaw ? Number.parseFloat(weightRaw) : NaN;
+                if (!weightRaw || !Number.isFinite(weightNum) || weightNum <= 0) {
+                    e.preventDefault();
+                    alert('Zadejte hmotnost v tunách větší než 0 (např. 10,36).');
+                }
+            });
+        }
+    })();
+    </script>
+    <script src="{% static 'waste_docs/js/yard_ride_container_validate.js' %}"></script>
+    {% endif %}
+</div>
+{% endblock %}

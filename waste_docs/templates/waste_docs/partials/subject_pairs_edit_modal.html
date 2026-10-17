@@ -1,0 +1,53 @@
+{% load static %}
+<script type="application/json" id="name-subject-zpo-urls">{}</script>
+<div
+    id="name-subject-zpo-config"
+    hidden
+    data-options-url="{% url 'catalogs:zpo_options_json' %}"
+    data-inline-url="{% url 'catalogs:zpo_inline_create' %}"
+    data-auto-zpo-by-waste="true"
+></div>
+<div id="jedis-subject-pairs-modal" class="map-modal" aria-hidden="true">
+    <div class="map-modal__card" style="max-width: min(96vw, 1100px); max-height: 92vh; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-shrink: 0;">
+            <h2 style="margin: 0; font-size: 1.15rem;">Povolené odpady a koncovky</h2>
+            <button type="button" class="btn secondary" data-subject-pairs-modal-close>Zavřít</button>
+        </div>
+        <div id="jedis-subject-pairs-modal-body" class="jedis-subject-pairs-modal-body" style="overflow: auto; flex: 1; min-height: 0;"></div>
+        <div class="form-actions" style="margin-top: 12px; flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 8px;">
+            <button type="button" class="btn" id="jedis-subject-pairs-modal-save">Uložit páry</button>
+            <button type="button" class="btn secondary" data-subject-pairs-modal-close>Zrušit</button>
+        </div>
+    </div>
+</div>
+
+<div id="name-subject-zpo-inline-modal" class="map-modal" aria-hidden="true">
+    <div class="map-modal__card" style="max-width: 520px">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+            <h2 style="margin: 0; font-size: 1.1rem">Nové ZPO do knihovny</h2>
+            <button type="button" class="btn secondary" data-zpo-modal-close>Zavřít</button>
+        </div>
+        <p><small>Soubor se uloží do knihovny ZPO a hned ho vyberete u páru.</small></p>
+        <form id="name-subject-zpo-inline-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="waste_type" id="zpo-inline-waste" value="" />
+            <input type="hidden" name="suffix" id="zpo-inline-suffix" value="" />
+            <div class="field-row" style="margin-bottom: 10px">
+                <label for="zpo-inline-label">Popisek</label>
+                <div class="field-input">
+                    <input type="text" name="label" id="zpo-inline-label" maxlength="200" required class="form-control" style="width: 100%" />
+                </div>
+            </div>
+            <div class="field-row" style="margin-bottom: 10px">
+                <label for="zpo-inline-file">Soubor (PDF, JPG, PNG)</label>
+                <div class="field-input">
+                    <input type="file" name="file" id="zpo-inline-file" accept=".pdf,.jpg,.jpeg,.png" required />
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top: 12px">
+                <button type="submit" class="btn">Uložit a vybrat</button>
+                <button type="button" class="btn secondary" data-zpo-modal-close>Zrušit</button>
+            </div>
+        </form>
+    </div>
+</div>

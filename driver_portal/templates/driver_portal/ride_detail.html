@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Jízda #{{ ride.pk }}{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Jízda{% if ride.snd_cislo_listu %} — {{ ride.snd_cislo_listu }}{% endif %}</h1>
+    <p style="color:var(--color-muted);">
+        Datum: {{ ride.drive_date|date:"d.m.Y" }}<br>
+        Adresa plnění:
+        {% if ride.address_snapshot %}
+        <a href="https://www.google.com/maps/search/?api=1&query={{ ride.address_snapshot|urlencode }}" target="_blank" rel="noopener noreferrer" title="Otevřít v mapové aplikaci">{{ ride.address_snapshot }}</a>
+        {% elif ride.address %}
+        <a href="https://www.google.com/maps/search/?api=1&query={{ ride.address.value|urlencode }}" target="_blank" rel="noopener noreferrer" title="Otevřít v mapové aplikaci">{{ ride.address.value }}</a>
+        {% else %}
+        —
+        {% endif %}
+        <br>
+        {% if ride.name_snapshot or ride.name %}Odběratel: {{ ride.name_snapshot|default:ride.name }}<br>{% endif %}
+    </p>
+    {% if ride.driver_completed_at %}
+    <p><strong>Dokončeno řidičem:</strong> {{ ride.driver_completed_at|date:"d.m.Y H:i" }}</p>
+    {% endif %}
+</div>
+<div class="card">
+    <form method="post" class="form-grid form-grid--wide">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+        {% for field in form %}
+        <div class="field-row">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            <div class="field-input">
+                {{ field }}
+                {% if field.errors %}<ul class="errorlist">{% for e in field.errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+        {% endfor %}
+        <div class="form-actions">
+            <button type="submit" class="btn" style="padding:14px 20px;font-size:1.05rem;">Uložit</button>
+            <a class="btn secondary" style="padding:14px 20px;font-size:1.05rem;" href="{% url 'driver_portal:day_list' %}">Zpět na seznam</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

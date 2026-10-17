@@ -1,0 +1,648 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Tisk jízdy{% endblock %}
+
+{% block content %}
+<style>
+    .print-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+    .print-toolbar form { display: inline-flex; align-items: stretch; margin: 0; vertical-align: middle; }
+    .print-toolbar .btn,
+    .print-toolbar form .btn {
+        box-sizing: border-box;
+        min-height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.2;
+    }
+    .print-toolbar button.btn {
+        font: inherit;
+        font-weight: 600;
+    }
+    .print-meta { margin: 0 0 12px; color: var(--color-muted); }
+    .print-status { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; display: none; }
+    .print-status.is-visible { display: block; }
+    .print-status.is-error { background: #fff8e6; color: #7a4b00; border: 1px solid #e8c878; }
+    .print-status.is-ok { background: #eef8ef; color: #1f5d33; border: 1px solid #b8dcc0; }
+    .print-files { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .print-files th, .print-files td { padding: 8px 10px; border-bottom: 1px solid var(--color-border); vertical-align: middle; }
+    .print-files td form { display: inline-flex; align-items: stretch; margin: 0 0 0 6px; vertical-align: middle; }
+    .print-files td .btn {
+        box-sizing: border-box;
+        min-height: 2.25rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font: inherit;
+        font-weight: 600;
+    }
+    .print-kind { text-transform: uppercase; font-size: 0.75rem; font-weight: 700; color: #1f5d33; }
+    .print-row-printed td { background: #eef8ef; }
+    .print-badge-done {
+        display: inline-block;
+        margin-left: 8px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1f5d33;
+        background: #d8eedc;
+        border: 1px solid #b8dcc0;
+    }
+    .print-files td .btn-print-row { margin-left: 6px; }
+    .print-modal-backdrop {
+        position: fixed; inset: 0; background: rgba(0,0,0,.35);
+        display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .print-modal {
+        width: min(420px, calc(100vw - 32px)); background: #fff; border-radius: 12px;
+        border: 1px solid var(--color-border); padding: 16px;
+    }
+    .print-modal h3 { margin: 0 0 6px; }
+    .print-modal .hint { margin: 0 0 12px; color: var(--color-muted); font-size: 0.9rem; }
+    .print-modal .opts { display: grid; gap: 8px; margin-bottom: 14px; }
+    .print-modal .opt-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 32px;
+        padding: 6px 8px;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background: #fff;
+    }
+    .print-modal .opt-row input[type="radio"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        flex: 0 0 auto;
+    }
+    .print-modal .opt-row span {
+        line-height: 1.2;
+    }
+    .print-modal .acts { display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+    .print-modal .acts .btn {
+        box-sizing: border-box;
+        min-height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font: inherit;
+        font-weight: 600;
+    }
+    .bulk-print-progress { margin-bottom: 12px; }
+    .bulk-print-progress[hidden] { display: none !important; }
+    .bulk-print-progress-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 6px;
+    }
+    .bulk-print-progress-label {
+        margin: 0;
+        font-size: 0.9rem;
+        color: var(--color-muted);
+    }
+    .bulk-print-progress-track {
+        height: 8px;
+        background: #e8f0ea;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .bulk-print-progress-bar {
+        height: 100%;
+        width: 0%;
+        background: var(--color-primary, #2d7a3e);
+        transition: width .2s ease;
+    }
+    @keyframes protocol-generate-progress {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    .protocol-generate-progress,
+    .jedis-generate-progress {
+        margin: 12px 0 0;
+        max-width: 420px;
+    }
+    .protocol-generate-progress .bulk-print-progress-bar,
+    .jedis-generate-progress .bulk-print-progress-bar {
+        width: 100%;
+        transform: translateX(-100%);
+        animation: protocol-generate-progress 1.2s ease-in-out infinite;
+        transition: none;
+    }
+    .bulk-print-result[hidden] { display: none !important; }
+    .bulk-print-result-msg {
+        margin: 0 0 14px;
+        color: var(--color-text, #1a2e1f);
+        font-size: 0.95rem;
+        line-height: 1.4;
+    }
+    .print-col-kind { width: 4.5rem; }
+    .print-col-rz { width: 5.5rem; }
+    .print-col-driver { width: 9rem; max-width: 9rem; }
+    .print-col-kdo { width: 15rem; max-width: 15rem; }
+    .print-col-odpad { width: 15rem; max-width: 15rem; }
+    .print-col-file { width: auto; min-width: 12rem; }
+    .print-col-status { width: 5.5rem; }
+    .print-col-actions { width: 13rem; }
+    .print-actions-cell { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    .print-cell-clip {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+
+<div class="card">
+    <h1>Tisk jízdních souborů</h1>
+    <p class="print-meta"><strong>{{ selected_date|date:"d.m.Y" }}</strong> · RZ: <strong>{{ vehicle_label }}</strong>{% if driver_label %} · řidič: <strong>{{ driver_label }}</strong>{% endif %} · průvodek: <strong>{{ print_rows|length }}</strong>{% if filter_pks %} <span class="dash-muted">(jen vybrané #{{ filter_pks|join:", #" }})</span>{% endif %}</p>
+    <p id="client-print-status" class="print-status" role="status" aria-live="polite"></p>
+    <div class="print-toolbar">
+        <a class="btn secondary" href="{% url 'core:dashboard' %}?date={{ selected_date_iso }}">Zpět na dashboard</a>
+        {% if vehicle_rz_id %}
+        <form method="post" action="{% url 'waste_docs:ride_print_bundle_generate_protocol' %}" data-generate-progress-form data-progress-label="Generuji PDF protokol…" data-overlay-id="protocol-busy" data-inline-progress-id="protocol-generate-progress">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ selected_date_iso }}">
+            <input type="hidden" name="vehicle_rz_id" value="{{ vehicle_rz_id }}">
+            {% if driver_id %}<input type="hidden" name="driver_id" value="{{ driver_id }}">{% endif %}
+            {% if filter_pks_csv %}<input type="hidden" name="pks" value="{{ filter_pks_csv }}">{% endif %}
+            <input type="hidden" name="next" value="{{ ride_print_return_url }}">
+            <button type="submit" class="btn secondary" title="Vygenerovat PDF protokol jízd pro tuto skupinu RZ">Generovat protokol</button>
+        </form>
+        {% else %}
+        <form method="post" action="{% url 'waste_docs:dashboard_bulk_generate_protocol' %}" data-generate-progress-form data-progress-label="Generuji PDF protokol…" data-overlay-id="protocol-busy" data-inline-progress-id="protocol-generate-progress">
+            {% csrf_token %}
+            <input type="hidden" name="date" value="{{ selected_date_iso }}">
+            <button type="submit" class="btn secondary" title="Přegenerovat PDF protokol z aktuálních jízd za den">Generovat protokol</button>
+        </form>
+        {% endif %}
+        <button type="button" class="btn" id="bulk-print-open-modal">🖨 Vytisknout bez otevírání</button>
+        <button type="button" class="btn secondary" id="open-files-btn">Otevřít soubory ručně</button>
+        <small class="print-meta" style="margin:0;">Protokol se generuje jako PDF; tisk proběhne v prohlížeči na tomto počítači.</small>
+    </div>
+    <div id="protocol-generate-progress" class="bulk-print-progress protocol-generate-progress" hidden>
+        <div class="bulk-print-progress-head">
+            <span class="jedis-spinner" aria-hidden="true"></span>
+            <p class="bulk-print-progress-label">Generuji PDF protokol, čekejte prosím…</p>
+        </div>
+        <div class="bulk-print-progress-track" aria-hidden="true">
+            <div class="bulk-print-progress-bar"></div>
+        </div>
+    </div>
+    {% include "waste_docs/partials/print_prepare_overlay.html" %}
+    {% if needs_print_prepare %}
+    <form
+        method="post"
+        action="{{ print_prepare_url }}"
+        data-print-prepare-form
+        data-prepare-label="{{ prepare_progress_label }}"
+        data-overlay-id="jedis-global-busy"
+        data-inline-progress-id="print-prepare-progress"
+        hidden
+    >
+        {% csrf_token %}
+        <input type="hidden" name="date" value="{{ selected_date_iso }}">
+        {% if vehicle_rz_id %}<input type="hidden" name="vehicle_rz_id" value="{{ vehicle_rz_id }}">{% endif %}
+        {% if driver_id %}<input type="hidden" name="driver_id" value="{{ driver_id }}">{% endif %}
+        {% if filter_pks_csv %}<input type="hidden" name="pks" value="{{ filter_pks_csv }}">{% endif %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    </form>
+    {% endif %}
+</div>
+
+<div class="card">
+    <table class="print-files">
+        <thead>
+            <tr>
+                <th class="print-col-kind">Typ</th>
+                <th class="print-col-rz">RZ</th>
+                <th class="print-col-driver">Řidič</th>
+                <th class="print-col-kdo" title="Subjekt (F/P osoba)">Kdo</th>
+                <th class="print-col-odpad" title="Název druhu odpadu">Odpad</th>
+                <th class="print-col-file">Soubor</th>
+                {% if manual_row_print_enabled %}<th class="print-col-status">Stav</th>{% endif %}
+                <th class="print-col-actions">Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in file_rows %}
+            <tr{% if f.warning %} class="print-row-warning"{% elif manual_row_print_enabled and f.row_key in printed_row_keys %} class="print-row-printed"{% endif %} data-row-key="{{ f.row_key }}">
+                <td><span class="print-kind">{{ f.kind }}</span></td>
+                <td>{{ f.vehicle_rz|default:"—" }}</td>
+                <td><span class="print-cell-clip" title="{{ f.driver|default:'—' }}">{{ f.driver|default:"—" }}</span></td>
+                <td class="print-col-kdo">
+                    {% with val=f.kdo|default:"—" %}
+                    <span class="print-cell-clip" title="{{ val }}">{{ val }}</span>
+                    {% endwith %}
+                </td>
+                <td class="print-col-odpad">
+                    {% with val=f.odpad|default:"—" %}
+                    <span class="print-cell-clip" title="{{ val }}">{{ val }}</span>
+                    {% endwith %}
+                </td>
+                <td class="print-col-file"><span class="print-cell-clip" title="{{ f.label }}">{{ f.label }}</span></td>
+                {% if manual_row_print_enabled %}
+                <td class="print-status-cell">
+                    {% if f.row_key in printed_row_keys %}
+                    <span class="print-badge-done">Vytištěno</span>
+                    {% else %}
+                    <span class="print-meta">—</span>
+                    {% endif %}
+                </td>
+                {% endif %}
+                <td class="print-actions-cell">
+                    {% if f.url %}
+                    <a class="btn secondary js-open-file" href="{{ f.url }}" target="_blank">Otevřít</a>
+                    {% if manual_row_print_enabled and not f.warning %}
+                    <button type="button" class="btn btn-print-row js-print-row" data-row-key="{{ f.row_key }}">Tisk</button>
+                    {% endif %}
+                    {% else %}
+                    <span class="print-meta">Soubor není k dispozici</span>
+                    {% endif %}
+                    {% if can_delete_protocol_files and f.kind|lower == "protocol" and f.path %}
+                        {% if vehicle_rz_id %}
+                        <form method="post" action="{% url 'waste_docs:ride_print_bundle_delete_protocol' %}" onsubmit="return confirm('Smazat PDF protokol jízd pro tuto skupinu?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                            <input type="hidden" name="vehicle_rz_id" value="{{ vehicle_rz_id }}">
+                            {% if driver_id %}<input type="hidden" name="driver_id" value="{{ driver_id }}">{% endif %}
+                            {% if filter_pks_csv %}<input type="hidden" name="pks" value="{{ filter_pks_csv }}">{% endif %}
+                            <input type="hidden" name="next" value="{{ ride_print_return_url }}">
+                            <input type="hidden" name="protocol_path" value="{{ f.path }}">
+                            <button type="submit" class="btn secondary">Smazat</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'waste_docs:dashboard_bulk_delete_protocol' %}" onsubmit="return confirm('Smazat PDF protokol jízd za den?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                            <input type="hidden" name="protocol_path" value="{{ f.path }}">
+                            <button type="submit" class="btn secondary">Smazat</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="{% if manual_row_print_enabled %}8{% else %}7{% endif %}">{% if needs_print_prepare %}Generuji soubory k tisku…{% else %}Není nic k tisku.{% endif %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{{ file_rows|json_script:"ride-file-rows" }}
+{{ bulk_print_config|json_script:"bulk-print-config" }}
+{% if manual_row_print_enabled %}
+<script>
+    window.JEDIS_PRINT_MARK_URL = "{% url 'waste_docs:mark_file_row_printed' %}";
+    window.JEDIS_PRINT_DATE = "{{ selected_date_iso }}";
+</script>
+<script src="{% static 'waste_docs/js/manual_row_print.js' %}"></script>
+{% endif %}
+<div class="jedis-busy-overlay" id="protocol-busy" role="status" aria-live="polite">
+    <span class="jedis-spinner jedis-spinner--lg" aria-hidden="true"></span>
+    <span class="jedis-busy-overlay__label">Generuji PDF protokol…</span>
+    <div class="bulk-print-progress protocol-generate-progress" style="width:min(420px, 80vw);">
+        <div class="bulk-print-progress-track" aria-hidden="true">
+            <div class="bulk-print-progress-bar"></div>
+        </div>
+    </div>
+</div>
+<div class="print-modal-backdrop" id="bulk-print-modal">
+    <div class="print-modal" role="dialog" aria-modal="true" aria-labelledby="bulk-print-title">
+        <h3 id="bulk-print-title">Co vytisknout</h3>
+        <p class="hint">Tisk proběhne v prohlížeči na tomto počítači. Excel se nejdřív převede na PDF. Volba „Vše (bez protokolu)“ tiskne průvodky a ZPO. Volba „Vše včetně protokolu“ sloučí i protokol (doplněk poznámek zvlášť).</p>
+        <div id="bulk-print-form">
+            <div id="bulk-print-progress" class="bulk-print-progress" hidden>
+                <div class="bulk-print-progress-head">
+                    <span class="jedis-spinner" aria-hidden="true"></span>
+                    <p class="bulk-print-progress-label" id="bulk-print-progress-label">Připravuji sloučené PDF…</p>
+                </div>
+                <div class="bulk-print-progress-track" aria-hidden="true">
+                    <div class="bulk-print-progress-bar" id="bulk-print-progress-bar"></div>
+                </div>
+            </div>
+            <div class="opts" style="margin-bottom:10px;">
+                <label class="opt-row"><input type="radio" name="print_mode" value="merged" checked><span>Jeden sloučený PDF (1 dialog)</span></label>
+                <label class="opt-row"><input type="radio" name="print_mode" value="sequential"><span>Po jednotlivých souborech</span></label>
+            </div>
+            <div class="opts">
+                <label class="opt-row"><input type="radio" name="print_kind" value="all" checked><span>Vše (bez protokolu)</span></label>
+                <label class="opt-row"><input type="radio" name="print_kind" value="all_with_protocol"><span>Vše včetně protokolu</span></label>
+                <label class="opt-row"><input type="radio" name="print_kind" value="xlsx"><span>Průvodka (PDF)</span></label>
+                <label class="opt-row"><input type="radio" name="print_kind" value="protocol"><span>Protokol</span></label>
+                <label class="opt-row"><input type="radio" name="print_kind" value="protocol_notes"><span>Doplněk poznámek (PDF)</span></label>
+                <label class="opt-row"><input type="radio" name="print_kind" value="zpo"><span>ZPO</span></label>
+            </div>
+            <div class="acts">
+                <button type="button" class="btn secondary" id="bulk-print-cancel">Zrušit</button>
+                <button type="button" class="btn" id="bulk-print-run">Spustit tisk</button>
+            </div>
+        </div>
+        <div id="bulk-print-result" class="bulk-print-result" hidden>
+            <p class="bulk-print-result-msg" id="bulk-print-result-msg">
+                Sloučené PDF bylo odesláno na tiskárnu. Můžete ho také stáhnout pro pozdější použití.
+            </p>
+            <div class="acts">
+                <button type="button" class="btn" id="bulk-print-download">Stáhnout PDF</button>
+                <button type="button" class="btn secondary" id="bulk-print-close-done">Zavřít</button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="{% static 'waste_docs/js/client_bulk_print.js' %}?v=20260904-print-blob-keep"></script>
+<script>
+(function () {
+    const openBtn = document.getElementById("open-files-btn");
+    const dataEl = document.getElementById("ride-file-rows");
+    const configEl = document.getElementById("bulk-print-config");
+    const statusEl = document.getElementById("client-print-status");
+    let rows = [];
+    let bulkPrintConfig = {};
+    if (dataEl) {
+        try {
+            rows = JSON.parse(dataEl.textContent || "[]");
+        } catch (e) {
+            rows = [];
+        }
+    }
+    if (configEl) {
+        try {
+            bulkPrintConfig = JSON.parse(configEl.textContent || "{}");
+        } catch (e) {
+            bulkPrintConfig = {};
+        }
+    }
+
+    function showStatus(message, isError) {
+        if (!statusEl) return;
+        statusEl.textContent = message || "";
+        statusEl.classList.toggle("is-visible", Boolean(message));
+        statusEl.classList.toggle("is-error", Boolean(isError));
+        statusEl.classList.toggle("is-ok", Boolean(message) && !isError);
+    }
+
+    const protocolBusy = document.getElementById("protocol-busy");
+    const protocolGenerateProgress = document.getElementById("protocol-generate-progress");
+
+    if (openBtn) {
+        openBtn.addEventListener("click", function () {
+            rows.forEach(function (row) {
+                const url = row && row.url ? row.url : "";
+                if (!url) return;
+                const link = document.createElement("a");
+                link.href = url;
+                link.target = "_blank";
+                link.rel = "noopener";
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            });
+        });
+    }
+
+    const modal = document.getElementById("bulk-print-modal");
+    const openModalBtn = document.getElementById("bulk-print-open-modal");
+    const closeModalBtn = document.getElementById("bulk-print-cancel");
+    const runBtn = document.getElementById("bulk-print-run");
+    const formWrap = document.getElementById("bulk-print-form");
+    const resultWrap = document.getElementById("bulk-print-result");
+    const resultMsg = document.getElementById("bulk-print-result-msg");
+    const downloadBtn = document.getElementById("bulk-print-download");
+    const closeDoneBtn = document.getElementById("bulk-print-close-done");
+    const progressWrap = document.getElementById("bulk-print-progress");
+    const progressBar = document.getElementById("bulk-print-progress-bar");
+    const progressLabel = document.getElementById("bulk-print-progress-label");
+    let lastMergedBlob = null;
+    let lastMergedBlobUrl = null;
+    let lastMergedDownloadUrl = "";
+    let lastMergedFilename = "tisk_slouceny.pdf";
+
+    function clearMergedDownload() {
+        if (lastMergedBlobUrl) {
+            URL.revokeObjectURL(lastMergedBlobUrl);
+            lastMergedBlobUrl = null;
+        }
+        lastMergedBlob = null;
+        lastMergedDownloadUrl = "";
+        lastMergedFilename = "tisk_slouceny.pdf";
+    }
+
+    function resetBulkPrintModal() {
+        showMergeProgress(false);
+        if (formWrap) {
+            formWrap.hidden = false;
+        }
+        if (resultWrap) {
+            resultWrap.hidden = true;
+        }
+        clearMergedDownload();
+    }
+
+    function closeBulkPrintModal() {
+        resetBulkPrintModal();
+        if (modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    function showMergedDownloadResult(result) {
+        if (!result || !resultWrap || !formWrap) {
+            return;
+        }
+        if (!result.blob && !result.downloadUrl) {
+            return;
+        }
+        if (result.blob) {
+            lastMergedBlob = result.blob;
+            if (lastMergedBlobUrl) {
+                URL.revokeObjectURL(lastMergedBlobUrl);
+            }
+            lastMergedBlobUrl = URL.createObjectURL(result.blob);
+        }
+        lastMergedDownloadUrl = result.downloadUrl || lastMergedDownloadUrl || "";
+        lastMergedFilename = result.downloadFilename || "tisk_slouceny.pdf";
+        formWrap.hidden = true;
+        resultWrap.hidden = false;
+        if (resultMsg) {
+            const count = Number(result.printed) || 0;
+            const countLabel = count ? (" (" + count + " souborů)") : "";
+            if (result.blob) {
+                resultMsg.textContent =
+                    "Sloučené PDF" + countLabel + " bylo odesláno na tiskárnu. Můžete ho také stáhnout pro pozdější použití.";
+            } else {
+                resultMsg.textContent =
+                    "Sloučené PDF" + countLabel + " je připraveno. Probíhá odeslání na tiskárnu — mezitím ho můžete stáhnout.";
+            }
+        }
+        if (modal) {
+            modal.style.display = "flex";
+        }
+    }
+
+    function showMergeProgress(show) {
+        if (!progressWrap) return;
+        progressWrap.hidden = !show;
+        if (!show && progressBar) {
+            progressBar.style.width = "0%";
+        }
+    }
+
+    function updateMergeProgress(payload) {
+        if (!payload) return;
+        const current = Number(payload.current) || 0;
+        const total = Number(payload.total) || 0;
+        const label = payload.label || "";
+        const pct = total > 0 ? Math.round((current / total) * 100) : 0;
+        if (progressBar) {
+            progressBar.style.width = pct + "%";
+        }
+        if (progressLabel) {
+            progressLabel.textContent = total
+                ? ("Připravuji PDF " + current + "/" + total + (label ? " — " + label : ""))
+                : "Připravuji sloučené PDF…";
+        }
+    }
+
+    function selectedPrintKind() {
+        if (!formWrap) return "all";
+        const checked = formWrap.querySelector('input[name="print_kind"]:checked');
+        return checked ? checked.value : "all";
+    }
+
+    function selectedPrintMode() {
+        if (!formWrap) return "merged";
+        const checked = formWrap.querySelector('input[name="print_mode"]:checked');
+        return checked ? checked.value : "merged";
+    }
+
+    function csrfToken() {
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        return input ? input.value : "";
+    }
+
+    function clearBlockingOverlays() {
+        ["jedis-global-busy", "protocol-busy"].forEach(function (id) {
+            const overlay = document.getElementById(id);
+            if (overlay) {
+                overlay.classList.remove("is-active");
+            }
+        });
+        if (protocolGenerateProgress) {
+            protocolGenerateProgress.hidden = true;
+        }
+    }
+
+    function openBulkPrintModal() {
+        clearBlockingOverlays();
+        resetBulkPrintModal();
+        if (modal) {
+            modal.style.display = "flex";
+        }
+    }
+
+    if (modal && openModalBtn) {
+        openModalBtn.addEventListener("click", openBulkPrintModal);
+        if (closeModalBtn) {
+            closeModalBtn.addEventListener("click", closeBulkPrintModal);
+        }
+        modal.addEventListener("click", function (e) {
+            if (e.target !== modal) {
+                return;
+            }
+            if (resultWrap && !resultWrap.hidden) {
+                return;
+            }
+            closeBulkPrintModal();
+        });
+    }
+
+    if (closeDoneBtn) {
+        closeDoneBtn.addEventListener("click", closeBulkPrintModal);
+    }
+
+    if (downloadBtn) {
+        downloadBtn.addEventListener("click", function () {
+            const bulk = globalThis.JedisClientBulkPrint;
+            if (!bulk) {
+                return;
+            }
+            if (lastMergedDownloadUrl) {
+                bulk.triggerFileDownload(lastMergedDownloadUrl, lastMergedFilename);
+                return;
+            }
+            if (lastMergedBlobUrl) {
+                bulk.triggerFileDownload(lastMergedBlobUrl, lastMergedFilename);
+                return;
+            }
+            if (lastMergedBlob) {
+                bulk.downloadBlob(lastMergedBlob, lastMergedFilename);
+            }
+        });
+    }
+
+    if (runBtn && globalThis.JedisClientBulkPrint) {
+        runBtn.addEventListener("click", function () {
+            const kind = selectedPrintKind();
+            const mode = selectedPrintMode();
+            runBtn.disabled = true;
+            showStatus("Probíhá tisk…", false);
+            const onRowPrinted = globalThis.JedisManualRowPrint
+                ? function (row) {
+                    if (!row || !row.row_key) {
+                        return;
+                    }
+                    globalThis.JedisManualRowPrint.markRowPrinted(row.row_key).then(function () {
+                        globalThis.JedisManualRowPrint.applyPrintedRowUi(row.row_key);
+                    });
+                }
+                : undefined;
+            const bulk = globalThis.JedisClientBulkPrint;
+            const done = mode === "merged" && bulk.runMergedBulkPrint
+                ? bulk.runMergedBulkPrint({
+                    mergeUrl: bulkPrintConfig.merge_url || "",
+                    date: bulkPrintConfig.date || "",
+                    vehicleRzId: Number(bulkPrintConfig.vehicle_rz_id) || 0,
+                    driverId: bulkPrintConfig.driver_id || "",
+                    filterPks: bulkPrintConfig.filter_pks || "",
+                    printKind: kind,
+                    csrfToken: csrfToken(),
+                    rows: rows,
+                    onStatus: showStatus,
+                    onRowPrinted: onRowPrinted,
+                    onProgressStart: function () {
+                        showMergeProgress(true);
+                        if (progressLabel) {
+                            progressLabel.textContent = "Generuji chybějící průvodky…";
+                        }
+                    },
+                    onProgressEnd: function () { showMergeProgress(false); },
+                    onProgress: updateMergeProgress,
+                    onMergedReady: showMergedDownloadResult,
+                })
+                : bulk.runClientBulkPrint(rows, kind, showStatus, onRowPrinted);
+            done.then(function (result) {
+                if (mode === "merged") {
+                    if (result && (result.blob || result.downloadUrl)) {
+                        showMergedDownloadResult(result);
+                    }
+                    return;
+                }
+                if (modal && result && result.printed > 0) {
+                    closeBulkPrintModal();
+                }
+            }).finally(function () {
+                runBtn.disabled = false;
+            });
+        });
+    }
+
+    if (globalThis.JedisManualRowPrint) {
+        globalThis.JedisManualRowPrint.initManualRowPrint(rows, showStatus);
+    }
+})();
+</script>
+{% endblock %}

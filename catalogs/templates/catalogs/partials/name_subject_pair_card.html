@@ -1,0 +1,228 @@
+                <article class="name-subject-pairs__card name-subject-pairs__group is-collapsed{% if f.yard_svoz_enabled.value %} name-subject-pairs__card--svoz-matrix{% else %} name-subject-pairs__card--no-svoz-matrix{% endif %}" draggable="false">
+                    <header class="name-subject-pairs__card-head">
+                        <div class="name-subject-pairs__card-drag">
+                            <span class="name-subject-pairs__handle" draggable="true" title="Přetáhnutím změníte pořadí páru v seznamu i v matici požadavku na svoz (hodnota Pořadí se uloží při odeslání formuláře).">⠿</span>
+                            {{ f.sort_order }}
+                            {{ f.sort_order.errors }}
+                        </div>
+                        <div class="name-subject-pairs__card-field--grow">
+                            {% for hidden in f.hidden_fields %}
+                                {% if hidden.name != "sort_order" %}{{ hidden }}{% endif %}
+                            {% endfor %}
+                            {{ f.waste_type.label_tag }}
+                            {{ f.waste_type }}
+                            {{ f.waste_type.errors }}
+                        </div>
+                        <div class="name-subject-pairs__card-field--grow">
+                            {{ f.suffix.label_tag }}
+                            {{ f.suffix }}
+                            {{ f.suffix.errors }}
+                        </div>
+                        <div class="name-subject-pairs__card-actions">
+                            <button
+                                type="button"
+                                class="btn secondary name-subject-pairs__copy-btn"
+                                data-copy-pair
+                                title="Vytvoří nový řádek se stejným nastavením jako tento pár (druh odpadu, koncovka, svoz, dokumenty…). Soubory PIO se nekopírují — nahrajte je znovu. ZPO vybírejte z knihovny. Po úpravě uložte formulář."
+                            >Kopírovat</button>
+                            <div class="name-subject-pairs__card-delete">
+                                {% if f.DELETE %}
+                                    {{ f.DELETE }}
+                                    <label for="{{ f.DELETE.id_for_label }}" title="{{ f.DELETE.help_text|default:'Po zaškrtnutí a uložení se pár odpad–koncovka odstraní.' }}">Smazat pár</label>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <button
+                            type="button"
+                            class="btn name-subject-pairs__collapse-btn name-subject-pairs__collapse-btn--alert"
+                            data-pair-collapse-toggle
+                            aria-expanded="false"
+                            aria-controls="nsp-body-{{ forloop.counter0 }}"
+                            style="background:#c0392b !important; border:2px solid #c0392b !important; color:#fff !important; font-size:1.15rem !important;"
+                            title="Rozbalte a vyplňte druh vozidla (sekce Dvůr a svoz)."
+                        >▸</button>
+                        <div class="name-subject-pairs__card-head-address">
+                            <label for="{{ f.fulfillment_address_value.id_for_label }}">{{ f.fulfillment_address_value.label }}</label>
+                            {% with pair_addr=f.fulfillment_address_value.value|default:"" central=central_fulfillment_address|default:"" %}
+                            <select class="name-subject-pairs__fulfillment-address-select"
+                                    aria-label="Rychlý výběr adresy plnění"
+                                    title="Centrální adresa subjektu a další uložené adresy plnění u tohoto F/P">
+                                <option value=""
+                                        {% if not pair_addr or pair_addr == central %}selected{% endif %}
+                                        title="{% if central %}Použije se hodnota z pole Adresa plnění v sekci Adresy subjektu: {{ central }}{% else %}Použije se hodnota z pole Adresa plnění výše ve formuláři{% endif %}">
+                                    {% if central %}{{ central|truncatechars:80 }}{% else %}Adresa plnění subjektu (doplňte výše){% endif %}
+                                </option>
+                                {% for addr in known_fulfillment_addresses %}
+                                    {% if addr != central %}
+                                <option value="{{ addr }}"
+                                        {% if pair_addr == addr %}selected{% endif %}
+                                        title="{{ addr }}">{{ addr|truncatechars:80 }}</option>
+                                    {% endif %}
+                                {% endfor %}
+                                <option value="__custom__"
+                                        title="Vlastní adresa plnění pro tento řádek F/P">
+                                    Jiná adresa (zadejte ručně)
+                                </option>
+                            </select>
+                            {% endwith %}
+                            <div class="name-subject-pairs__card-head-address-row">
+                                <button type="button"
+                                        class="btn secondary name-subject-pairs__pair-map-btn"
+                                        id="{{ f.fulfillment_address_value.id_for_label }}-map-btn"
+                                        title="Otevře mapu pro výběr adresy plnění u tohoto řádku">Vybrat polohu na mapě</button>
+                                {{ f.fulfillment_address_value }}
+                                <datalist id="{{ f.fulfillment_address_value.id_for_label }}-datalist"
+                                          class="name-subject-pairs__pair-fulfillment-datalist"></datalist>
+                            </div>
+                            {% if f.fulfillment_address_value.help_text %}
+                            <p class="dash-muted name-subject-pairs__card-head-address-hint">{{ f.fulfillment_address_value.help_text }}</p>
+                            {% else %}
+                            <p class="dash-muted name-subject-pairs__card-head-address-hint">Formát: Ulice, č.p., Město nebo Město (vesnice) č.p. Návrhy od 3 znaků (stejně jako Adresa plnění výše).</p>
+                            {% endif %}
+                            {{ f.fulfillment_address_value.errors }}
+                        </div>
+                    </header>
+                    <div class="name-subject-pairs__card-body" id="nsp-body-{{ forloop.counter0 }}">
+                    <section class="name-subject-pairs__section" aria-labelledby="nsp-yard-{{ forloop.counter0 }}">
+                        <h3 class="name-subject-pairs__section-title" id="nsp-yard-{{ forloop.counter0 }}" title="Svoz z dvora v matici požadavků, druh vozidla a činnosti, průvodka zadaná přímo ze sběrného dvora a související údaje.">Činnost Dvůr a svoz</h3>
+                        <div class="name-subject-pairs__grid">
+                            <div class="name-subject-pairs__grid-item--check">
+                                {{ f.yard_svoz_enabled.label_tag }}
+                                {{ f.yard_svoz_enabled }}
+                                {{ f.yard_svoz_enabled.errors }}
+                            </div>
+                            <div style="border:2px solid #c0392b; background:#fff5f4; border-radius:8px; padding:8px;">
+                                <label for="{{ f.yard_vehicle_kinds.id_for_label }}" style="display:block; color:#c0392b; font-weight:700; font-size:1rem; margin-bottom:4px;">
+                                    {{ f.yard_vehicle_kinds.label }} *
+                                </label>
+                                {{ f.yard_vehicle_kinds }}
+                                {% if f.yard_vehicle_kinds.help_text %}
+                                <p class="dash-muted" style="font-size:0.85rem; margin:4px 0 0;">{{ f.yard_vehicle_kinds.help_text }}</p>
+                                {% endif %}
+                                {{ f.yard_vehicle_kinds.errors }}
+                            </div>
+                            <div>
+                                {{ f.yard_svoz_activity.label_tag }}
+                                {{ f.yard_svoz_activity }}
+                                {{ f.yard_svoz_activity.errors }}
+                            </div>
+                            <div class="name-subject-pairs__grid-item--span2">
+                                {{ f.yard_svoz_display_label.label_tag }}
+                                {{ f.yard_svoz_display_label }}
+                                {{ f.yard_svoz_display_label.errors }}
+                            </div>
+                            <div class="name-subject-pairs__grid-item--check">
+                                {{ f.yard_dispatch_note_enabled.label_tag }}
+                                {{ f.yard_dispatch_note_enabled }}
+                                {% if f.yard_dispatch_note_enabled.help_text %}
+                                <p class="dash-muted" style="font-size:0.85rem; margin:4px 0 0;">{{ f.yard_dispatch_note_enabled.help_text }}</p>
+                                {% endif %}
+                                {{ f.yard_dispatch_note_enabled.errors }}
+                            </div>
+                            <div class="name-subject-pairs__grid-item--span2">
+                                {{ f.yard_dispatch_note_title.label_tag }}
+                                {{ f.yard_dispatch_note_title }}
+                                {% if f.yard_dispatch_note_title.help_text %}
+                                <p class="dash-muted" style="font-size:0.85rem; margin:4px 0 0;">{{ f.yard_dispatch_note_title.help_text }}</p>
+                                {% endif %}
+                                {{ f.yard_dispatch_note_title.errors }}
+                            </div>
+                            <div class="name-subject-pairs__grid-item--span2">
+                                {{ f.yard_dispatch_note_text.label_tag }}
+                                {{ f.yard_dispatch_note_text }}
+                                {% if f.yard_dispatch_note_text.help_text %}
+                                <p class="dash-muted" style="font-size:0.85rem; margin:4px 0 0;">{{ f.yard_dispatch_note_text.help_text }}</p>
+                                {% endif %}
+                                {{ f.yard_dispatch_note_text.errors }}
+                            </div>
+                            <div class="name-subject-pairs__grid-item--check">
+                                {{ f.yard_svoz_auto_assign_driver.label_tag }}
+                                {{ f.yard_svoz_auto_assign_driver }}
+                                {{ f.yard_svoz_auto_assign_driver.errors }}
+                            </div>
+                            {% if show_dispatch_plan_fields and f.yard_svoz_exception_slot %}
+                            <div class="name-subject-pairs__grid-item name-subject-pairs__exception-slot-wrap" hidden>
+                                {{ f.yard_svoz_exception_slot.label_tag }}
+                                {{ f.yard_svoz_exception_slot }}
+                                {% if f.yard_svoz_exception_slot.help_text %}
+                                <p class="dash-muted" style="font-size:0.85rem; margin:4px 0 0;">{{ f.yard_svoz_exception_slot.help_text }}</p>
+                                {% endif %}
+                                {{ f.yard_svoz_exception_slot.errors }}
+                            </div>
+                            {% endif %}
+                            <div class="name-subject-pairs__grid-item--check">
+                                {{ f.yard_pruvodka_enabled.label_tag }}
+                                {{ f.yard_pruvodka_enabled }}
+                                {{ f.yard_pruvodka_enabled.errors }}
+                            </div>
+                            <div>
+                                {{ f.yard_pruvodka_activity.label_tag }}
+                                {{ f.yard_pruvodka_activity }}
+                                {{ f.yard_pruvodka_activity.errors }}
+                            </div>
+                            <div>
+                                {{ f.yard_container_kind.label_tag }}
+                                {{ f.yard_container_kind }}
+                                {{ f.yard_container_kind.errors }}
+                            </div>
+                            <div>
+                                {{ f.contract_number.label_tag }}
+                                {{ f.contract_number }}
+                                {{ f.contract_number.errors }}
+                            </div>
+                            <div>
+                                {{ f.ride_note.label_tag }}
+                                {{ f.ride_note }}
+                                {{ f.ride_note.errors }}
+                                {% if f.ride_note.help_text %}
+                                <p class="dash-muted" style="font-size:0.85rem; margin:4px 0 0;">{{ f.ride_note.help_text }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+                    <section class="name-subject-pairs__section" aria-labelledby="nsp-doc-{{ forloop.counter0 }}">
+                        <h3 class="name-subject-pairs__section-title" id="nsp-doc-{{ forloop.counter0 }}" title="ZPO ze sdílené knihovny, PIO a ostatní dokumenty; vypnutí systémového generování ZPO pro tento pár.">Dokumenty a ZPO</h3>
+                        <div class="name-subject-pairs__grid name-subject-pairs__grid--docs">
+                            <div class="name-subject-pairs__grid-item--span2 name-subject-pairs__zpo-block">
+                                <div class="name-subject-pairs__zpo-row" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;">
+                                    <div style="flex:1;min-width:200px;">
+                                        {{ f.zpo.label_tag }}
+                                        {{ f.zpo }}
+                                        {{ f.zpo.errors }}
+                                    </div>
+                                    <button type="button" class="btn secondary name-subject-pairs__zpo-add-btn" title="Přidá nový soubor ZPO do knihovny (Číselníky → Knihovna ZPO)">+ Nahrát nové ZPO</button>
+                                </div>
+                                <div class="name-subject-pairs__pio-row" style="margin-top:6px;">
+                                    <a class="name-subject-pairs__zpo-open-link" href="#" target="_blank" rel="noopener noreferrer" title="Otevřít vybrané ZPO" hidden>📄 Otevřít soubor</a>
+                                    <small class="dash-muted name-subject-pairs__zpo-hint"></small>
+                                </div>
+                            </div>
+                            <div class="name-subject-pairs__grid-item--check">
+                                {{ f.suppress_system_zpo.label_tag }}
+                                {{ f.suppress_system_zpo }}
+                                {{ f.suppress_system_zpo.errors }}
+                            </div>
+                            <div class="name-subject-pairs__file-field">
+                                {{ f.pio_document.label_tag }}
+                                {{ f.pio_document }}
+                                {{ f.pio_document.errors }}
+                            </div>
+                            <div>
+                                <span class="name-subject-pairs__section-title" style="font-size:0.88rem;margin-bottom:8px;">Archiv PIO</span>
+                                <div class="name-subject-pairs__pio-row">
+                                    {% if f.instance.pk and item and item.pk %}
+                                        <a class="btn secondary" href="{% url 'catalogs:name_pair_pio' item.pk f.instance.pk %}" title="Historie a přehled revizí PIO nahraných u tohoto páru odpad + koncovka.">Archiv{% for rpk,cnt in pio_revision_counts.items %}{% if rpk == f.instance.pk %} ({{ cnt }}){% endif %}{% endfor %}</a>
+                                    {% else %}
+                                        <small class="dash-muted">Po uložení páru</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="name-subject-pairs__file-field">
+                                {{ f.other_document.label_tag }}
+                                {{ f.other_document }}
+                                {{ f.other_document.errors }}
+                            </div>
+                        </div>
+                    </section>
+                    </div>
+                </article>

@@ -1,0 +1,1675 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} | JeDiS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .customer-request-form-page {
+        padding-bottom: 5.5rem;
+    }
+    .customer-request-form-dock {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 200;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+        background: var(--color-surface, #fff);
+        border-top: 1px solid var(--color-border, #c8d4c8);
+        box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.08);
+    }
+    .customer-request-form-dock .btn {
+        min-height: 40px;
+    }
+    .customer-request-form-errors {
+        margin: 0 0 16px;
+        padding: 12px 14px;
+        border-radius: 10px;
+        border: 2px solid #b42318;
+        background: #fef3f2;
+        color: #912018;
+    }
+    .customer-request-form-errors ul.errorlist {
+        margin: 8px 0 0;
+        padding-left: 1.2rem;
+    }
+    /* Combobox odpadu — o ~20 % širší než ostatní pole v řádku */
+    #customer-request-waste-type-row {
+        overflow: visible;
+    }
+    #customer-request-waste-type-row > .field-input {
+        width: 120%;
+        max-width: 120%;
+    }
+    #customer-request-waste-type-host .input-with-actions,
+    #customer-request-waste-type-host .waste-combo-q {
+        width: 100%;
+        box-sizing: border-box;
+    }
+    @media (max-width: 720px) {
+        #customer-request-waste-type-row > .field-input {
+            width: 100%;
+            max-width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="card customer-request-form-page">
+    <h1>{{ page_title }}</h1>
+    {% include "waste_docs/partials/customer_request_fix_feedback.html" %}
+    {% if form.errors %}
+    <div id="customer-request-form-errors" class="customer-request-form-errors" role="alert">
+        <strong>Požadavek se nepodařilo uložit.</strong>
+        <ul class="errorlist">
+            {% for field in form %}
+                {% for error in field.errors %}
+                <li>{{ field.label }}: {{ error }}</li>
+                {% endfor %}
+            {% endfor %}
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    <form id="customer-request-form" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.name_existing }}
+        {{ form.waste_type_lookup }}
+        {% if not item %}
+        {% include "customer_request_templates/picker_partial.html" %}
+        {% endif %}
+        <div class="form-grid form-grid--wide">
+            <h2 class="form-section-title">Subjekt a místo</h2>
+            <div class="field-row">
+                <label for="id_name_lookup">{{ form.name_lookup.label }}</label>
+                <div class="field-input">
+                    {{ form.name_lookup }}
+                    <datalist id="name-lookup-suggestions"></datalist>
+                    {{ form.name_lookup.errors }}
+                    <small>Vyhledejte subjekt z číselníku a po výběru se doplní údaje subjektu i doporučený odpad/koncovka.</small>
+                    <div class="form-actions" style="margin-top:6px;">
+                        <a class="btn secondary" href="{% url 'catalogs:name_create' %}" target="_blank" rel="noopener">+ Nová osoba</a>
+                    </div>
+                    {% if can_edit_name_subject_pairs %}
+                    <div id="customer-request-pairs-btn-wrap" style="margin-top:8px;">
+                        <button type="button" class="btn secondary" id="customer-request-edit-subject-pairs-btn" title="Upravit páry odpad–koncovka u vybraného subjektu (po výběru z našeptávače)">Upravit páry odpad–koncovka</button>
+                        <small style="display:block;margin-top:6px;max-width:42rem;line-height:1.45;">
+                            Nejdřív vyberte subjekt z našeptávače (klik na položku v seznamu), pak tlačítkem upravíte páry odpad–koncovka bez opuštění požadavku.
+                            Po uložení se nabídka odpadů a koncovek v tomto formuláři sama obnoví.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="id_facility_address_value">{{ form.facility_address_value.label }}</label>
+                <div class="field-input">
+                    {{ form.facility_address_value }}
+                    <datalist id="facility-address-suggestions"></datalist>
+                    {% if form.facility_address_value.help_text %}<small>{{ form.facility_address_value.help_text }}</small>{% endif %}
+                    {{ form.facility_address_value.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="id_contact_phone">{{ form.contact_phone.label }}</label>
+                <div class="field-input">
+                    {{ form.contact_phone }}
+                    {% if form.contact_phone.help_text %}<small>{{ form.contact_phone.help_text }}</small>{% endif %}
+                    {{ form.contact_phone.errors }}
+                </div>
+            </div>
+            <div class="field-row field-row--ride-note-highlight" style="padding:10px 12px;margin:4px 0 10px;border:2px solid var(--color-primary,#2d7c42);border-radius:10px;background:rgba(150,192,61,0.18);">
+                <label for="id_contact_note" style="font-weight:700;color:var(--color-primary-dark,#245f33);">{{ form.contact_note.label }}</label>
+                <div class="field-input">
+                    {{ form.contact_note }}
+                    {% if form.contact_note.help_text %}<small style="display:block;margin-top:6px;font-weight:600;color:var(--color-primary-dark,#245f33);">{{ form.contact_note.help_text }}</small>{% endif %}
+                    {{ form.contact_note.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="id_address_value">{{ form.address_value.label }}</label>
+                <div class="field-input">
+                    <div class="field-toolbar">
+                        <button type="button" class="btn secondary" id="map-open-btn">Vybrat polohu na mapě</button>
+                    </div>
+                    <div id="customer-request-pair-address-select-wrap" style="display:none;margin:0 0 8px;">
+                        <label for="customer-request-pair-address-select" style="display:block;font-size:0.9rem;margin-bottom:4px;">Adresa podle páru odpad–koncovka</label>
+                        <select id="customer-request-pair-address-select" class="form-control" title="Více adres plnění u stejného odpadu — vyberte správnou"></select>
+                        <small>U tohoto odpadu je více adres plnění — vyberte, která platí.</small>
+                    </div>
+                    {{ form.address_value }}
+                    <datalist id="request-address-suggestions"></datalist>
+                    {{ form.fulfillment_latitude }}
+                    {{ form.fulfillment_longitude }}
+                    <small>Formát: Ulice, č.p. Město nebo Město (vesnice) č.p.</small>
+                    {{ form.address_value.errors }}
+                </div>
+            </div>
+
+            <h2 class="form-section-title">Požadavek</h2>
+            <div class="field-row"><label>{{ form.activity.label }}</label><div class="field-input">{{ form.activity }}{{ form.activity.errors }}</div></div>
+            <div class="field-row" id="customer-request-waste-type-row">
+                <label>{{ form.waste_type.label }}</label>
+                <div class="field-input" id="customer-request-waste-type-host">
+                    {{ form.waste_type }}
+                    {{ form.waste_type.errors }}
+                    {% if can_edit_name_subject_pairs %}
+                    <div id="customer-request-pairs-btn-wrap-waste" style="margin-top:8px;">
+                        <button type="button" class="btn secondary customer-request-edit-subject-pairs-btn" title="Upravit páry odpad–koncovka u vybraného subjektu">Upravit páry odpad–koncovka</button>
+                        <small style="display:block;margin-top:6px;max-width:42rem;line-height:1.45;">
+                            Chybí odpad v nabídce? Vyberte subjekt a upravte páry odpad–koncovka u subjektu F/P.
+                        </small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="customer-request-waste-code">Katalogové číslo odpadu</label>
+                <div class="field-input">
+                    <input type="text" id="customer-request-waste-code" readonly class="form-control" tabindex="-1" aria-readonly="true">
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="customer-request-waste-category">Kategorie odpadu</label>
+                <div class="field-input">
+                    <input type="text" id="customer-request-waste-category" readonly class="form-control" tabindex="-1" aria-readonly="true">
+                </div>
+            </div>
+            <div class="field-row">
+                <label>{{ form.vehicle_kind.label }}</label>
+                <div class="field-input">
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        {{ form.vehicle_kind }}
+                        <button type="button" id="customer-request-vehicle-kind-clear" class="btn secondary" title="Smazat výběr druhu vozidla" aria-label="Smazat výběr druhu vozidla">x</button>
+                    </div>
+                    {{ form.vehicle_kind.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                <label>{{ form.suffix.label }}</label>
+                <div class="field-input">
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        {{ form.suffix }}
+                        <button type="button" id="customer-request-suffix-clear" class="btn secondary" title="Smazat výběr koncovky" aria-label="Smazat výběr koncovky">x</button>
+                    </div>
+                    {{ form.suffix.errors }}
+                </div>
+            </div>
+            <div class="field-row" id="customer-request-contract-row"{% if not form.contract_number.value %} style="display:none"{% endif %}><label for="id_contract_number">{{ form.contract_number.label }}</label><div class="field-input">{{ form.contract_number }}{{ form.contract_number.errors }}{% if form.contract_number.help_text %}<small>{{ form.contract_number.help_text }}</small>{% endif %}</div></div>
+            <div class="field-row"><label>{{ form.target_date.label }}</label><div class="field-input">{{ form.target_date }}{{ form.target_date.errors }}</div></div>
+            {% if form.operating_date_shift_notes %}
+            <p role="status" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;border:2px solid var(--color-primary,#2d7c42);background:rgba(150,192,61,0.18);color:var(--color-primary-dark,#245f33);">
+                {% for note in form.operating_date_shift_notes %}{{ note }}{% if not forloop.last %}<br>{% endif %}{% endfor %}
+            </p>
+            {% endif %}
+            <div class="field-row">
+                <label for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>
+                <div class="field-input">
+                    {{ form.note }}
+                    {% if form.note.help_text %}<small>{{ form.note.help_text }}</small>{% endif %}
+                    {{ form.note.errors }}
+                </div>
+            </div>
+
+            <h2 class="form-section-title" id="follow-up-section-title">Navazující činnost</h2>
+            <p id="follow-up-request-hint" class="follow-up-row" style="margin:0 0 8px;font-size:0.95rem;line-height:1.45;max-width:44rem;">
+                <small>Názvy v poli <strong>Navazující činnost</strong> odpovídají číselníku druhů činností (stejné jako u jízdy); podle zvolené první činnosti se nabídka omezí jen na nastavené návaznosti. <strong>Datum navazující činnosti</strong> můžete nechat prázdné — termín doplní dispečer nebo zadavatel později.</small>
+            </p>
+            <div class="field-row follow-up-row"><label>{{ form.has_follow_up.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.has_follow_up }}{{ form.has_follow_up.errors }}</div></div>
+            <div class="field-row follow-up-row"><label>{{ form.follow_up_activity.label }}</label><div class="field-input">{{ form.follow_up_activity }}{{ form.follow_up_activity.errors }}</div></div>
+            <div class="field-row follow-up-row"><label>{{ form.follow_up_target_date.label }}</label><div class="field-input">{{ form.follow_up_target_date }}{{ form.follow_up_target_date.errors }}</div></div>
+
+            <h2 class="form-section-title">Pravidelnost</h2>
+            <div class="field-row"><label>{{ form.is_recurring.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.is_recurring }}{{ form.is_recurring.errors }}</div></div>
+            <div class="field-row"><label>{{ form.recurrence_weekdays_pick.label }}</label><div class="field-input">{{ form.recurrence_weekdays_pick }}{{ form.recurrence_weekdays_pick.errors }}</div></div>
+            <div class="field-row"><label>{{ form.recurrence_until.label }}</label><div class="field-input">{{ form.recurrence_until }}{{ form.recurrence_until.errors }}</div></div>
+
+            <h2 class="form-section-title">Záloha a přílohy</h2>
+            <div class="field-row"><label>{{ form.requires_advance_invoice.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.requires_advance_invoice }}{{ form.requires_advance_invoice.errors }}</div></div>
+            <div class="field-row" id="advance-amount-wrap"><label>{{ form.advance_invoice_amount.label }}</label><div class="field-input">{{ form.advance_invoice_amount }}{{ form.advance_invoice_amount.errors }}</div></div>
+            <div class="field-row" id="advance-due-wrap"><label>{{ form.invoice_due_date.label }}</label><div class="field-input">{{ form.invoice_due_date }}{{ form.invoice_due_date.errors }}</div></div>
+            <div class="field-row"><label>{{ form.attachment_1.label }}</label><div class="field-input">{{ form.attachment_1 }}{{ form.attachment_1.errors }}</div></div>
+            <div class="field-row"><label>{{ form.attachment_2.label }}</label><div class="field-input">{{ form.attachment_2 }}{{ form.attachment_2.errors }}</div></div>
+            <div class="field-row"><label>{{ form.attachment_3.label }}</label><div class="field-input">{{ form.attachment_3 }}{{ form.attachment_3.errors }}</div></div>
+        </div>
+        <div class="customer-request-form-dock" role="toolbar" aria-label="Akce požadavku">
+            {% if is_edit %}
+            <div class="field-row" style="width:100%; max-width:36rem; margin:0 0 8px;">
+                <label for="id_cancel_reason">Důvod zrušení (povinné při zrušení)</label>
+                <div class="field-input">
+                    <textarea id="id_cancel_reason" name="cancel_reason" rows="2" style="width:100%;" placeholder="Proč se požadavek ruší…">{{ cancel_reason|default:"" }}</textarea>
+                </div>
+            </div>
+            <button class="btn" type="submit" name="action" value="resubmit">Uložit a odeslat znovu</button>
+            <button class="btn secondary" type="submit" name="action" value="save">Uložit opravu</button>
+            <button class="btn secondary" type="submit" name="action" value="cancel" formnovalidate onclick="return confirm('Opravdu zrušit tento požadavek?');">Zrušit požadavek</button>
+            {% if can_delete_fix and fix_delete_url %}
+            <button class="btn danger" type="submit" formaction="{{ fix_delete_url }}" formmethod="post" formnovalidate onclick="return confirm('Trvale smazat požadavek? Tuto akci nelze vrátit.');">Smazat trvale</button>
+            {% endif %}
+            <a class="btn secondary" href="{% url 'waste_docs:customer_request_detail' item.pk %}">Zpět na detail</a>
+            {% else %}
+            <button class="btn" type="submit">Uložit požadavek</button>
+            <button type="button" class="btn secondary" id="customer-request-form-reset">Vyprázdnit formulář</button>
+            <a class="btn secondary" href="{% url 'waste_docs:customer_request_list' %}">Zpět</a>
+            {% endif %}
+        </div>
+    </form>
+</section>
+
+{{ activity_follow_map|json_script:"activity-follow-map" }}
+{{ waste_type_combo_meta|json_script:"customer-request-waste-meta" }}
+{{ customer_request_form_config|json_script:"customer-request-form-config" }}
+<script src="{% static 'core/js/fulfillment_address_field.js' %}"></script>
+{% if not item %}
+<script src="{% static 'customer_request_templates/js/picker.js' %}"></script>
+{% endif %}
+
+{% if can_edit_name_subject_pairs %}
+<link rel="stylesheet" href="{% static 'catalogs/css/name_subject_form.css' %}">
+{% include "waste_docs/partials/subject_pairs_edit_modal.html" %}
+<script src="{% static 'catalogs/js/name_subject_waste_combo.js' %}"></script>
+<script src="{% static 'catalogs/js/pair_fulfillment_address_field.js' %}"></script>
+<script src="{% static 'catalogs/js/name_subject_pairs_formset.js' %}"></script>
+<script src="{% static 'catalogs/js/zpo_pair_library.js' %}"></script>
+{% endif %}
+<link rel="stylesheet" href="{% static 'waste_docs/css/zpo_pairing_dock.css' %}">
+{% include "waste_docs/partials/zpo_pairing_dock.html" with dock_title="ZPO + detail požadavku" %}
+<script>
+(function () {
+    var el = document.getElementById("customer-request-form-config");
+    if (!el) return;
+    try {
+        var cfg = JSON.parse(el.textContent || "{}");
+        if (cfg.zpoPairing) {
+            window.JEDIS_ZPO_PAIRING = cfg.zpoPairing;
+        }
+    } catch (e) {}
+})();
+</script>
+<script src="{% static 'waste_docs/js/zpo_pairing_panel.js' %}"></script>
+<script type="module" src="{% static 'waste_docs/js/customer_request/main.js' %}"></script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const activityFollowMap = JSON.parse(
+        document.getElementById("activity-follow-map").textContent || "{}"
+    );
+    const nameLookup = document.getElementById("id_name_lookup");
+    const nameHidden = document.getElementById("id_name_existing");
+    const nameList = document.getElementById("name-lookup-suggestions");
+    const selectedByLabel = new Map();
+    const subjectByNameId = new Map();
+    const wasteSelect = document.getElementById("id_waste_type");
+    const suffixSelect = document.getElementById("id_suffix");
+    const vehicleKindSelect = document.getElementById("id_vehicle_kind");
+    const contractInput = document.getElementById("id_contract_number");
+    const contractRow = document.getElementById("customer-request-contract-row");
+    let contractPinnedFromInstance = Boolean((contractInput && contractInput.value || "").trim());
+    const facilityInput = document.getElementById("id_facility_address_value");
+    const addrInput = document.getElementById("id_address_value");
+    const pairAddressSelect = document.getElementById("customer-request-pair-address-select");
+    const pairAddressSelectWrap = document.getElementById("customer-request-pair-address-select-wrap");
+    const phoneInput = document.getElementById("id_contact_phone");
+    const noteInput = document.getElementById("id_contact_note");
+    let notePinnedFromInstance = Boolean((noteInput && noteInput.value || "").trim());
+    let noteTypedByUser = false;
+    let noteSyncSilent = false;
+    if (noteInput) {
+        noteInput.addEventListener("input", function () {
+            if (noteSyncSilent) return;
+            noteTypedByUser = true;
+            notePinnedFromInstance = false;
+        });
+    }
+    let nameDebounce = null;
+    let currentWasteFilterIds = null;
+    let wasteComboApi = null;
+    let lastCentralFulfillmentAddress = "";
+    let pairAddressPinnedByUser = false;
+    let pairAddressPinWasteId = "";
+
+    function syncWasteMetaFromHooks() {
+        if (window.customerRequestFormHooks &&
+            typeof window.customerRequestFormHooks.syncWasteMeta === "function") {
+            window.customerRequestFormHooks.syncWasteMeta();
+        }
+        if (window.customerRequestFormHooks &&
+            typeof window.customerRequestFormHooks.syncContractFromPair === "function") {
+            window.customerRequestFormHooks.syncContractFromPair();
+        }
+        if (window.customerRequestFormHooks &&
+            typeof window.customerRequestFormHooks.syncFulfillmentFromPair === "function") {
+            window.customerRequestFormHooks.syncFulfillmentFromPair();
+        }
+        if (window.customerRequestFormHooks &&
+            typeof window.customerRequestFormHooks.syncRideNoteFromPair === "function") {
+            window.customerRequestFormHooks.syncRideNoteFromPair();
+        }
+    }
+
+    (function initWasteTypeCombo() {
+        const metaEl = document.getElementById("customer-request-waste-meta");
+        if (!wasteSelect || !metaEl) return;
+        let wasteTypeMeta = {};
+        try {
+            wasteTypeMeta = JSON.parse(metaEl.textContent || "{}");
+        } catch (e) {
+            return;
+        }
+        const optionMap = {};
+        Object.entries(wasteTypeMeta).forEach(function (entry) {
+            optionMap[entry[1].label] = entry[0];
+        });
+        function normalizeWasteQuery(q) {
+            return (q || "")
+                .toLowerCase()
+                .replace(/\s+/g, "")
+                .replace(/[^0-9a-záčďéěíňóôřšťúůýž+\-*]/gi, "");
+        }
+        function refillWasteDatalist(datalistEl, query) {
+            const nq = normalizeWasteQuery(query);
+            datalistEl.innerHTML = "";
+            Object.entries(wasteTypeMeta).forEach(function (entry) {
+                const metaId = String(entry[0]);
+                const meta = entry[1];
+                if (Array.isArray(currentWasteFilterIds) && currentWasteFilterIds.length > 0) {
+                    if (!currentWasteFilterIds.includes(metaId)) return;
+                }
+                const searchable = normalizeWasteQuery((meta.code || "") + " " + (meta.label || ""));
+                if (!nq || searchable.includes(nq)) {
+                    const opt = document.createElement("option");
+                    opt.value = meta.label;
+                    datalistEl.appendChild(opt);
+                }
+            });
+        }
+
+        const wrap = document.createElement("div");
+        wrap.className = "input-with-actions";
+        const input = document.createElement("input");
+        input.type = "text";
+        input.id = "customer-request-waste-combo";
+        input.className = "waste-combo-q";
+        input.setAttribute("autocomplete", "off");
+        input.placeholder = "Kód (00 00 00 / 000000) nebo text…";
+        const clearBtn = document.createElement("button");
+        clearBtn.type = "button";
+        clearBtn.id = "customer-request-waste-clear";
+        clearBtn.className = "btn secondary";
+        clearBtn.title = "Smazat výběr odpadu";
+        clearBtn.setAttribute("aria-label", "Smazat výběr odpadu");
+        clearBtn.textContent = "x";
+        const flexRow = document.createElement("div");
+        flexRow.style.display = "flex";
+        flexRow.style.gap = "6px";
+        flexRow.style.alignItems = "center";
+        input.style.flex = "1 1 auto";
+        const dl = document.createElement("datalist");
+        dl.id = "customer-request-waste-dl";
+        input.setAttribute("list", dl.id);
+        wasteSelect.parentNode.insertBefore(wrap, wasteSelect);
+        flexRow.appendChild(input);
+        flexRow.appendChild(clearBtn);
+        wrap.appendChild(flexRow);
+        wrap.appendChild(dl);
+        wrap.appendChild(wasteSelect);
+        wasteSelect.style.display = "none";
+
+        function maybeSyncWasteMeta() {
+            syncWasteMetaFromHooks();
+        }
+
+        function normalizeWasteComboText(q) {
+            return (q || "")
+                .trim()
+                .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212-]+/g, " — ")
+                .replace(/\s+/g, " ")
+                .replace(/\s*—\s*/g, " — ")
+                .trim();
+        }
+        function fuzzyResolveWastePk(query) {
+            const raw = (query || "").trim();
+            if (!raw) return "";
+            const exact = optionMap[raw];
+            if (exact) return String(exact);
+            const normalized = normalizeWasteComboText(raw);
+            for (const entry of Object.entries(wasteTypeMeta)) {
+                if (normalizeWasteComboText(entry[1].label) === normalized) {
+                    return String(entry[0]);
+                }
+            }
+            const nq = normalizeWasteQuery(raw);
+            if (!nq) return "";
+            const hits = [];
+            Object.entries(wasteTypeMeta).forEach(function (entry) {
+                const metaId = String(entry[0]);
+                if (Array.isArray(currentWasteFilterIds) && currentWasteFilterIds.length > 0) {
+                    if (!currentWasteFilterIds.includes(metaId)) return;
+                }
+                const meta = entry[1];
+                const searchable = normalizeWasteQuery((meta.code || "") + " " + (meta.label || ""));
+                if (searchable.includes(nq) || nq.includes(searchable)) {
+                    hits.push(metaId);
+                }
+            });
+            if (hits.length === 1) return hits[0];
+            const prefixHits = [];
+            Object.entries(wasteTypeMeta).forEach(function (entry) {
+                const metaId = String(entry[0]);
+                if (Array.isArray(currentWasteFilterIds) && currentWasteFilterIds.length > 0) {
+                    if (!currentWasteFilterIds.includes(metaId)) return;
+                }
+                if (normalizeWasteComboText(entry[1].label).indexOf(normalized) === 0) {
+                    prefixHits.push(metaId);
+                }
+            });
+            if (prefixHits.length === 1) return prefixHits[0];
+            return "";
+        }
+        function applyWastePkToCombo(pk) {
+            if (!pk) return;
+            const nextPk = String(pk);
+            const samePk = String(wasteSelect.value || "") === nextPk;
+            wasteSelect.value = nextPk;
+            const meta = wasteTypeMeta[String(pk)];
+            if (meta && meta.label) {
+                input.value = String(meta.label);
+            }
+            const sid = String(nameHidden.value || "");
+            if (sid && !samePk) {
+                pickPairSuffix(subjectByNameId.get(sid), wasteSelect.value);
+            }
+            if (samePk) {
+                if (window.customerRequestFormHooks &&
+                    typeof window.customerRequestFormHooks.syncWasteMeta === "function") {
+                    window.customerRequestFormHooks.syncWasteMeta();
+                }
+                return;
+            }
+            maybeSyncWasteMeta();
+        }
+
+        const lookupHiddenInit = document.getElementById("id_waste_type_lookup");
+        wasteComboApi = {
+            wasteTypeMeta: wasteTypeMeta,
+            resolveInitialPk: function () {
+                const fromSelect = String(wasteSelect.value || "");
+                if (fromSelect) return fromSelect;
+                const lookupEl = document.getElementById("id_waste_type_lookup");
+                return fuzzyResolveWastePk(lookupEl ? lookupEl.value : "");
+            },
+            applyPk: applyWastePkToCombo,
+            input: input,
+            datalist: dl,
+            optionMap: optionMap,
+            fuzzyResolveWastePk: fuzzyResolveWastePk,
+            syncToSelect: function () {
+                const picked = fuzzyResolveWastePk(input.value);
+                if (picked) applyWastePkToCombo(picked);
+            },
+            refresh: function () {
+                refillWasteDatalist(dl, input.value || "");
+            },
+            clearIfNotAllowed: function () {
+                if (!Array.isArray(currentWasteFilterIds) || currentWasteFilterIds.length === 0) return;
+                const currentId = String(wasteSelect.value || "");
+                if (!currentId) return;
+                if (!currentWasteFilterIds.includes(currentId)) {
+                    wasteSelect.value = "";
+                    input.value = "";
+                }
+            },
+            initDisplay: function () {
+                const lookupEl = document.getElementById("id_waste_type_lookup");
+                const initialPk = this.resolveInitialPk();
+                if (initialPk) {
+                    applyWastePkToCombo(initialPk);
+                } else if (lookupEl && lookupEl.value) {
+                    input.value = lookupEl.value;
+                }
+                refillWasteDatalist(dl, "");
+            },
+        };
+
+        input.addEventListener("focus", function () {
+            refillWasteDatalist(dl, input.value || "");
+        });
+        input.addEventListener("input", function () {
+            refillWasteDatalist(dl, input.value || "");
+            const picked = fuzzyResolveWastePk(input.value);
+            if (picked) {
+                applyWastePkToCombo(picked);
+            } else {
+                wasteSelect.value = "";
+                maybeSyncWasteMeta();
+            }
+        });
+        input.addEventListener("change", function () {
+            const picked = fuzzyResolveWastePk(input.value);
+            if (picked) applyWastePkToCombo(picked);
+        });
+        input.addEventListener("blur", function () {
+            const picked = fuzzyResolveWastePk(input.value);
+            if (picked) {
+                applyWastePkToCombo(picked);
+                return;
+            }
+            if (!(input.value || "").trim()) {
+                wasteSelect.value = "";
+                maybeSyncWasteMeta();
+            }
+        });
+    })();
+
+    async function fetchNameSuggestions(q) {
+        if (!q || q.length < 2) return;
+        const url = "{% url 'waste_docs:subject_search' %}?q=" + encodeURIComponent(q);
+        const res = await fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}});
+        if (!res.ok) return;
+        const payload = await res.json();
+        selectedByLabel.clear();
+        subjectByNameId.clear();
+        nameList.innerHTML = "";
+        const rows = Array.isArray(payload.data) ? payload.data : (Array.isArray(payload.items) ? payload.items : []);
+        rows.forEach(function (it) {
+            const label = String(it.label || "").trim();
+            if (!label) return;
+            const opt = document.createElement("option");
+            opt.value = label;
+            nameList.appendChild(opt);
+            selectedByLabel.set(label.toLowerCase(), String(it.name_id));
+            subjectByNameId.set(String(it.name_id), it);
+        });
+    }
+
+    let closedVehicleKindIds = new Set();
+    let closedKindsFetchSeq = 0;
+
+    function pairVehicleKindIdsFromHint(p) {
+        const ids = Array.isArray(p.yard_vehicle_kind_ids) ? p.yard_vehicle_kind_ids : [];
+        if (ids.length) return ids.map(function (x) { return String(x); });
+        return p.yard_vehicle_kind_id ? [String(p.yard_vehicle_kind_id)] : [];
+    }
+
+    function currentSubjectForVehicleKind() {
+        if (!nameHidden || !nameHidden.value) return null;
+        return subjectByNameId.get(String(nameHidden.value)) || null;
+    }
+
+    function resyncVehicleKindOptions() {
+        const subject = currentSubjectForVehicleKind();
+        const wasteTypeId = wasteSelect ? String(wasteSelect.value || "") : "";
+        syncVehicleKindByWaste(subject, wasteTypeId);
+    }
+
+    function refreshClosedKindsForTargetDate() {
+        const dateEl = document.getElementById("id_target_date");
+        if (!dateEl) return Promise.resolve();
+        const day = String(dateEl.value || "").trim();
+        if (!day) {
+            closedVehicleKindIds = new Set();
+            dateEl.setCustomValidity("");
+            return Promise.resolve();
+        }
+        let statusUrl = "";
+        try {
+            const cfgEl = document.getElementById("customer-request-form-config");
+            const cfg = cfgEl ? JSON.parse(cfgEl.textContent || "{}") : {};
+            statusUrl = (cfg.urls && cfg.urls.kindClosureStatus) || "";
+        } catch (e) {
+            statusUrl = "";
+        }
+        if (!statusUrl) return Promise.resolve();
+        const seq = ++closedKindsFetchSeq;
+        const url = statusUrl + (statusUrl.indexOf("?") >= 0 ? "&" : "?") + "date=" + encodeURIComponent(day);
+        return fetch(url, { credentials: "same-origin" })
+            .then(function (r) { return r.json(); })
+            .then(function (payload) {
+                if (seq !== closedKindsFetchSeq) return;
+                const ids = payload && payload.ok && Array.isArray(payload.closed_kind_ids)
+                    ? payload.closed_kind_ids
+                    : [];
+                closedVehicleKindIds = new Set(ids.map(function (x) { return String(x); }));
+                enforceKindClosureOnDate();
+            })
+            .catch(function () {
+                if (seq !== closedKindsFetchSeq) return;
+                closedVehicleKindIds = new Set();
+                enforceKindClosureOnDate();
+            });
+    }
+
+    function enforceKindClosureOnDate() {
+        const dateEl = document.getElementById("id_target_date");
+        if (!dateEl) return;
+        const kindId = vehicleKindSelect ? String(vehicleKindSelect.value || "") : "";
+        if (!kindId || !closedVehicleKindIds.has(kindId)) {
+            dateEl.setCustomValidity("");
+            return;
+        }
+        dateEl.value = "";
+        closedVehicleKindIds = new Set();
+        dateEl.setCustomValidity(
+            "Pro zvolený druh vozidla je tento den uzavřen. Zvolte jiné datum."
+        );
+        if (typeof dateEl.reportValidity === "function") {
+            dateEl.reportValidity();
+        }
+    }
+
+    function syncVehicleKindByWaste(subject, wasteTypeId) {
+        if (!vehicleKindSelect) return;
+        if (!vehicleKindSelect.dataset.originalOptionsJson) {
+            const rows = [];
+            Array.from(vehicleKindSelect.options).forEach(function (opt) {
+                rows.push({value: String(opt.value || ""), text: String(opt.textContent || "")});
+            });
+            vehicleKindSelect.dataset.originalOptionsJson = JSON.stringify(rows);
+        }
+        const sourceRows = JSON.parse(vehicleKindSelect.dataset.originalOptionsJson || "[]");
+        const pairHints = Array.isArray(subject && subject.pair_hints) ? subject.pair_hints : [];
+        let allowedVehicleKindIds = Array.from(new Set(
+            pairHints
+                .filter(function (p) {
+                    return String(p.waste_type_id || "") === String(wasteTypeId || "");
+                })
+                .flatMap(pairVehicleKindIdsFromHint)
+        ));
+        const prevValue = String(vehicleKindSelect.value || "");
+        vehicleKindSelect.innerHTML = "";
+        const empty = document.createElement("option");
+        empty.value = "";
+        empty.textContent = "---------";
+        vehicleKindSelect.appendChild(empty);
+        sourceRows.forEach(function (row) {
+            if (!row.value) return;
+            if (allowedVehicleKindIds.length > 0 && !allowedVehicleKindIds.includes(String(row.value))) return;
+            const opt = document.createElement("option");
+            opt.value = row.value;
+            opt.textContent = row.text;
+            vehicleKindSelect.appendChild(opt);
+        });
+        if (allowedVehicleKindIds.includes(prevValue)) {
+            vehicleKindSelect.value = prevValue;
+        } else if (allowedVehicleKindIds.length === 1) {
+            vehicleKindSelect.value = allowedVehicleKindIds[0];
+        } else {
+            vehicleKindSelect.value = "";
+        }
+        vehicleKindSelect.disabled = false;
+        enforceKindClosureOnDate();
+    }
+
+    function pairHintCandidates(subject, wasteTypeId, suffixId) {
+        const pairHints = Array.isArray(subject && subject.pair_hints) ? subject.pair_hints : [];
+        if (!wasteTypeId) return [];
+        let rows = pairHints.filter(function (p) {
+            return String(p.waste_type_id) === String(wasteTypeId);
+        });
+        if (suffixId) {
+            const byBoth = rows.filter(function (p) {
+                return String(p.suffix_id) === String(suffixId);
+            });
+            if (byBoth.length) rows = byBoth;
+        }
+        return rows;
+    }
+
+    function resolvePairHintAddress(hint) {
+        const own = hint && hint.own_fulfillment_address_value
+            ? String(hint.own_fulfillment_address_value).trim()
+            : "";
+        if (own) return own;
+        return lastCentralFulfillmentAddress || "";
+    }
+
+    function preferPairHint(candidates) {
+        if (!candidates.length) return null;
+        if (candidates.length === 1) return candidates[0];
+        const vk = vehicleKindSelect ? String(vehicleKindSelect.value || "") : "";
+        if (vk) {
+            const byVk = candidates.filter(function (p) {
+                return pairVehicleKindIdsFromHint(p).includes(vk);
+            });
+            if (byVk.length) return byVk[0];
+        }
+        const withOwn = candidates.filter(function (p) {
+            return Boolean(String(p.own_fulfillment_address_value || "").trim());
+        });
+        if (withOwn.length) return withOwn[0];
+        return candidates[0];
+    }
+
+    function findPairHint(subject, wasteTypeId, suffixId) {
+        return preferPairHint(pairHintCandidates(subject, wasteTypeId, suffixId));
+    }
+
+    function hidePairAddressSelect() {
+        if (pairAddressSelectWrap) pairAddressSelectWrap.style.display = "none";
+        if (pairAddressSelect) {
+            pairAddressSelect.innerHTML = "";
+        }
+    }
+
+    function buildPairAddressOptions(candidates) {
+        const byAddr = {};
+        candidates.forEach(function (p) {
+            const addr = resolvePairHintAddress(p);
+            if (!addr) return;
+            const note = p && p.ride_note ? String(p.ride_note).trim() : "";
+            const prev = byAddr[addr];
+            if (prev && (!note || prev.rideNote)) return;
+            const kinds = String(p.yard_vehicle_kind_display || "").trim();
+            byAddr[addr] = {
+                value: addr,
+                label: kinds ? (kinds + " — " + addr) : addr,
+                title: addr,
+                pairId: p.pair_id || "",
+                rideNote: note,
+            };
+        });
+        return Object.keys(byAddr).map(function (k) { return byAddr[k]; });
+    }
+
+    let activityPinnedByUser = false;
+    let activitySyncSilent = false;
+
+    function preferPairHintForActivity(candidates) {
+        if (!candidates.length) return null;
+        let rows = candidates;
+        const vk = vehicleKindSelect ? String(vehicleKindSelect.value || "") : "";
+        if (vk) {
+            const byVk = rows.filter(function (p) {
+                return pairVehicleKindIdsFromHint(p).includes(vk);
+            });
+            if (byVk.length) rows = byVk;
+        }
+        const withActivity = rows.filter(function (p) {
+            return Boolean(p.activity_id);
+        });
+        if (!withActivity.length) return null;
+        return withActivity[withActivity.length - 1];
+    }
+
+    function syncActivityFromPair(subject, wasteTypeId, suffixId) {
+        const actSelect = document.getElementById("id_activity");
+        if (!actSelect || activityPinnedByUser) return;
+        const wasteId = wasteTypeId || (wasteSelect ? String(wasteSelect.value || "") : "");
+        let sufId = suffixId;
+        if (sufId === undefined || sufId === null) {
+            sufId = suffixSelect ? String(suffixSelect.value || "") : "";
+        } else {
+            sufId = String(sufId || "");
+        }
+        if (!subject || !wasteId) return;
+        const match = preferPairHintForActivity(pairHintCandidates(subject, wasteId, sufId));
+        const activityId = match && match.activity_id ? String(match.activity_id) : "";
+        if (!activityId) return;
+        const hasOption = Array.from(actSelect.options).some(function (o) { return o.value === activityId; });
+        if (!hasOption) return;
+        if (actSelect.value === activityId) return;
+        activitySyncSilent = true;
+        actSelect.value = activityId;
+        actSelect.dispatchEvent(new Event("change", { bubbles: true }));
+        activitySyncSilent = false;
+    }
+
+    function syncContractFromPair() {
+        if (!contractInput) return;
+        const sid = String(nameHidden.value || "");
+        const subject = sid ? subjectByNameId.get(sid) : null;
+        const wasteId = wasteSelect ? String(wasteSelect.value || "") : "";
+        const suffixId = suffixSelect ? String(suffixSelect.value || "") : "";
+        if (!wasteId || !suffixId) {
+            if (!contractPinnedFromInstance) {
+                contractInput.value = "";
+                if (contractRow) contractRow.style.display = "none";
+            } else if (contractRow) {
+                contractRow.style.display = "";
+            }
+            return;
+        }
+        const match = findPairHint(subject, wasteId, suffixId);
+        const fromPair = match && match.contract_number ? String(match.contract_number).trim() : "";
+        if (fromPair) {
+            contractPinnedFromInstance = false;
+            contractInput.value = fromPair;
+            if (contractRow) contractRow.style.display = "";
+            return;
+        }
+        if (contractPinnedFromInstance) {
+            if (contractRow) contractRow.style.display = "";
+            return;
+        }
+        contractInput.value = "";
+        if (contractRow) contractRow.style.display = "none";
+    }
+
+    function pairAddrKey(value) {
+        return String(value || "").trim().replace(/\s+/g, " ");
+    }
+
+    function writeRideNoteValue(text) {
+        if (!noteInput) return;
+        notePinnedFromInstance = false;
+        noteSyncSilent = true;
+        noteInput.value = text || "";
+        noteSyncSilent = false;
+    }
+
+    function rideNoteFromPairSelectOption(addr) {
+        if (!pairAddressSelect) return "";
+        const wanted = pairAddrKey(addr || pairAddressSelect.value);
+        const opts = Array.from(pairAddressSelect.options);
+        let hit = null;
+        if (wanted) {
+            hit = opts.find(function (o) { return pairAddrKey(o.value) === wanted; }) || null;
+        }
+        if (!hit) {
+            hit = pairAddressSelect.selectedOptions && pairAddressSelect.selectedOptions[0]
+                ? pairAddressSelect.selectedOptions[0]
+                : null;
+        }
+        if (!hit || !hit.getAttribute) return "";
+        return String(hit.getAttribute("data-ride-note") || "").trim();
+    }
+
+    function rideNoteFromPairHints(addr) {
+        const sid = String(nameHidden.value || "");
+        const subject = sid ? subjectByNameId.get(sid) : null;
+        const wasteId = wasteSelect ? String(wasteSelect.value || "") : "";
+        if (!wasteId) return "";
+        const suffixId = suffixSelect ? String(suffixSelect.value || "") : "";
+        const candidates = pairHintCandidates(subject, wasteId, suffixId);
+        const wanted = pairAddrKey(addr);
+        if (wanted && candidates.length) {
+            let matched = candidates.filter(function (p) {
+                const own = pairAddrKey(p.own_fulfillment_address_value);
+                const ful = pairAddrKey(p.fulfillment_address_value);
+                const resolved = pairAddrKey(resolvePairHintAddress(p));
+                return own === wanted || ful === wanted || resolved === wanted;
+            });
+            if (matched.length) {
+                const withNote = matched.filter(function (p) {
+                    return Boolean(p.ride_note && String(p.ride_note).trim());
+                });
+                const row = withNote.length ? withNote[0] : preferPairHint(matched);
+                return row && row.ride_note ? String(row.ride_note).trim() : "";
+            }
+            return "";
+        }
+        const fallback = preferPairHint(candidates);
+        return fallback && fallback.ride_note ? String(fallback.ride_note).trim() : "";
+    }
+
+    function rideNoteFromPairId(pairId) {
+        const wanted = String(pairId || "");
+        if (!wanted) return "";
+        const sid = String(nameHidden.value || "");
+        const subject = sid ? subjectByNameId.get(sid) : null;
+        const hints = Array.isArray(subject && subject.pair_hints) ? subject.pair_hints : [];
+        const hit = hints.find(function (p) { return String(p.pair_id || "") === wanted; });
+        return hit && hit.ride_note ? String(hit.ride_note).trim() : "";
+    }
+
+    function selectedPairIdFromSelect() {
+        if (!pairAddressSelect) return "";
+        const selected = pairAddressSelect.selectedOptions && pairAddressSelect.selectedOptions[0];
+        return selected ? String(selected.getAttribute("data-pair-id") || "") : "";
+    }
+
+    function rideNoteFromSelectedPairId() {
+        return rideNoteFromPairId(selectedPairIdFromSelect());
+    }
+
+    let rideNoteApplySeq = 0;
+
+    function optimisticRideNoteFromClient(addr) {
+        const fromOpt = rideNoteFromPairSelectOption(addr);
+        if (fromOpt) {
+            writeRideNoteValue(fromOpt);
+            return;
+        }
+        const byId = rideNoteFromSelectedPairId();
+        if (byId) {
+            writeRideNoteValue(byId);
+            return;
+        }
+        const fromHints = rideNoteFromPairHints(addr);
+        if (fromHints) writeRideNoteValue(fromHints);
+    }
+
+    function requestRideNoteFromServer(addr) {
+        if (!noteInput) return;
+        const seq = ++rideNoteApplySeq;
+        const params = new URLSearchParams();
+        const pairId = selectedPairIdFromSelect();
+        if (pairId) params.set("pair_id", pairId);
+        const nameId = nameHidden ? String(nameHidden.value || "") : "";
+        if (nameId) params.set("name_id", nameId);
+        const wasteId = wasteSelect ? String(wasteSelect.value || "") : "";
+        if (wasteId) params.set("waste_type_id", wasteId);
+        const suffixId = suffixSelect ? String(suffixSelect.value || "") : "";
+        if (suffixId) params.set("suffix_id", suffixId);
+        const address = String(
+            addr
+            || (addrInput && addrInput.value)
+            || (pairAddressSelect && pairAddressSelect.value)
+            || ""
+        ).trim();
+        if (address) params.set("address", address);
+        if (!pairId && (!nameId || !wasteId)) {
+            if (notePinnedFromInstance) return;
+            writeRideNoteValue("");
+            return;
+        }
+        const url = "{% url 'waste_docs:customer_request_pair_ride_note' %}?" + params.toString();
+        fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}})
+            .then(function (res) { return res.ok ? res.json() : null; })
+            .then(function (payload) {
+                if (seq !== rideNoteApplySeq) return;
+                if (!payload || !payload.ok) return;
+                const note = String(payload.ride_note || "");
+                if (notePinnedFromInstance && !note) return;
+                noteTypedByUser = false;
+                writeRideNoteValue(note);
+            })
+            .catch(function () {});
+    }
+
+    function applyRideNoteForAddress(addr) {
+        noteTypedByUser = false;
+        optimisticRideNoteFromClient(addr);
+        requestRideNoteFromServer(addr);
+    }
+
+    function syncRideNoteFromPair() {
+        if (!noteInput) return;
+        const chosenAddr = addrInput && String(addrInput.value || "").trim()
+            ? String(addrInput.value || "").trim()
+            : (pairAddressSelect ? String(pairAddressSelect.value || "").trim() : "");
+        applyRideNoteForAddress(chosenAddr);
+    }
+
+    function setAddressValue(value) {
+        if (!addrInput) return;
+        addrInput.value = value || "";
+        const latInput = document.getElementById("id_fulfillment_latitude");
+        const lngInput = document.getElementById("id_fulfillment_longitude");
+        if (window.FulfillmentAddressField && window.FulfillmentAddressField.clearCoordInputs) {
+            window.FulfillmentAddressField.clearCoordInputs(latInput, lngInput);
+        }
+        applyRideNoteForAddress(value || addrInput.value);
+    }
+
+    function restoreCentralFulfillmentCoords(subject) {
+        const latInput = document.getElementById("id_fulfillment_latitude");
+        const lngInput = document.getElementById("id_fulfillment_longitude");
+        if (!window.FulfillmentAddressField) return;
+        const subLat = parseFloat(String(subject && subject.fulfillment_latitude || "").replace(",", "."));
+        const subLng = parseFloat(String(subject && subject.fulfillment_longitude || "").replace(",", "."));
+        if (Number.isFinite(subLat) && Number.isFinite(subLng)) {
+            if (latInput) latInput.value = subLat.toFixed(7);
+            if (lngInput) lngInput.value = subLng.toFixed(7);
+        } else {
+            window.FulfillmentAddressField.clearCoordInputs(latInput, lngInput);
+        }
+    }
+
+    function syncFulfillmentFromPair() {
+        const sid = String(nameHidden.value || "");
+        const subject = sid ? subjectByNameId.get(sid) : null;
+        const wasteId = wasteSelect ? String(wasteSelect.value || "") : "";
+        const suffixId = suffixSelect ? String(suffixSelect.value || "") : "";
+        if (!wasteId) {
+            pairAddressPinnedByUser = false;
+            pairAddressPinWasteId = "";
+            hidePairAddressSelect();
+            if (lastCentralFulfillmentAddress) {
+                setAddressValue(lastCentralFulfillmentAddress);
+                restoreCentralFulfillmentCoords(subject);
+            }
+            return;
+        }
+        const candidates = pairHintCandidates(subject, wasteId, suffixId);
+        const options = buildPairAddressOptions(candidates);
+        if (options.length < 2) {
+            hidePairAddressSelect();
+            pairAddressPinnedByUser = false;
+            pairAddressPinWasteId = "";
+            const match = preferPairHint(candidates);
+            const ownFromPair = match && match.own_fulfillment_address_value
+                ? String(match.own_fulfillment_address_value).trim()
+                : "";
+            if (ownFromPair) {
+                setAddressValue(ownFromPair);
+                return;
+            }
+            setAddressValue(lastCentralFulfillmentAddress || "");
+            if (subject) {
+                restoreCentralFulfillmentCoords(subject);
+            }
+            return;
+        }
+        if (pairAddressSelectWrap) pairAddressSelectWrap.style.display = "";
+        if (pairAddressSelect) {
+            const nextSig = options.map(function (row) {
+                return String(row.value || "") + "\0" + String(row.pairId || "") + "\0" + String(row.rideNote || "");
+            }).join("\n");
+            const curSig = Array.from(pairAddressSelect.options).map(function (opt) {
+                return String(opt.value || "") + "\0"
+                    + String(opt.getAttribute("data-pair-id") || "") + "\0"
+                    + String(opt.getAttribute("data-ride-note") || "");
+            }).join("\n");
+            if (nextSig !== curSig) {
+                pairAddressSelect.innerHTML = "";
+                options.forEach(function (row) {
+                    const opt = document.createElement("option");
+                    opt.value = row.value;
+                    opt.textContent = row.label;
+                    opt.title = row.title;
+                    opt.setAttribute("data-ride-note", row.rideNote || "");
+                    if (row.pairId) opt.setAttribute("data-pair-id", String(row.pairId));
+                    pairAddressSelect.appendChild(opt);
+                });
+            }
+        }
+        const currentAddr = addrInput ? String(addrInput.value || "").trim() : "";
+        const inOptions = Boolean(currentAddr && options.some(function (o) { return o.value === currentAddr; }));
+        const pinActive = pairAddressPinnedByUser && pairAddressPinWasteId === wasteId;
+        let chosen = "";
+        if (inOptions) {
+            // Uživatel / uložená adresa je v nabídce — nenašilovat preferPairHint (submit/edit sync).
+            chosen = currentAddr;
+            pairAddressPinnedByUser = true;
+            pairAddressPinWasteId = wasteId;
+        } else if (pinActive && currentAddr) {
+            // Pin mimo seznam — nenašilovat textové pole.
+            if (pairAddressSelect) pairAddressSelect.value = "";
+            return;
+        } else {
+            pairAddressPinnedByUser = false;
+            pairAddressPinWasteId = "";
+            const preferred = preferPairHint(candidates);
+            chosen = resolvePairHintAddress(preferred) || options[0].value;
+            if (chosen) {
+                pairAddressPinnedByUser = true;
+                pairAddressPinWasteId = wasteId;
+            }
+        }
+        if (pairAddressSelect) pairAddressSelect.value = chosen;
+        if (chosen) setAddressValue(chosen);
+        if (chosen === lastCentralFulfillmentAddress && subject) {
+            restoreCentralFulfillmentCoords(subject);
+        }
+    }
+
+    function pickPairSuffix(subject, wasteTypeId) {
+        if (!subject || !suffixSelect) return;
+        noteTypedByUser = false;
+        pairAddressPinnedByUser = false;
+        pairAddressPinWasteId = "";
+        const pairHints = Array.isArray(subject.pair_hints) ? subject.pair_hints : [];
+        const match = pairHints.find(function (p) { return String(p.waste_type_id) === String(wasteTypeId || ""); });
+        if (match && match.suffix_id) {
+            suffixSelect.value = String(match.suffix_id);
+        }
+        syncVehicleKindByWaste(subject, wasteTypeId);
+        syncActivityFromPair(subject, wasteTypeId, suffixSelect ? suffixSelect.value : "");
+        syncContractFromPair();
+        syncFulfillmentFromPair();
+        syncRideNoteFromPair();
+    }
+
+    function applySubjectPrefill(subject, options) {
+        options = options || {};
+        const preserveExistingWaste = Boolean(options.preserveExistingWaste);
+        const preserveSideFields = Boolean(options.preserveSideFields);
+        if (!subject) return;
+        if (!preserveSideFields) {
+            activityPinnedByUser = false;
+        }
+        lastCentralFulfillmentAddress = String(subject.fulfillment_address_value || "");
+        const allowedIds = Array.isArray(subject.allowed_waste_type_ids)
+            ? subject.allowed_waste_type_ids.map(function (x) { return String(x); })
+            : [];
+        currentWasteFilterIds = allowedIds.length ? allowedIds : null;
+        if (wasteComboApi) {
+            wasteComboApi.clearIfNotAllowed();
+            wasteComboApi.refresh();
+        }
+        if (!preserveSideFields) {
+            if (facilityInput) facilityInput.value = String(subject.facility_address_value || "");
+            const fulfillment = String(subject.fulfillment_address_value || "");
+            const latInput = document.getElementById("id_fulfillment_latitude");
+            const lngInput = document.getElementById("id_fulfillment_longitude");
+            if (addrInput && fulfillment) addrInput.value = fulfillment;
+            if (window.FulfillmentAddressField && window.FulfillmentAddressField.clearCoordInputs) {
+                const subLat = parseFloat(String(subject.fulfillment_latitude || "").replace(",", "."));
+                const subLng = parseFloat(String(subject.fulfillment_longitude || "").replace(",", "."));
+                if (Number.isFinite(subLat) && Number.isFinite(subLng)) {
+                    if (latInput) latInput.value = subLat.toFixed(7);
+                    if (lngInput) lngInput.value = subLng.toFixed(7);
+                } else {
+                    window.FulfillmentAddressField.clearCoordInputs(latInput, lngInput);
+                }
+            }
+            if (phoneInput) phoneInput.value = String(subject.contact_phone || "");
+            if (noteInput) {
+                noteSyncSilent = true;
+                noteInput.value = String(subject.contact_note || "");
+                noteSyncSilent = false;
+            }
+        }
+        if (wasteSelect) {
+            if (preserveExistingWaste) {
+                if (wasteSelect.value) {
+                    syncVehicleKindByWaste(subject, wasteSelect.value);
+                }
+            } else if (allowedIds.length === 1) {
+                const onlyWaste = String(allowedIds[0] || "");
+                if (wasteComboApi && wasteComboApi.applyPk) {
+                    wasteComboApi.applyPk(onlyWaste);
+                }
+            } else {
+                // Pokud má subjekt více odpadů, uživatel vybírá sám.
+                wasteSelect.value = "";
+                if (wasteComboApi) {
+                    wasteComboApi.input.value = "";
+                    wasteComboApi.refresh();
+                }
+                suffixSelect.value = "";
+                syncVehicleKindByWaste(subject, "");
+                syncWasteMetaFromHooks();
+            }
+        }
+        syncContractFromPair();
+        syncFulfillmentFromPair();
+        syncRideNoteFromPair();
+    }
+
+    function syncNameHiddenOnly() {
+        const key = String(nameLookup.value || "").trim().toLowerCase();
+        const selectedId = selectedByLabel.get(key) || "";
+        nameHidden.value = selectedId;
+    }
+
+    function syncSelectedName() {
+        syncNameHiddenOnly();
+        const selectedId = String(nameHidden.value || "");
+        if (selectedId) {
+            applySubjectPrefill(subjectByNameId.get(selectedId));
+        } else {
+            currentWasteFilterIds = null;
+            if (wasteComboApi) {
+                wasteComboApi.refresh();
+            }
+            syncVehicleKindByWaste(null, "");
+            syncContractFromPair();
+            syncRideNoteFromPair();
+        }
+    }
+
+    wasteSelect.addEventListener("change", function () {
+        noteTypedByUser = false;
+        contractPinnedFromInstance = false;
+        pairAddressPinnedByUser = false;
+        pairAddressPinWasteId = "";
+        const sid = String(nameHidden.value || "");
+        if (!sid) return;
+        pickPairSuffix(subjectByNameId.get(sid), wasteSelect.value);
+    });
+
+    if (suffixSelect) {
+        suffixSelect.addEventListener("change", function () {
+            noteTypedByUser = false;
+            contractPinnedFromInstance = false;
+            pairAddressPinnedByUser = false;
+            pairAddressPinWasteId = "";
+            syncContractFromPair();
+            syncFulfillmentFromPair();
+            syncRideNoteFromPair();
+            const sid = String(nameHidden.value || "");
+            const subject = sid ? subjectByNameId.get(sid) : null;
+            const wasteId = wasteSelect ? String(wasteSelect.value || "") : "";
+            syncActivityFromPair(subject, wasteId, suffixSelect.value);
+        });
+    }
+
+    if (pairAddressSelect) {
+        pairAddressSelect.addEventListener("change", function () {
+            noteTypedByUser = false;
+            const wasteId = wasteSelect ? String(wasteSelect.value || "") : "";
+            pairAddressPinnedByUser = true;
+            pairAddressPinWasteId = wasteId;
+            const chosen = String(pairAddressSelect.value || "");
+            setAddressValue(chosen);
+            if (chosen === lastCentralFulfillmentAddress) {
+                const sid = String(nameHidden.value || "");
+                const subject = sid ? subjectByNameId.get(sid) : null;
+                if (subject) restoreCentralFulfillmentCoords(subject);
+            }
+        });
+    }
+
+    if (vehicleKindSelect) {
+        vehicleKindSelect.addEventListener("change", function () {
+            noteTypedByUser = false;
+            pairAddressPinnedByUser = false;
+            pairAddressPinWasteId = "";
+            syncContractFromPair();
+            syncFulfillmentFromPair();
+            syncRideNoteFromPair();
+            const sid = String(nameHidden.value || "");
+            const subject = sid ? subjectByNameId.get(sid) : null;
+            const wasteId = wasteSelect ? String(wasteSelect.value || "") : "";
+            const suffixId = suffixSelect ? String(suffixSelect.value || "") : "";
+            syncActivityFromPair(subject, wasteId, suffixId);
+        });
+    }
+
+    nameLookup.addEventListener("input", function () {
+        nameLookup.setAttribute("list", "name-lookup-suggestions");
+        syncSelectedName();
+        clearTimeout(nameDebounce);
+        nameDebounce = setTimeout(function () { fetchNameSuggestions(nameLookup.value); }, 180);
+    });
+    nameLookup.addEventListener("change", syncSelectedName);
+
+    const addrList = document.getElementById("request-address-suggestions");
+    const facilityList = document.getElementById("facility-address-suggestions");
+    let addrDebounce = null;
+    async function fetchAddressSuggestions(q, targetList) {
+        if (!q || q.length < 2) return;
+        const url = "{% url 'waste_docs:address_suggestions' %}?q=" + encodeURIComponent(q);
+        const res = await fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}});
+        if (!res.ok) return;
+        const payload = await res.json();
+        targetList.innerHTML = "";
+        (payload.data || []).forEach(function (val) {
+            const opt = document.createElement("option");
+            opt.value = String(val || "");
+            targetList.appendChild(opt);
+        });
+    }
+    addrInput.addEventListener("input", function () {
+        clearTimeout(addrDebounce);
+        addrDebounce = setTimeout(function () { fetchAddressSuggestions(addrInput.value, addrList); }, 180);
+    });
+    addrInput.addEventListener("change", function () {
+        noteTypedByUser = false;
+        applyRideNoteForAddress(addrInput.value);
+    });
+    addrInput.addEventListener("blur", function () {
+        noteTypedByUser = false;
+        applyRideNoteForAddress(addrInput.value);
+    });
+    facilityInput.addEventListener("input", function () {
+        clearTimeout(addrDebounce);
+        addrDebounce = setTimeout(function () { fetchAddressSuggestions(facilityInput.value, facilityList); }, 180);
+    });
+
+    if (window.CzechPhoneInput) {
+        window.CzechPhoneInput.bind(phoneInput);
+    }
+
+    const fulfillmentAddressFieldConfig = {
+        inputId: "id_address_value",
+        datalistId: "request-address-suggestions",
+        mapButtonId: "map-open-btn",
+        latInputId: "id_fulfillment_latitude",
+        lngInputId: "id_fulfillment_longitude",
+        suggestionsUrl: "{% url 'waste_docs:address_suggestions' %}",
+        geocodeUrl: "{% url 'waste_docs:address_geocode' %}",
+        reverseGeocodeUrl: "{% url 'waste_docs:address_reverse_geocode' %}",
+        minChars: 2,
+        debounceMs: 220,
+        normalizeOnBlur: true,
+        prefillSuggestionsOnFocus: false
+    };
+    if (window.FulfillmentAddressField) {
+        window.FulfillmentAddressField.init(fulfillmentAddressFieldConfig);
+        {% if is_edit %}
+        window.FulfillmentAddressField.bootstrapCoordsFromAddress(fulfillmentAddressFieldConfig);
+        {% endif %}
+    }
+
+    const invoiceCheck = document.getElementById("id_requires_advance_invoice");
+    const amountWrap = document.getElementById("advance-amount-wrap");
+    const dueWrap = document.getElementById("advance-due-wrap");
+    const dueDateInput = document.getElementById("id_invoice_due_date");
+    const hasFollowUpCheck = document.getElementById("id_has_follow_up");
+    const recurringCheck = document.getElementById("id_is_recurring");
+    const activitySelect = document.getElementById("id_activity");
+    const followUpActivity = document.getElementById("id_follow_up_activity");
+    const followUpDate = document.getElementById("id_follow_up_target_date");
+    const targetDateInput = document.getElementById("id_target_date");
+    const followUpSectionTitle = document.getElementById("follow-up-section-title");
+    const followUpRows = Array.from(document.querySelectorAll(".follow-up-row"));
+    const recurrenceUntil = document.getElementById("id_recurrence_until");
+    const weekdayChecks = document.querySelectorAll('input[name="recurrence_weekdays_pick"]');
+
+    function syncAmountVisibility() {
+        const show = invoiceCheck.checked;
+        amountWrap.style.display = show ? "" : "none";
+        dueWrap.style.display = show ? "" : "none";
+    }
+
+    function syncInvoiceDueDateMin() {
+        if (!dueDateInput || !targetDateInput) {
+            return;
+        }
+        const baseDate = (targetDateInput.value || "").trim();
+        dueDateInput.min = baseDate || "";
+        if (baseDate && dueDateInput.value && dueDateInput.value < baseDate) {
+            dueDateInput.value = baseDate;
+        }
+    }
+    invoiceCheck.addEventListener("change", syncAmountVisibility);
+    syncAmountVisibility();
+    syncInvoiceDueDateMin();
+
+    (function syncTargetDateClosureMin() {
+        var cfgEl = document.getElementById("customer-request-form-config");
+        if (!cfgEl || !targetDateInput) {
+            return;
+        }
+        try {
+            var cfg = JSON.parse(cfgEl.textContent || "{}");
+            if (cfg.targetDateMin) {
+                targetDateInput.min = cfg.targetDateMin;
+                if (targetDateInput.value && targetDateInput.value < cfg.targetDateMin) {
+                    targetDateInput.value = cfg.targetDateMin;
+                }
+            }
+        } catch (e) {}
+    })();
+
+    if (targetDateInput) {
+        targetDateInput.addEventListener("change", function () {
+            targetDateInput.setCustomValidity("");
+            refreshClosedKindsForTargetDate();
+        });
+        refreshClosedKindsForTargetDate();
+    }
+    if (vehicleKindSelect) {
+        vehicleKindSelect.addEventListener("change", function () {
+            if (targetDateInput && targetDateInput.value) {
+                refreshClosedKindsForTargetDate();
+            } else {
+                enforceKindClosureOnDate();
+            }
+        });
+    }
+
+    function syncFollowUpRecurringRules() {
+        const hasFollow = hasFollowUpCheck.checked;
+        followUpActivity.disabled = !hasFollow;
+        followUpDate.disabled = !hasFollow;
+        if (targetDateInput && targetDateInput.value) {
+            const d = new Date(targetDateInput.value);
+            if (!isNaN(d.getTime())) {
+                d.setDate(d.getDate() + 1);
+                const minVal = d.toISOString().slice(0, 10);
+                followUpDate.min = minVal;
+                if (followUpDate.value && followUpDate.value < minVal) {
+                    followUpDate.value = minVal;
+                }
+            }
+        }
+        if (!hasFollow) {
+            followUpActivity.value = "";
+            followUpDate.value = "";
+            recurringCheck.disabled = false;
+            return;
+        }
+        recurringCheck.checked = false;
+        recurringCheck.disabled = true;
+        recurrenceUntil.value = "";
+        weekdayChecks.forEach(function (cb) { cb.checked = false; cb.disabled = true; });
+    }
+
+    function syncFollowUpByActivity() {
+        const activityId = String(activitySelect.value || "");
+        const nextCfgList = Array.isArray(activityFollowMap[activityId]) ? activityFollowMap[activityId] : [];
+        if (!followUpActivity.dataset.originalOptions) {
+            const rows = [];
+            Array.from(followUpActivity.options).forEach(function (o) {
+                rows.push({value: o.value, text: o.text});
+            });
+            followUpActivity.dataset.originalOptions = JSON.stringify(rows);
+        }
+        followUpActivity.innerHTML = "";
+        if (nextCfgList.length > 0) {
+            // Činnost má návaznost -> automaticky zapnout návaznou část.
+            hasFollowUpCheck.checked = true;
+            hasFollowUpCheck.disabled = true;
+            const empty = document.createElement("option");
+            empty.value = "";
+            empty.textContent = "---------";
+            followUpActivity.appendChild(empty);
+            nextCfgList.forEach(function (nextCfg) {
+                if (!nextCfg || !nextCfg.id) return;
+                const opt = document.createElement("option");
+                opt.value = String(nextCfg.id);
+                opt.textContent = String(nextCfg.name || "");
+                followUpActivity.appendChild(opt);
+            });
+            if (nextCfgList.length === 1) {
+                followUpActivity.value = String(nextCfgList[0].id);
+            }
+        } else {
+            hasFollowUpCheck.disabled = false;
+            hasFollowUpCheck.checked = false;
+            const empty = document.createElement("option");
+            empty.value = "";
+            empty.textContent = "---------";
+            followUpActivity.appendChild(empty);
+        }
+        if (!hasFollowUpCheck.checked) {
+            followUpActivity.value = "";
+        }
+        const showFollowUp = nextCfgList.length > 0;
+        if (followUpSectionTitle) {
+            followUpSectionTitle.style.display = showFollowUp ? "" : "none";
+        }
+        followUpRows.forEach(function (row) {
+            row.style.display = showFollowUp ? "" : "none";
+        });
+    }
+
+    function syncRecurringControls() {
+        const recurringEnabled = recurringCheck.checked && !recurringCheck.disabled;
+        recurrenceUntil.disabled = !recurringEnabled;
+        weekdayChecks.forEach(function (cb) { cb.disabled = !recurringEnabled; });
+        if (!recurringEnabled) {
+            recurrenceUntil.value = "";
+            weekdayChecks.forEach(function (cb) { cb.checked = false; });
+        }
+    }
+
+    hasFollowUpCheck.addEventListener("change", function () {
+        syncFollowUpRecurringRules();
+        syncFollowUpByActivity();
+        syncRecurringControls();
+    });
+    targetDateInput.addEventListener("change", function () {
+        syncFollowUpRecurringRules();
+        syncInvoiceDueDateMin();
+    });
+    activitySelect.addEventListener("change", function () {
+        if (activitySyncSilent) return;
+        activityPinnedByUser = true;
+        syncFollowUpByActivity();
+        syncFollowUpRecurringRules();
+        syncRecurringControls();
+        if (hasFollowUpCheck.checked) {
+            followUpActivity.disabled = false;
+        }
+    });
+    recurringCheck.addEventListener("change", syncRecurringControls);
+    let formConfig = {};
+    try {
+        const cfgElInit = document.getElementById("customer-request-form-config");
+        if (cfgElInit) formConfig = JSON.parse(cfgElInit.textContent || "{}");
+    } catch (e) {}
+    if (activitySelect && activitySelect.value && formConfig.initialSubjectSnapshot) {
+        activityPinnedByUser = true;
+    }
+    if (formConfig.initialSubjectSnapshot) {
+        subjectByNameId.set(
+            String(formConfig.initialSubjectSnapshot.name_id),
+            formConfig.initialSubjectSnapshot
+        );
+        applySubjectPrefill(formConfig.initialSubjectSnapshot, {
+            preserveExistingWaste: true,
+            preserveSideFields: true,
+        });
+    }
+    if (wasteComboApi && wasteComboApi.initDisplay) {
+        wasteComboApi.initDisplay();
+    }
+    if (wasteComboApi) {
+        wasteComboApi.refresh();
+    }
+    syncContractFromPair();
+    syncFulfillmentFromPair();
+    syncRideNoteFromPair();
+    syncFollowUpByActivity();
+    syncFollowUpRecurringRules();
+    syncRecurringControls();
+
+    const resetBtn = document.getElementById("customer-request-form-reset");
+    if (resetBtn) {
+        resetBtn.addEventListener("click", function () {
+            if (!window.confirm("Zahodit vyplněné údaje a načíst prázdný formulář?")) {
+                return;
+            }
+            window.location.href = "{% url 'waste_docs:customer_request_create' %}";
+        });
+    }
+
+    const crForm = document.getElementById("customer-request-form");
+    if (crForm) {
+        crForm.addEventListener("submit", function () {
+            // Zachovat zvolenou adresu před syncToSelect → pickPairSuffix → syncFulfillmentFromPair.
+            const addrBeforeSubmit = addrInput ? String(addrInput.value || "").trim() : "";
+            const comboBeforeSubmit = pairAddressSelect ? String(pairAddressSelect.value || "").trim() : "";
+            if (!addrBeforeSubmit && comboBeforeSubmit && addrInput) {
+                addrInput.value = comboBeforeSubmit;
+            }
+            if ((addrBeforeSubmit || comboBeforeSubmit) && wasteSelect) {
+                pairAddressPinnedByUser = true;
+                pairAddressPinWasteId = String(wasteSelect.value || "");
+            }
+            const lookupHidden = document.getElementById("id_waste_type_lookup");
+            if (wasteComboApi) {
+                if (lookupHidden) {
+                    lookupHidden.value = wasteComboApi.input.value || "";
+                }
+                wasteComboApi.syncToSelect();
+                if (lookupHidden && wasteSelect.value) {
+                    const meta = document.getElementById("customer-request-waste-meta");
+                    if (meta) {
+                        try {
+                            const wasteTypeMeta = JSON.parse(meta.textContent || "{}");
+                            const row = wasteTypeMeta[String(wasteSelect.value)];
+                            if (row && row.label) {
+                                lookupHidden.value = row.label;
+                                wasteComboApi.input.value = row.label;
+                            }
+                        } catch (e) {}
+                    }
+                }
+            }
+            // Po syncu odpadu znovu prosadit adresu (sync mohl smazat pin).
+            const keepAddr = addrBeforeSubmit || comboBeforeSubmit;
+            if (keepAddr && addrInput) {
+                addrInput.value = keepAddr;
+                if (pairAddressSelect) {
+                    const hasOpt = Array.from(pairAddressSelect.options).some(function (o) {
+                        return o.value === keepAddr;
+                    });
+                    if (hasOpt) pairAddressSelect.value = keepAddr;
+                }
+                pairAddressPinnedByUser = true;
+                pairAddressPinWasteId = wasteSelect ? String(wasteSelect.value || "") : "";
+            }
+            syncNameHiddenOnly();
+            syncFollowUpByActivity();
+            syncFollowUpRecurringRules();
+            if (hasFollowUpCheck && hasFollowUpCheck.disabled && hasFollowUpCheck.checked) {
+                hasFollowUpCheck.disabled = false;
+            }
+        });
+    }
+
+    const errorBanner = document.getElementById("customer-request-form-errors");
+    if (errorBanner) {
+        errorBanner.scrollIntoView({behavior: "smooth", block: "start"});
+    }
+
+    window.customerRequestFormHooks = {
+        getWasteComboApi: function () {
+            return wasteComboApi;
+        },
+        getNameId: function () {
+            return String(nameHidden.value || "");
+        },
+        getProfileId: function () {
+            const sid = String(nameHidden.value || "");
+            if (!sid) return null;
+            const subj = subjectByNameId.get(sid);
+            return subj && subj.subject_profile_id ? subj.subject_profile_id : null;
+        },
+        hasWasteSelected: function () {
+            if (wasteSelect && wasteSelect.value) return true;
+            if (wasteComboApi && wasteComboApi.input && (wasteComboApi.input.value || "").trim()) {
+                return true;
+            }
+            const lookup = document.getElementById("id_waste_type_lookup");
+            return Boolean(lookup && (lookup.value || "").trim());
+        },
+        applySubjectSnapshot: function (snapshot, options) {
+            if (!snapshot || !snapshot.name_id) return;
+            const label = String(snapshot.label || snapshot.name_value || "").trim();
+            if (label) {
+                nameLookup.value = label;
+                selectedByLabel.set(label.toLowerCase(), String(snapshot.name_id));
+            }
+            subjectByNameId.set(String(snapshot.name_id), snapshot);
+            nameHidden.value = String(snapshot.name_id);
+            applySubjectPrefill(snapshot, options || {});
+        },
+        clearWasteFollowUp: function () {
+            contractPinnedFromInstance = false;
+            const sid = String(nameHidden.value || "");
+            if (sid) {
+                pickPairSuffix(subjectByNameId.get(sid), "");
+            } else {
+                syncContractFromPair();
+                syncFulfillmentFromPair();
+                syncRideNoteFromPair();
+            }
+        },
+        syncContractFromPair: syncContractFromPair,
+        syncRideNoteFromPair: syncRideNoteFromPair,
+        syncFulfillmentFromPair: syncFulfillmentFromPair,
+    };
+    document.dispatchEvent(new CustomEvent("customer-request-form-ready"));
+    if (typeof window.bootCustomerRequestFormExtras === "function") {
+        window.bootCustomerRequestFormExtras();
+    }
+    syncWasteMetaFromHooks();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,348 @@
+{% extends "base.html" %}
+{% load pruvodka_tags %}
+
+{% block title %}Jízda #{{ item.pk }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    /* Jedna lišta: stejná výška odkazů <a.btn>, <button.btn> a pole šablony */
+    .ride-detail-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    .ride-detail-toolbar .btn,
+    .ride-detail-toolbar button.btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 40px;
+        padding: 0 14px;
+        font-family: inherit;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        line-height: 1.2;
+        white-space: nowrap;
+        box-sizing: border-box;
+    }
+    .ride-detail-toolbar form:not(.ride-detail-toolbar__template-form) {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+    }
+    /* Pole názvu šablony na prvním řádku, „Vytvořit šablonu“ pod ním (viz layout detailu jízdy) */
+    .ride-detail-toolbar form.ride-detail-toolbar__template-form {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        margin: 0;
+        flex: 0 1 auto;
+        min-width: min(16rem, 100%);
+        max-width: 28rem;
+    }
+    .ride-detail-toolbar__template-form fieldset {
+        margin: 0;
+        padding: 8px 10px;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        font-size: 0.875rem;
+    }
+    .ride-detail-toolbar__template-form fieldset legend {
+        padding: 0 4px;
+        font-weight: 600;
+    }
+    .ride-detail-toolbar__template-form .template-kind-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 4px 0;
+        line-height: 1.35;
+    }
+    .ride-detail-toolbar__template-form .template-kind-row input {
+        flex-shrink: 0;
+        width: auto;
+        max-width: none;
+        margin: 0;
+        accent-color: var(--color-primary);
+    }
+    .ride-detail-toolbar__template-block {
+        max-width: 28rem;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid var(--color-border);
+        background: rgba(0, 0, 0, 0.03);
+        font-size: 0.875rem;
+        line-height: 1.4;
+    }
+    .ride-detail-toolbar form.ride-detail-toolbar__template-form button.btn {
+        align-self: flex-start;
+        flex-shrink: 0;
+    }
+    .ride-detail-toolbar input[name="template_title"] {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        height: 40px;
+        padding: 0 12px;
+        margin: 0;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        font: inherit;
+        font-size: 0.9375rem;
+        background: #fff;
+        box-sizing: border-box;
+    }
+    .ride-detail-toolbar input[name="template_title"]:focus {
+        outline: 2px solid rgba(45, 124, 66, 0.2);
+        border-color: var(--color-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Jízda #{{ item.pk }}{% if item.is_blank_pruvodka %} <span class="pruv-blank-badge" title="Bianko průvodka">Bianko</span>{% endif %}</h1>
+    {% if ride_is_archived %}
+    <div style="margin:0.75rem 0; padding:10px 12px; border-radius:8px; border:1px solid #e6c200; background:#fff8e1; color:#6b4f00;">
+        <strong>Jízda byla smazána (archivována)</strong>
+        {% if item.archive_reason %} — důvod: {{ item.archive_reason }}{% endif %}
+        {% if latest_soft_delete_log %}
+            <br><small>Smazáno {{ latest_soft_delete_log.deleted_at|date:"d.m.Y H:i" }}
+            uživatelem {{ latest_soft_delete_log.deleted_by.get_full_name|default:latest_soft_delete_log.deleted_by.username }}.
+            <a href="{% url 'waste_docs:ride_soft_delete_log_list' %}">Seznam smazaných jízd</a></small>
+        {% endif %}
+    </div>
+    {% endif %}
+    {% if source_customer_request %}
+    <p class="dash-muted" style="margin:0 0 12px; padding:8px 10px; border-radius:8px; border:1px solid var(--color-border); background:var(--color-surface-alt,#f4f6f4);">
+        Založeno z požadavku
+        <a href="{% url 'waste_docs:customer_request_detail' source_customer_request.pk %}">#{{ source_customer_request.pk }}</a>
+        ({{ source_customer_request.get_status_display }}, {{ source_customer_request.target_date|date:"j. n. Y" }})
+    </p>
+    {% endif %}
+    <p>Datum jízdy: <strong>{% if item.drive_date %}{{ item.drive_date|date:"d.m.Y" }} ({{ item.drive_date|czech_weekday_short }}){% else %}—{% endif %}</strong></p>
+    <p>Číslo listu/jízdy: <strong>{{ item.snd_cislo_listu|default:"-" }}</strong></p>
+    <p>Status: <strong>{{ item.get_status_display }}</strong></p>
+    {% if item.follow_up_open %}
+        <p><small>Tato jízda <strong>čeká na uzavření návaznosti</strong>{% if follow_up_terminal_names %}: {{ follow_up_terminal_names|join:", " }}{% elif leg2_activity %} ({{ leg2_activity.name }}){% endif %}{% if follow_up_intermediate_names %}. Mezitím lze evidovat: {{ follow_up_intermediate_names|join:", " }}{% endif %}.</small></p>
+    {% endif %}
+    {% if item.follow_up_parent_id %}
+        <p><small><strong>Předchozí část:</strong> jízda <a href="{% url 'waste_docs:detail' item.follow_up_parent_id %}">#{{ item.follow_up_parent_id }}</a>.</small></p>
+    {% endif %}
+    {% if follow_up_children %}
+        <p><small><strong>Navazující {% if follow_up_children|length > 1 %}jízdy{% else %}jízda{% endif %}:</strong>
+            {% for ch in follow_up_children %}
+            <a href="{% url 'waste_docs:detail' ch.pk %}">#{{ ch.pk }}</a>{% if ch.snd_cislo_listu %} ({{ ch.snd_cislo_listu }}){% endif %}{% if not forloop.last %}, {% endif %}
+            {% endfor %}
+        </small></p>
+    {% endif %}
+    <div class="ride-detail-toolbar">
+        {% if can_create_waste_doc %}
+        <a class="btn secondary" href="{% url 'waste_docs:create' %}?date={{ item.drive_date|date:'Y-m-d' }}">Nová jízda</a>
+        {% endif %}
+        {% if role_access.show_dashboard_nav %}
+        <a class="btn secondary" href="{% url 'core:dashboard' %}?date={{ item.drive_date|date:'Y-m-d' }}">Dashboard</a>
+        {% endif %}
+        {% if can_edit_waste_doc %}
+            <a class="btn" href="{% url 'waste_docs:edit' item.pk %}">Upravit jízdu</a>
+            <a class="btn secondary" href="{% url 'catalogs:name_create' %}">Vložit nový subjekt</a>
+            {% if template_vehicle_kind_options %}
+            <form class="ride-detail-toolbar__template-form" method="post" action="{% url 'waste_docs:ride_template_create_from_pruvodka' item.pk %}">
+                {% csrf_token %}
+                <input
+                    type="text"
+                    name="template_title"
+                    required
+                    maxlength="180"
+                    placeholder="Název šablony (např. MB svoz papír)"
+                >
+                <fieldset>
+                    <legend>Druhy vozidel</legend>
+                    <small style="display:block;margin-bottom:6px;">Označte, u kterých druhů se má šablona nabízet při nové jízdě.</small>
+                    {% for k in template_vehicle_kind_options %}
+                    <label class="template-kind-row">
+                        <input type="checkbox" name="template_vehicle_kind" value="{{ k.pk }}" checked>
+                        <span><strong>{{ k.shortcut }}</strong> — {{ k.name }}</span>
+                    </label>
+                    {% endfor %}
+                </fieldset>
+                <button type="submit" class="btn secondary">Vytvořit šablonu</button>
+            </form>
+            {% elif template_vehicle_kind_block %}
+            <div class="ride-detail-toolbar__template-block" role="note">
+                <strong>Šablonu z této jízdy nelze založit:</strong> {{ template_vehicle_kind_block }}
+            </div>
+            {% endif %}
+        {% endif %}
+        {% if not ride_detail_read_only and item.follow_up_open %}
+            <a class="btn" href="{% url 'waste_docs:create' %}?follow_up_for={{ item.pk }}">Založit navazující jízdu</a>
+            <form method="post" action="{% url 'waste_docs:follow_up_close' item.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="btn secondary">Uzavřít čekání (bez navazující jízdy)</button>
+            </form>
+        {% endif %}
+        {% if not ride_detail_read_only and not activity_suppresses_excel %}
+            <form method="post" action="{% url 'waste_docs:generate' item.pk %}" data-generate-progress-form data-progress-label="Připravuji průvodku…" style="display:none;margin:0;" aria-hidden="true">
+                {% csrf_token %}
+                <button type="submit" class="btn">Vygenerovat průvodku</button>
+            </form>
+        {% endif %}
+        <button type="button" class="btn" id="detail-print-open" title="Otevřít PDF průvodku nebo protokolu">Tisk (PDF)</button>
+        {% if item.generated_file %}
+            <a class="btn secondary" href="{% url 'waste_docs:download' item.pk %}">Stáhnout průvodku (Excel)</a>
+        {% endif %}
+        {% if may_generate_zpo and not ride_detail_read_only %}
+            <a class="btn secondary" href="{% url 'waste_docs:zpo_preview' item.pk %}">Náhled / vygenerovat ZPO</a>
+        {% elif effective_zpo_url %}
+            <a class="btn secondary" href="{{ effective_zpo_url }}" target="_blank" rel="noopener">Otevřít ZPO</a>
+        {% elif zpo_template_url %}
+            <a class="btn secondary" href="{{ zpo_template_url }}" target="_blank" rel="noopener">Vzor ZPO (náhled)</a>
+        {% endif %}
+        {% if can_archive_blank_pruvodka %}
+            <form method="post" action="{% url 'waste_docs:blank_pruvodka_archive' item.pk %}" onsubmit="return confirm('Archivovat nepoužitou bianko průvodku?')">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'waste_docs:detail' item.pk %}">
+                <button type="submit" class="btn secondary">Archivovat bianko</button>
+            </form>
+        {% endif %}
+        {% if can_archive_waste_doc %}
+            <a class="btn secondary" href="{% url 'waste_docs:ride_soft_delete_confirm' item.pk %}">Smazat jízdu (bezpečně)</a>
+        {% endif %}
+    </div>
+</div>
+
+{% if item.attachments.exists %}
+<div class="card">
+    <h2>Přílohy k jízdě</h2>
+    <ul style="margin: 0; padding-left: 1.25rem; line-height: 1.55;">
+        {% for att in item.attachments.all %}
+        <li>
+            <a href="{{ att.file.url }}" target="_blank" rel="noopener">{{ att.filename_display }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% if ride_attachment_print_items %}
+    <p style="margin: 12px 0 0;">
+        <button
+            type="button"
+            class="btn secondary"
+            id="ride-attachment-print-open"
+            data-ride-pk="{{ item.pk }}"
+            title="Otevřít PDF přílohy s číslem listu a datem jízdy"
+        >Tisk s číslem jízdy</button>
+    </p>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="card">
+    <h2>Evidence jízdy</h2>
+    <table>
+        <tbody>
+            <tr><th>Datum jízdy</th><td>{% if item.drive_date %}{{ item.drive_date|date:"d.m.Y" }} ({{ item.drive_date|czech_weekday_short }}){% else %}—{% endif %}</td></tr>
+            <tr><th>Název F/P osoby</th><td>{{ item.name_snapshot }}</td></tr>
+            <tr><th>IČO</th><td>{{ item.ico_snapshot }}</td></tr>
+            <tr><th>Adresa plnění</th><td>
+                {% if item.address_snapshot %}
+                    <a href="https://www.google.com/maps/search/?api=1&query={{ item.address_snapshot|urlencode }}" target="_blank" rel="noopener noreferrer" title="Otevřít v mapové aplikaci">{{ item.address_snapshot }}</a>
+                {% else %}
+                    —
+                {% endif %}
+            </td></tr>
+            <tr>
+                <th>Kdo zadal</th>
+                <td>{% if item.created_by %}{{ item.created_by.get_full_name|default:item.created_by.username }}{% else %}-{% endif %}</td>
+            </tr>
+            <tr>
+                <th>Datum zadání</th>
+                <td>{{ item.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% if item.svoz_task_sources.all %}
+            <tr>
+                <th>Žádost DV</th>
+                <td>
+                    {% for st in item.svoz_task_sources.all %}
+                        {% if st.created_by %}{{ st.created_by.get_full_name|default:st.created_by.username }}{% else %}-{% endif %}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endif %}
+            {% if item.driver_completed_at %}
+            <tr>
+                <th>Dokončeno řidičem</th>
+                <td>{{ item.driver_completed_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% endif %}
+            {% if item.follow_up_resolved_at %}
+            <tr>
+                <th>Návaznost vyřešena</th>
+                <td>{{ item.follow_up_resolved_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% endif %}
+            <tr><th>Číslo listu/jízdy</th><td>{{ item.snd_cislo_listu|default:"-" }}</td></tr>
+            <tr><th>Číslo kontejneru (1)</th><td>{{ item.container_number|default:"-" }}</td></tr>
+            <tr><th>Číslo kontejneru (2)</th><td>{{ item.container_number_2|default:"-" }}</td></tr>
+            <tr><th>Telefon</th><td>{{ item.contact_phone|default:"-" }}</td></tr>
+            <tr><th>Číslo smlouvy</th><td>{{ item.contract_number_snapshot|default:"-" }}</td></tr>
+            <tr><th>Poznámka</th><td>{{ item.contact_note|default:"-" }}</td></tr>
+            <tr><th>Činnost</th><td>{{ item.activity_snapshot|default:"-" }}</td></tr>
+            <tr><th>Název druhu odpadu</th><td>{{ item.waste_type_snapshot }}</td></tr>
+            <tr><th>Katalogové číslo odpadu</th><td>{{ item.waste_code_snapshot }}</td></tr>
+            <tr><th>Kategorie odpadu</th><td>{{ item.waste_category_snapshot }}</td></tr>
+            <tr><th>RZ vozidla</th><td>{{ item.vehicle_rz_snapshot }}</td></tr>
+            {% if item.container_passport %}
+            <tr><th>Pasport kontejneru</th><td>{{ item.container_passport.container_number }} — {{ item.container_passport.vehicle_kind }}</td></tr>
+            {% endif %}
+            <tr><th>Řidič</th><td>{{ item.driver_snapshot|default:"-" }}</td></tr>
+            <tr><th>Koncovka</th><td>{{ item.suffix_snapshot }}</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="card">
+    <h2>Dokumenty pro odpad + koncovku</h2>
+    {% if pair_docs %}
+        <div class="actions">
+            {% if effective_zpo_url %}
+                <a class="btn" href="{{ effective_zpo_url }}" target="_blank" rel="noopener" title="Otevřít ZPO">📄 ZPO</a>
+            {% elif zpo_template_url %}
+                <a class="btn secondary" href="{{ zpo_template_url }}" target="_blank" rel="noopener" title="Vzor ZPO z knihovny (bez čísla listu)">📄 Vzor ZPO</a>
+            {% endif %}
+            {% if effective_pio_url %}
+                <a class="btn" href="{{ effective_pio_url }}" target="_blank" title="Otevřít PIO">📄 PIO</a>
+            {% endif %}
+            {% if pair_docs.other_document %}
+                <a class="btn" href="{{ pair_docs.other_document.url }}" target="_blank" title="Otevřít dokument">📄 Jiný dokument</a>
+            {% endif %}
+        </div>
+        {% if not effective_zpo_url and zpo_missing_reason %}
+            <p><small>{{ zpo_missing_reason|capfirst }}.</small>
+            {% if may_generate_zpo and not ride_detail_read_only %}
+                <a href="{% url 'waste_docs:zpo_preview' item.pk %}">Náhled / vygenerovat ZPO</a>
+            {% elif zpo_template_url %}
+                <a href="{{ zpo_template_url }}" target="_blank" rel="noopener">Otevřít vzor ZPO</a>
+            {% endif %}
+            </p>
+        {% elif not effective_zpo_url and may_generate_zpo and not ride_detail_read_only %}
+            <p><small>Vygenerované ZPO zatím není k dispozici.</small>
+            <a href="{% url 'waste_docs:zpo_preview' item.pk %}">Náhled / vygenerovat ZPO</a></p>
+        {% elif item.zpo_instance_file %}
+            <p><small>U této jízdy je k dispozici <strong>vygenerované ZPO</strong> (soubor ze vzoru s číslem listu {{ item.snd_cislo_listu|default:"" }}).</small></p>
+        {% endif %}
+    {% else %}
+        <p><small>Pro tento subjekt + odpad + koncovku není dokument přiřazen.</small></p>
+    {% endif %}
+</div>
+{% if open_print_after_generate and pruvodka_pdf_url %}
+<script>
+(function () {
+    window.__JEDIS_AUTO_OPEN_PDF_URL__ = "{{ pruvodka_pdf_url|escapejs }}";
+})();
+</script>
+{% endif %}
+{% include "waste_docs/partials/ride_detail_print_modal.html" %}
+{% endblock %}

@@ -1,0 +1,48 @@
+<div
+    class="dash-rides-modal"
+    id="dash-blank-pruvodka-modal"
+    hidden
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dash-blank-pruvodka-modal-title"
+>
+    <div class="dash-rides-modal__backdrop" data-dash-blank-modal-close aria-hidden="true"></div>
+    <div class="dash-rides-modal__panel">
+        <header class="dash-rides-modal__header">
+            <div>
+                <h2 id="dash-blank-pruvodka-modal-title">Bianko průvodky</h2>
+                <p class="dash-muted" style="margin:4px 0 0;font-size:0.92rem;">Nouzový provoz — prázdné průvodky s číslem jízdy (SND).</p>
+            </div>
+            <button type="button" class="dash-rides-modal__close" data-dash-blank-modal-close>Zavřít (Esc)</button>
+        </header>
+        <div class="dash-rides-modal__body">
+            <form method="post" action="{% url 'waste_docs:blank_pruvodka_create' %}" class="dash-blank-form">
+                {% csrf_token %}
+                <div class="field-row">
+                    <label for="blank-drive-date">Datum jízdy</label>
+                    <div class="field-input">
+                        <input type="date" id="blank-drive-date" name="drive_date" value="{{ selected_date_iso }}" required>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <label for="blank-count">Počet průvodek</label>
+                    <div class="field-input">
+                        <input type="number" id="blank-count" name="count" value="5" min="1" max="50" required>
+                        <small>1–50 kusů najednou</small>
+                    </div>
+                </div>
+                <div class="field-row">
+                    <label for="blank-note">Poznámka (volitelně)</label>
+                    <div class="field-input">
+                        <input type="text" id="blank-note" name="note" maxlength="200" placeholder="např. Výpadek sítě">
+                    </div>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;">
+                    <button type="submit" class="btn">Vytvořit a otevřít tisk</button>
+                    <button type="button" class="btn secondary" data-dash-blank-modal-close>Zrušit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

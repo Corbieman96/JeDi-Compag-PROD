@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat adresu{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat adresu</h1>
+    <p>Opravdu chcete smazat: <strong>{{ item.label }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Smazat</button>
+        <a class="btn secondary" href="{% url 'address_data:list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

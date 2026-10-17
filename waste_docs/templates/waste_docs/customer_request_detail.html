@@ -1,0 +1,400 @@
+{% extends "base.html" %}
+{% load pruvodka_tags static %}
+
+{% block title %}Požadavek #{{ item.pk }} | JeDiS{% endblock %}
+
+{% block extra_head %}
+{% if can_show_day_kind_counts_modal %}
+<link rel="stylesheet" href="{% static 'waste_docs/css/customer_request_day_kind_counts_modal.css' %}">
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<section class="card">
+    <style>
+        .req-map-modal-backdrop {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.45);
+            z-index: 9000;
+        }
+        .req-map-modal-backdrop.is-open { display: flex; }
+        .req-map-modal {
+            width: min(980px, 96vw);
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid var(--color-border);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+        .req-map-modal__head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--color-border);
+        }
+        .req-map-modal__map {
+            height: min(62vh, 520px);
+            width: 100%;
+        }
+        .req-map-modal__status {
+            padding: 8px 12px;
+            margin: 0;
+            color: var(--color-muted);
+            font-size: 0.92rem;
+            border-top: 1px solid var(--color-border);
+        }
+    </style>
+    <h1>Požadavek #{{ item.pk }}</h1>
+    {% if ride_reschedule_info %}
+    <p role="status" style="margin:0 0 12px;padding:10px 12px;border-radius:10px;border:2px solid var(--color-primary,#2d7c42);background:rgba(150,192,61,0.18);color:var(--color-primary-dark,#245f33);">
+        <strong>Přeplánováno dispečerem:</strong> {{ ride_reschedule_info }}
+    </p>
+    {% endif %}
+    {% with child_request=item.follow_up_child_requests.first %}
+    {% if child_request %}
+    <p class="dash-muted" style="margin:0 0 12px; padding:8px 10px; border-radius:8px; border:1px solid var(--color-border); background:var(--color-surface-alt,#f4f6f4);">
+        Navazující požadavek:
+        <a href="{% url 'waste_docs:customer_request_detail' child_request.pk %}">#{{ child_request.pk }}</a>
+        ({{ child_request.activity.name }}, {{ child_request.get_status_display }})
+    </p>
+    {% elif item.follow_up_parent_request_id %}
+    <p class="dash-muted" style="margin:0 0 12px; padding:8px 10px; border-radius:8px; border:1px solid var(--color-border); background:var(--color-surface-alt,#f4f6f4);">
+        Návazný požadavek na základní
+        <a href="{% url 'waste_docs:customer_request_detail' item.follow_up_parent_request_id %}">#{{ item.follow_up_parent_request_id }}</a>.
+    </p>
+    {% endif %}
+    {% endwith %}
+    <p>
+        <strong>Stav:</strong> {{ item.get_status_display }}<br>
+        <strong>Subjekt:</strong> {{ item.name.value }}<br>
+        <strong>Činnost:</strong> {{ item.activity.name }}{% if item.follow_up_activity %} → {{ item.follow_up_activity.name }}{% endif %}<br>
+        <strong>Druh vozidla:</strong>
+        {% with vk_label=item|customer_request_effective_vehicle_kind_label %}
+            {% if vk_label %}{{ vk_label }}{% else %}<span class="dash-muted">—</span>{% endif %}
+        {% endwith %}<br>
+        <strong>Datum:</strong> {{ item.target_date|date:"j. n. Y" }} ({{ item.target_date|czech_weekday_short }})<br>
+        {% if item.has_follow_up %}
+        <strong>Datum navazující činnosti:</strong>
+        {% if item.follow_up_target_date %}{{ item.follow_up_target_date|date:"j. n. Y" }}{% else %}<em>neuvedeno</em>{% endif %}<br>
+        {% endif %}
+        {% if item.is_recurring %}
+        <strong>Pravidelně:</strong> ano (dny: {{ item.recurrence_weekdays }}, do {{ item.recurrence_until|date:"j. n. Y"|default:"-" }})<br>
+        {% endif %}
+        <strong>Zálohová faktura:</strong> {% if item.requires_advance_invoice %}ano{% else %}ne{% endif %}
+        {% if item.requires_advance_invoice and item.advance_invoice_amount %} ({{ item.advance_invoice_amount }} Kč){% endif %}
+        {% if item.invoice_due_date %} · splatnost {{ item.invoice_due_date|date:"j. n. Y" }}{% endif %}<br>
+        <strong>Odpad/Koncovka:</strong> {{ item.waste_type.value }}{% if item.suffix %} / {{ item.suffix.value }}{% endif %}<br>
+        <strong>Adresa:</strong> {{ item.address }}
+        <button type="button" class="btn secondary" id="request-map-open-btn" style="margin-left:6px; padding:4px 10px;">Mapa</button><br>
+        {% with ride_note=item|customer_request_ride_note %}
+        {% if ride_note %}
+        <span style="display:inline-block;margin:6px 0;padding:6px 10px;border:2px solid var(--color-primary,#2d7c42);border-radius:8px;background:rgba(150,192,61,0.18);font-weight:600;color:var(--color-primary-dark,#245f33);">
+            <strong>Poznámka do jízdy:</strong> {{ ride_note }}
+        </span><br>
+        {% endif %}
+        {% if item.note and item.note != ride_note %}<strong>Poznámka k požadavku:</strong> {{ item.note }}<br>{% endif %}
+        {% endwith %}
+        <strong>Zadavatel:</strong> {{ item.created_by.get_full_name|default:item.created_by.username }}
+    </p>
+    {% if can_dispatcher_review %}
+    {% if item.is_recurring or item.recurrence_parent_request_id %}
+    <p style="margin: 0 0 16px;">
+        <a class="btn secondary" href="{% url 'customer_request_recurrence_series:manage' item.pk %}">Správa opakované série</a>
+        <a class="btn danger" href="{% url 'customer_request_recurrence_series:cancel_range' item.pk %}">Smazat sérii</a>
+    </p>
+    {% endif %}
+    {% endif %}
+    {% if can_show_day_kind_counts_modal %}
+    <p style="margin: 0 0 12px;">
+        <button
+            type="button"
+            class="btn secondary"
+            id="cr-day-kind-counts-open"
+            aria-expanded="false"
+            aria-controls="cr-day-kind-counts-modal"
+            data-api-url="{% url 'waste_docs:customer_request_day_kind_counts' item.pk %}"
+            data-default-date="{{ item.target_date|date:'Y-m-d' }}"
+        >Počet jízd ({{ item.target_date|date:"j. n. Y" }})</button>
+    </p>
+    {% with ride_note=item|customer_request_ride_note %}
+    {% if ride_note %}
+    <p class="dash-muted" style="margin: -4px 0 12px;">
+        <strong>Poznámka (odpad):</strong> {{ ride_note }}
+    </p>
+    {% endif %}
+    {% endwith %}
+    {% endif %}
+    {% if item.planned_pruvodka_id %}
+    <p>
+        <strong>Vytvořená jízda:</strong>
+        <a href="{% url 'waste_docs:detail' item.planned_pruvodka_id %}">#{{ item.planned_pruvodka_id }}</a>
+        {% if item.planned_follow_up_pruvodka_id %}
+            · <strong>Navazující:</strong>
+            <a href="{% url 'waste_docs:detail' item.planned_follow_up_pruvodka_id %}">#{{ item.planned_follow_up_pruvodka_id }}</a>
+        {% endif %}
+    </p>
+    {% endif %}
+
+    {% if item.attachments.all %}
+    <h3>Přílohy</h3>
+    <ul style="display:flex; gap:10px; align-items:center; list-style:none; padding:0; margin:0 0 12px;">
+        {% for a in item.attachments.all %}
+            <li>
+                <a
+                    href="{{ a.file.url }}"
+                    target="_blank"
+                    rel="noopener"
+                    title="{{ a.file.name }}"
+                    aria-label="Otevřít přílohu"
+                    style="display:inline-flex; align-items:center; justify-content:center; width:2rem; height:2rem; border:1px solid var(--color-border); border-radius:8px; text-decoration:none;"
+                >📎</a>
+            </li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if can_invoice_approve %}
+    {% if item.status == "submitted" or item.status == "invoice_overdue" %}
+    <form method="post" action="{% url 'waste_docs:customer_request_invoice_review' item.pk %}">
+        {% csrf_token %}
+        <h3>Schválení zálohy</h3>
+        <input type="text" name="note" placeholder="Poznámka (volitelné)" style="width: 100%; max-width: 36rem;">
+        <div style="margin-top:0.5rem;">
+            <button class="btn" type="submit" name="action" value="approve">Schválit zálohu</button>
+            <button class="btn secondary" type="submit" name="action" value="unpaid_overdue">Nezaplaceno ve splatnosti</button>
+            <button class="btn danger" type="submit" name="action" value="reject">Zamítnout zálohu</button>
+        </div>
+    </form>
+    {% endif %}
+    {% endif %}
+
+    {% if can_dispatcher_review and item.status == "dispatcher_review" %}
+    <form method="post" action="{% url 'waste_docs:customer_request_dispatcher_review' item.pk %}">
+        {% csrf_token %}
+        <h3>Dispečerská kontrola</h3>
+        <input type="text" name="note" placeholder="Poznámka (volitelné)" style="width: 100%; max-width: 36rem;">
+        <div style="margin-top:0.5rem;">
+            <button class="btn" type="submit" name="action" value="approve">Schválit</button>
+            <button class="btn secondary" type="submit" name="action" value="return">Vrátit k opravě</button>
+            <button class="btn secondary" type="submit" name="action" value="reschedule">Nutné přeplánovat</button>
+            <button class="btn danger" type="submit" name="action" value="cancel">Zrušit</button>
+        </div>
+    </form>
+    {% endif %}
+
+    {% if can_plan_rides or can_dispatcher_review %}
+    {% if item.has_follow_up and not item.follow_up_target_date and not item.planned_pruvodka_id %}
+    {% if item.status == "dispatcher_review" or item.status == "visible_for_dispatch" %}
+    <form method="post" action="{% url 'waste_docs:customer_request_set_follow_up_date' item.pk %}">
+        {% csrf_token %}
+        <h3>Datum navazující činnosti</h3>
+        <p class="dash-muted" style="margin:0 0 8px;">Termín zatím není v požadavku — doplňte ho před automatickým založením navazující jízdy, nebo nechte prázdné a navazující jízdu založte ručně z detailu průvodky.</p>
+        <label>Datum navazující činnosti: <input type="date" name="follow_up_target_date" required></label>
+        <div style="margin-top:0.5rem;">
+            <button class="btn secondary" type="submit">Uložit datum návaznosti</button>
+        </div>
+    </form>
+    {% endif %}
+    {% endif %}
+    {% endif %}
+
+    {% if can_plan_rides and item.status == "visible_for_dispatch" and not item.planned_pruvodka_id %}
+    <div style="margin: 0 0 16px;">
+        <h3>Převod na jízdu</h3>
+        <p class="dash-muted" style="margin:0 0 8px;">
+            Subjekt, činnost a adresa se předvyplní z požadavku. Na formuláři jízdy vyberte řidiče a RZ vozidla.
+        </p>
+        {% if item.has_follow_up and item.follow_up_activity %}
+        <p class="dash-muted" style="margin:0 0 8px;">
+            Navazující jízdu založte po vytvoření primární průvodky z jejího detailu.
+        </p>
+        {% endif %}
+        <a class="btn"
+           href="{% url 'waste_docs:create' %}?date={{ item.target_date|date:'Y-m-d' }}&amp;customer_request={{ item.pk }}">
+            Založit jízdu (vybrat řidiče a vozidlo)
+        </a>
+    </div>
+    {% endif %}
+
+    {% if can_dispatcher_review and item.status == "visible_for_dispatch" %}
+    {% if item.planned_pruvodka_id %}
+    <p class="dash-muted" style="margin: 0 0 16px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--color-border); background: var(--color-surface-alt, #f4f6f4);">
+        Schválení nelze vzít zpět — k požadavku už existuje jízda
+        <a href="{% url 'waste_docs:detail' item.planned_pruvodka_id %}">#{{ item.planned_pruvodka_id }}</a>.
+    </p>
+    {% else %}
+    <form method="post" action="{% url 'waste_docs:customer_request_dispatch_withdraw' item.pk %}">
+        {% csrf_token %}
+        <h3>Stažení schválení</h3>
+        <p class="dash-muted" style="margin:0 0 8px;">Požadavek je ve frontě dispečera. Pokud jste schválili omylem, vraťte ho zadavateli nebo zrušte.</p>
+        <input type="text" name="note" placeholder="Poznámka pro zadavatele (doporučeno)" style="width: 100%; max-width: 36rem;">
+        <div style="margin-top:0.5rem;">
+            <button class="btn secondary" type="submit" name="action" value="return">Vrátit k opravě</button>
+            <button class="btn danger" type="submit" name="action" value="cancel">Zrušit požadavek</button>
+        </div>
+    </form>
+    {% endif %}
+    {% endif %}
+
+    {% if item.dispatcher_note %}
+    {% if item.status == "returned_for_fix" or item.status == "requires_reschedule" %}
+    <p class="jedis-ico-lookup-create-hint" style="margin: 0 0 12px; border-left: 3px solid #d4a017; padding: 10px 12px; background: #fff8e6;">
+        <strong>Poznámka dispečera:</strong> {{ item.dispatcher_note }}
+    </p>
+    {% endif %}
+    {% endif %}
+
+    {% if can_fix_request and fix_edit_url %}
+    <p style="margin: 0 0 16px;">
+        <a class="btn" href="{{ fix_edit_url }}">Opravit požadavek</a>
+        <span style="color: var(--color-muted); font-size: 0.92rem; margin-left: 8px;">Upravíte subjekt, odpad, koncovku, druh vozidla, adresu a další údaje.</span>
+    </p>
+    {% elif can_submitter_edit %}
+    {% if item.status == "requires_reschedule" or item.status == "invoice_overdue" or item.status == "invoice_rejected" %}
+    <form method="post" action="{% url 'waste_docs:customer_request_submitter_update' item.pk %}">
+        {% csrf_token %}
+        <h3>Akce zadavatele</h3>
+        <label>Nové datum (doporučeno): <input type="date" name="target_date" value="{{ item.target_date|date:'Y-m-d' }}"></label><br>
+        {% if item.has_follow_up %}
+        <label>Datum navazující činnosti (volitelné): <input type="date" name="follow_up_target_date" value="{{ item.follow_up_target_date|date:'Y-m-d' }}"></label><br>
+        {% endif %}
+        {% if item.requires_advance_invoice %}
+        <label>Nová splatnost zálohy: <input type="date" name="invoice_due_date" value="{{ item.invoice_due_date|date:'Y-m-d' }}"></label><br>
+        {% endif %}
+        <input type="text" name="note" placeholder="Poznámka (volitelné)" style="width: 100%; max-width: 36rem;">
+        <div style="margin-top:0.5rem;">
+            <button class="btn" type="submit" name="action" value="resubmit">Přeplánovat a odeslat znovu</button>
+            <button class="btn danger" type="submit" name="action" value="cancel">Zrušit požadavek</button>
+        </div>
+    </form>
+    {% endif %}
+    {% endif %}
+
+    <h3>Audit</h3>
+    <ul>
+    {% for log in audit_rows %}
+        <li>{{ log.created_at|date:"j. n. Y H:i" }} — {{ log.actor.get_full_name|default:log.actor.username }}: {{ log.action_label }}{% if log.note %} ({{ log.note }}){% endif %}</li>
+    {% empty %}
+        <li>Bez záznamu.</li>
+    {% endfor %}
+    </ul>
+
+    <p><a class="btn secondary" href="{% url 'waste_docs:customer_request_list' %}">Zpět na seznam</a></p>
+</section>
+
+<div class="req-map-modal-backdrop" id="request-map-modal" aria-hidden="true">
+    <div class="req-map-modal" role="dialog" aria-modal="true" aria-labelledby="request-map-modal-title">
+        <div class="req-map-modal__head">
+            <strong id="request-map-modal-title">Mapa místa plnění</strong>
+            <button type="button" class="btn secondary" id="request-map-close-btn">Zavřít</button>
+        </div>
+        <div id="request-map-root" class="req-map-modal__map"></div>
+        <p class="req-map-modal__status" id="request-map-status">Načítám mapu…</p>
+    </div>
+</div>
+
+<script>
+(function () {
+    const openBtn = document.getElementById("request-map-open-btn");
+    const modal = document.getElementById("request-map-modal");
+    const closeBtn = document.getElementById("request-map-close-btn");
+    const mapRoot = document.getElementById("request-map-root");
+    const statusEl = document.getElementById("request-map-status");
+    if (!openBtn || !modal || !closeBtn || !mapRoot || !statusEl) return;
+
+    const rawAddress = "{{ item.address|escapejs }}";
+    const savedLat = parseFloat("{{ request_map_lat|default_if_none:'' }}".replace(",", "."));
+    const savedLng = parseFloat("{{ request_map_lng|default_if_none:'' }}".replace(",", "."));
+    let map = null;
+    let marker = null;
+
+    function closeModal() {
+        modal.classList.remove("is-open");
+        modal.setAttribute("aria-hidden", "true");
+    }
+
+    function openModal() {
+        modal.classList.add("is-open");
+        modal.setAttribute("aria-hidden", "false");
+    }
+
+    function renderMap(lat, lng, label) {
+        if (!map) {
+            map = L.map(mapRoot).setView([lat, lng], 14);
+            L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+                maxZoom: 19,
+                attribution: "&copy; OpenStreetMap contributors",
+            }).addTo(map);
+            marker = L.marker([lat, lng]).addTo(map);
+        } else {
+            map.setView([lat, lng], 14);
+            marker.setLatLng([lat, lng]);
+        }
+        marker.bindPopup(label).openPopup();
+        statusEl.textContent = "Cíl požadavku je označen v mapě.";
+        setTimeout(function () { map.invalidateSize(); }, 50);
+    }
+
+    async function loadMapByAddress() {
+        if (!window.L) {
+            statusEl.textContent = "Mapa není dostupná (Leaflet se nenačetl).";
+            return;
+        }
+        statusEl.textContent = "Načítám souřadnice adresy…";
+        const url = "{% url 'waste_docs:address_geocode' %}?q=" + encodeURIComponent(rawAddress);
+        try {
+            const res = await fetch(url, {headers: {"X-Requested-With": "XMLHttpRequest"}});
+            const payload = await res.json();
+            if (!res.ok || !payload.ok || !payload.data) {
+                statusEl.innerHTML = 'Adresu se nepodařilo najít. <a href="https://www.openstreetmap.org/search?query=' + encodeURIComponent(rawAddress) + '" target="_blank" rel="noopener">Otevřít hledání v mapě</a>.';
+                return;
+            }
+            const lat = Number(payload.data.lat);
+            const lng = Number(payload.data.lng);
+            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                statusEl.textContent = "Adresu se nepodařilo převést na souřadnice.";
+                return;
+            }
+            renderMap(lat, lng, rawAddress);
+        } catch (err) {
+            statusEl.textContent = "Mapu se nepodařilo načíst.";
+        }
+    }
+
+    function loadMap() {
+        if (!window.L) {
+            statusEl.textContent = "Mapa není dostupná (Leaflet se nenačetl).";
+            return;
+        }
+        if (Number.isFinite(savedLat) && Number.isFinite(savedLng)) {
+            renderMap(savedLat, savedLng, rawAddress);
+            return;
+        }
+        loadMapByAddress();
+    }
+
+    openBtn.addEventListener("click", function () {
+        openModal();
+        loadMap();
+    });
+    closeBtn.addEventListener("click", closeModal);
+    modal.addEventListener("click", function (e) {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && modal.classList.contains("is-open")) {
+            closeModal();
+        }
+    });
+})();
+</script>
+{% if can_show_day_kind_counts_modal %}
+{% include "waste_docs/partials/customer_request_day_kind_counts_modal.html" %}
+<script src="{% static 'waste_docs/js/customer_requests/day_kind_counts_modal.js' %}"></script>
+{% endif %}
+{% endblock %}

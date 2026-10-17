@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat druh vozidla{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat druh vozidla</h1>
+    <p><strong>{{ item.name }}</strong>{% if item.shortcut and item.shortcut != item.name %} — {{ item.shortcut }}{% endif %}</p>
+    {% if container_passport_count %}
+    <p class="form-errors">K tomuto druhu je navázáno <strong>{{ container_passport_count }}</strong> pasportů kontejnerů — smazání selže, dokud u nich nezměníte druh vozidla nebo je nesmažete.
+        <a href="{% url 'catalogs:container_passport_list' %}?vehicle_kind={{ item.pk }}">Zobrazit pasporty</a>
+    </p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:vehicle_kind_list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

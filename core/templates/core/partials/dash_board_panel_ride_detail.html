@@ -1,0 +1,44 @@
+{% load pruvodka_tags %}
+        <section class="dash-panel dash-panel--ride-detail" aria-label="Detail jízdy">
+
+            <h2 class="dash-panel__head dash-panel__head--with-actions">
+                <span>Detail jízdy</span>
+                {% if selected_ride_group %}
+                <span class="dash-panel__head-actions">
+                    {% include "core/partials/dash_ride_email_actions.html" %}
+                    <button
+                        type="button"
+                        class="dash-ride-detail-view-toggle dash-rides-view-toggle dash-panel__icon-btn"
+                        id="dash-ride-detail-expand"
+                        aria-expanded="false"
+                        aria-controls="dash-ride-detail-modal"
+                        title="Otevřít celostránkový detail jízdy pro vybrané RZ"
+                        aria-label="Otevřít celostránkový detail jízdy pro vybrané RZ"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+                    </button>
+                    {% include "core/partials/dash_clear_ride_selection_btn.html" %}
+                </span>
+                {% endif %}
+            </h2>
+
+            <div class="dash-panel__body" id="dash-ride-detail-body">
+
+                {% if selected_ride_group %}
+
+                <p class="dash-ride-detail-summary" style="margin:0 0 8px;">
+                    <strong>Jízda {{ selected_ride_group.drive_date|date:"d.m.Y" }} ({{ selected_ride_group.drive_date|czech_weekday_short }}) — {{ selected_ride_group.vehicle_rz }} — {{ selected_ride_group.driver_last_name|default:"—" }}</strong>
+                    <span class="dash-muted">· záznamů: {{ selected_ride_group.items|length }}</span>
+                </p>
+
+                {% include "core/partials/dash_ride_detail_table.html" %}
+
+                {% else %}
+
+                <p class="dash-muted">Vyberte jízdu v seznamu vlevo.</p>
+
+                {% endif %}
+
+            </div>
+
+        </section>

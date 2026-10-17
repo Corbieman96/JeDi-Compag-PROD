@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'catalogs/css/driver_absence.css' %}">
+{% if is_edit %}
+<script src="{% static 'catalogs/js/driver_absence_panel.js' %}" defer></script>
+{% endif %}
+{% endblock %}
+
+{% block title %}{% if is_edit %}Úprava řidiče{% else %}Nový řidič{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Úprava řidiče{% else %}Nový řidič{% endif %}</h1>
+    <form method="post" class="form-grid form-grid--wide">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <h2 class="form-section-title">Osobní a pracovní údaje</h2>
+        <div class="field-row"><label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label><div class="field-input">{{ form.last_name }}{{ form.last_name.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label><div class="field-input">{{ form.first_name }}{{ form.first_name.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.title.id_for_label }}">{{ form.title.label }}</label><div class="field-input">{{ form.title }}{{ form.title.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.personal_number.id_for_label }}">{{ form.personal_number.label }}</label><div class="field-input">{{ form.personal_number }}{% if form.personal_number.help_text %}<small>{{ form.personal_number.help_text }}</small>{% endif %}{{ form.personal_number.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.phone.id_for_label }}">{{ form.phone.label }}</label><div class="field-input">{{ form.phone }}{{ form.phone.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.job_position.id_for_label }}">{{ form.job_position.label }}</label><div class="field-input">{{ form.job_position }}{{ form.job_position.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.employment_type.id_for_label }}">{{ form.employment_type.label }}</label><div class="field-input">{{ form.employment_type }}{{ form.employment_type.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.start_date.id_for_label }}">{{ form.start_date.label }}</label><div class="field-input">{{ form.start_date }}{{ form.start_date.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.availability_note.id_for_label }}">{{ form.availability_note.label }}</label><div class="field-input">{{ form.availability_note }}{{ form.availability_note.errors }}</div></div>
+
+        <h2 class="form-section-title">Řidičský průkaz</h2>
+        <div class="field-row"><label for="{{ form.driver_license_number.id_for_label }}">{{ form.driver_license_number.label }}</label><div class="field-input">{{ form.driver_license_number }}{{ form.driver_license_number.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.driver_license_groups.id_for_label }}">{{ form.driver_license_groups.label }}</label><div class="field-input">{{ form.driver_license_groups }}{{ form.driver_license_groups.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.driver_license_valid_until.id_for_label }}">{{ form.driver_license_valid_until.label }}</label><div class="field-input">{{ form.driver_license_valid_until }}{{ form.driver_license_valid_until.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.driver_license_restrictions.id_for_label }}">{{ form.driver_license_restrictions.label }}</label><div class="field-input">{{ form.driver_license_restrictions }}{{ form.driver_license_restrictions.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.driver_license_last_check.id_for_label }}">{{ form.driver_license_last_check.label }}</label><div class="field-input">{{ form.driver_license_last_check }}{{ form.driver_license_last_check.errors }}</div></div>
+
+        <h2 class="form-section-title">Profesní způsobilost</h2>
+        <div class="field-row"><label for="{{ form.professional_competence_required.id_for_label }}">{{ form.professional_competence_required.label }}</label><div class="field-input">{{ form.professional_competence_required }}{{ form.professional_competence_required.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.professional_competence_document.id_for_label }}">{{ form.professional_competence_document.label }}</label><div class="field-input">{{ form.professional_competence_document }}{{ form.professional_competence_document.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.professional_competence_valid_until.id_for_label }}">{{ form.professional_competence_valid_until.label }}</label><div class="field-input">{{ form.professional_competence_valid_until }}{{ form.professional_competence_valid_until.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.professional_competence_last_training.id_for_label }}">{{ form.professional_competence_last_training.label }}</label><div class="field-input">{{ form.professional_competence_last_training }}{{ form.professional_competence_last_training.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.professional_competence_next_training.id_for_label }}">{{ form.professional_competence_next_training.label }}</label><div class="field-input">{{ form.professional_competence_next_training }}{{ form.professional_competence_next_training.errors }}</div></div>
+
+        <h2 class="form-section-title">Karta řidiče (tachograf)</h2>
+        <div class="field-row"><label for="{{ form.tachograph_card_number.id_for_label }}">{{ form.tachograph_card_number.label }}</label><div class="field-input">{{ form.tachograph_card_number }}{{ form.tachograph_card_number.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.tachograph_card_issued.id_for_label }}">{{ form.tachograph_card_issued.label }}</label><div class="field-input">{{ form.tachograph_card_issued }}{{ form.tachograph_card_issued.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.tachograph_card_valid_until.id_for_label }}">{{ form.tachograph_card_valid_until.label }}</label><div class="field-input">{{ form.tachograph_card_valid_until }}{{ form.tachograph_card_valid_until.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.tachograph_card_note.id_for_label }}">{{ form.tachograph_card_note.label }}</label><div class="field-input">{{ form.tachograph_card_note }}{{ form.tachograph_card_note.errors }}</div></div>
+
+        <h2 class="form-section-title">Zdravotní způsobilost</h2>
+        <div class="field-row"><label for="{{ form.medical_entry_exam_date.id_for_label }}">{{ form.medical_entry_exam_date.label }}</label><div class="field-input">{{ form.medical_entry_exam_date }}{{ form.medical_entry_exam_date.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.medical_periodic_exam_date.id_for_label }}">{{ form.medical_periodic_exam_date.label }}</label><div class="field-input">{{ form.medical_periodic_exam_date }}{{ form.medical_periodic_exam_date.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.medical_certificate_valid_until.id_for_label }}">{{ form.medical_certificate_valid_until.label }}</label><div class="field-input">{{ form.medical_certificate_valid_until }}{{ form.medical_certificate_valid_until.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.medical_restrictions.id_for_label }}">{{ form.medical_restrictions.label }}</label><div class="field-input">{{ form.medical_restrictions }}{{ form.medical_restrictions.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.medical_provider.id_for_label }}">{{ form.medical_provider.label }}</label><div class="field-input">{{ form.medical_provider }}{{ form.medical_provider.errors }}</div></div>
+
+        <h2 class="form-section-title">Odbornosti</h2>
+        <div class="field-row"><label for="{{ form.hds_certificate_number.id_for_label }}">Hydraulická ruka (HDS) - {{ form.hds_certificate_number.label }}</label><div class="field-input">{{ form.hds_certificate_number }}{{ form.hds_certificate_number.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.hds_valid_until.id_for_label }}">Hydraulická ruka (HDS) - {{ form.hds_valid_until.label }}</label><div class="field-input">{{ form.hds_valid_until }}{{ form.hds_valid_until.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.sling_certificate_number.id_for_label }}">Vazač břemen - {{ form.sling_certificate_number.label }}</label><div class="field-input">{{ form.sling_certificate_number }}{{ form.sling_certificate_number.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.sling_valid_until.id_for_label }}">Vazač břemen - {{ form.sling_valid_until.label }}</label><div class="field-input">{{ form.sling_valid_until }}{{ form.sling_valid_until.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.vzv_certificate_number.id_for_label }}">Vysokozdvižný vozík (VZV) - {{ form.vzv_certificate_number.label }}</label><div class="field-input">{{ form.vzv_certificate_number }}{{ form.vzv_certificate_number.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.vzv_valid_until.id_for_label }}">Vysokozdvižný vozík (VZV) - {{ form.vzv_valid_until.label }}</label><div class="field-input">{{ form.vzv_valid_until }}{{ form.vzv_valid_until.errors }}</div></div>
+
+        <h2 class="form-section-title">Strojník - oprávnění podle typu</h2>
+        <div class="field-row"><label>{{ form.machine_tractor.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_tractor }}{{ form.machine_tractor.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_loader.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_loader }}{{ form.machine_loader.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_skid_loader.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_skid_loader }}{{ form.machine_skid_loader.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_wheel_loader.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_wheel_loader }}{{ form.machine_wheel_loader.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_telehandler.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_telehandler }}{{ form.machine_telehandler.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_mini_loader.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_mini_loader }}{{ form.machine_mini_loader.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_excavator.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_excavator }}{{ form.machine_excavator.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_mini_excavator.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_mini_excavator }}{{ form.machine_mini_excavator.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_backhoe_loader.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_backhoe_loader }}{{ form.machine_backhoe_loader.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_unc.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_unc }}{{ form.machine_unc.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_spreader_plow.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_spreader_plow }}{{ form.machine_spreader_plow.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_vzv.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_vzv }}{{ form.machine_vzv.errors }}</div></div>
+        <div class="field-row"><label>{{ form.machine_crane_operator.label }}</label><div class="field-input field-input--checkbox-narrow">{{ form.machine_crane_operator }}{{ form.machine_crane_operator.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.special_attachments.id_for_label }}">{{ form.special_attachments.label }}</label><div class="field-input">{{ form.special_attachments }}{{ form.special_attachments.errors }}</div></div>
+
+        <h2 class="form-section-title">Přiřazená vozidla</h2>
+        <div class="field-row"><label for="{{ form.allowed_vehicle_rz.id_for_label }}">{{ form.allowed_vehicle_rz.label }}</label><div class="field-input">{{ form.allowed_vehicle_rz }}{{ form.allowed_vehicle_rz.errors }}</div></div>
+        <div class="field-row"><label for="{{ form.allowed_vehicle_kinds.id_for_label }}">{{ form.allowed_vehicle_kinds.label }}</label><div class="field-input">{{ form.allowed_vehicle_kinds }}{{ form.allowed_vehicle_kinds.errors }}</div></div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'catalogs:driver_list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+
+{% if is_edit %}
+<div class="card driver-absence-card">
+    <h2>Kalendářová nepřítomnost</h2>
+    {% include "catalogs/partials/driver_absence_panel.html" %}
+</div>
+<div class="card">
+    <h2>Portál řidiče — propojený účet</h2>
+    {% if portal_linked_profile %}
+    <p>Tento profil je v systému přiřazen k uživateli <strong>{{ portal_linked_profile.user.username }}</strong> (přístupové právo → propojený řidič). Dokud tady účet neodeberete, <strong>nikdo jiný QR stejného řidiče nepřipojí</strong> — server odpoví chybou „už je propojeno“.</p>
+    <form method="post" action="{% url 'catalogs:driver_portal_unlink_linked_user' item.pk %}" style="margin-top:12px;">
+        {% csrf_token %}
+        <button type="submit" class="btn danger">Odebrat propojení portálu (uvolnit pro nový účet)</button>
+    </form>
+    {% else %}
+    <p style="color:var(--color-muted);">Zatím není přes portál přiřazen žádný uživatelský účet — první úspěšné párování přes QR účet přiřadí.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Portál řidiče — pozvánky (QR)</h2>
+    <p style="color:var(--color-muted); font-size:0.95rem;">Řidič po přihlášení (role „Řidič“) naskenuje QR nebo otevře odkaz. Odkaz a QR se ve výchozím stavu berou z <strong>adresy, na které máte JeDiS otevřené</strong> (např. <code>http://192.168.68.62:8000</code>). Pokud má být odkaz vždy stejný nebo jiný než v prohlížeči (produkce, jiný hostitel), nastavte na serveru <code>PUBLIC_BASE_URL</code>.</p>
+    <p style="color:var(--color-muted); font-size:0.95rem;">Řidič zadá jen <strong>kód pozvánky</strong> u QR (heslo nepotřebuje). Pokud k profilu ještě není ručně založený účet, systém po prvním úspěchu vytvoří uživatele ve tvaru <code>portal_driver_ID</code> (ID z databáze) bez hesla.</p>
+
+    <form method="post" action="{% url 'catalogs:driver_portal_invite_create' item.pk %}" class="form-grid form-grid--wide" style="margin-bottom:18px;">
+        {% csrf_token %}
+        <div class="field-row">
+            <label for="id_invite_note">Poznámka u nové pozvánky</label>
+            <div class="field-input">
+                <input type="text" name="invite_note" id="id_invite_note" maxlength="200" placeholder="Volitelné">
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn">Nová pozvánka</button>
+        </div>
+    </form>
+
+    {% if portal_invite_rows %}
+    <table>
+        <thead>
+            <tr>
+                <th>Párovací kód</th>
+                <th>Stav</th>
+                <th>Vytvořeno</th>
+                <th>Pozn.</th>
+                <th>Odkaz</th>
+                <th>QR</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in portal_invite_rows %}
+            <tr>
+                <td><code style="font-size:0.95rem;letter-spacing:0.05em;">{{ row.token.display_code }}</code></td>
+                <td>{{ row.token.get_status_display }}</td>
+                <td>{{ row.token.created_at|date:"d.m.Y H:i" }}</td>
+                <td>{{ row.token.note|default:"—" }}</td>
+                <td style="word-break:break-all; max-width:200px;"><a href="{{ row.pairing_url }}" target="_blank" rel="noopener noreferrer">{{ row.pairing_url }}</a></td>
+                <td>
+                    {% if row.qr_data_uri %}
+                    <img src="{{ row.qr_data_uri }}" alt="QR" style="max-width:120px;height:auto;border-radius:6px;" />
+                    {% elif row.needs_public_base %}
+                    <small>Neplatná URL (zkontrolujte nastavení serveru)</small>
+                    {% else %}—{% endif %}
+                </td>
+                <td>
+                    <div class="actions" style="flex-direction:column; align-items:flex-start; gap:6px;">
+                        {% if row.token.status == "active" %}
+                        <form method="post" action="{% url 'catalogs:driver_portal_invite_set_status' item.pk row.token.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="paused">
+                            <button type="submit" class="btn secondary" style="font-size:0.85rem;padding:6px 10px;">Pozastavit</button>
+                        </form>
+                        <form method="post" action="{% url 'catalogs:driver_portal_invite_set_status' item.pk row.token.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="revoked">
+                            <button type="submit" class="btn danger" style="font-size:0.85rem;padding:6px 10px;">Zrušit</button>
+                        </form>
+                        {% elif row.token.status == "paused" %}
+                        <form method="post" action="{% url 'catalogs:driver_portal_invite_set_status' item.pk row.token.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="active">
+                            <button type="submit" class="btn" style="font-size:0.85rem;padding:6px 10px;">Aktivovat</button>
+                        </form>
+                        <form method="post" action="{% url 'catalogs:driver_portal_invite_set_status' item.pk row.token.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="revoked">
+                            <button type="submit" class="btn danger" style="font-size:0.85rem;padding:6px 10px;">Zrušit</button>
+                        </form>
+                        {% else %}
+                        <form method="post" action="{% url 'catalogs:driver_portal_invite_set_status' item.pk row.token.pk %}" style="margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="status" value="active">
+                            <button type="submit" class="btn" style="font-size:0.85rem;padding:6px 10px;">Znovu aktivovat</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color:var(--color-muted);">Zatím žádná pozvánka — vytvořte první tlačítkem výše.</p>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

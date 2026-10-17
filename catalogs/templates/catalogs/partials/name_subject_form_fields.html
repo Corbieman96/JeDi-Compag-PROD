@@ -1,0 +1,215 @@
+    <form method="post" enctype="multipart/form-data" class="form-grid form-grid--wide name-subject-form">
+        {% csrf_token %}
+        {% if item.pk and not is_edit %}
+        <input type="hidden" name="existing_profile_pk" value="{{ item.pk }}">
+        {% endif %}
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <h2 class="form-section-title">Identifikace</h2>
+
+        <div class="field-row">
+            {{ form.ico_value.label_tag }}
+            <div class="field-input">
+                <div class="input-with-actions">
+                    {{ form.ico_value }}
+                    <button type="button" class="btn secondary" id="ares-load-btn" title="Načte název firmy a adresu provozovny z veřejného registru ARES podle zadaného IČO.">Načíst z ARES</button>
+                </div>
+                {{ form.ico_value.errors }}
+            </div>
+        </div>
+
+        <div class="field-row">
+            {{ form.name_value.label_tag }}
+            <div class="field-input">
+                {{ form.name_value }}
+                {{ form.name_value.errors }}
+            </div>
+        </div>
+
+        {% if not form.is_municipality.field.disabled %}
+            <div class="field-row">
+                <label for="{{ form.is_municipality.id_for_label }}">{{ form.is_municipality.label }}</label>
+                <div class="field-input field-input--checkbox-narrow">
+                    {{ form.is_municipality }}
+                    {{ form.is_municipality.errors }}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if not form.is_collection_yard.field.disabled %}
+            <div class="field-row">
+                <label for="{{ form.is_collection_yard.id_for_label }}">{{ form.is_collection_yard.label }}</label>
+                <div class="field-input field-input--checkbox-narrow">
+                    {{ form.is_collection_yard }}
+                    {% if form.is_collection_yard.help_text %}<small>{{ form.is_collection_yard.help_text }}</small>{% endif %}
+                    {{ form.is_collection_yard.errors }}
+                </div>
+            </div>
+        {% endif %}
+        {% if not form.yard_allow_pruvodka.field.disabled %}
+            <div class="field-row">
+                <label for="{{ form.yard_allow_pruvodka.id_for_label }}">{{ form.yard_allow_pruvodka.label }}</label>
+                <div class="field-input field-input--checkbox-narrow">
+                    {{ form.yard_allow_pruvodka }}
+                    {% if form.yard_allow_pruvodka.help_text %}<small>{{ form.yard_allow_pruvodka.help_text }}</small>{% endif %}
+                    {{ form.yard_allow_pruvodka.errors }}
+                </div>
+            </div>
+        {% endif %}
+        {% if not form.yard_allow_matrix.field.disabled %}
+            <div class="field-row">
+                <label for="{{ form.yard_allow_matrix.id_for_label }}">{{ form.yard_allow_matrix.label }}</label>
+                <div class="field-input field-input--checkbox-narrow">
+                    {{ form.yard_allow_matrix }}
+                    {% if form.yard_allow_matrix.help_text %}<small>{{ form.yard_allow_matrix.help_text }}</small>{% endif %}
+                    {{ form.yard_allow_matrix.errors }}
+                </div>
+            </div>
+        {% endif %}
+        {% if not form.yard_svoz_dispatch_group.field.disabled %}
+            <div class="field-row">
+                {{ form.yard_svoz_dispatch_group.label_tag }}
+                <div class="field-input">
+                    {{ form.yard_svoz_dispatch_group }}
+                    {% if form.yard_svoz_dispatch_group.help_text %}<small>{{ form.yard_svoz_dispatch_group.help_text }}</small>{% endif %}
+                    {{ form.yard_svoz_dispatch_group.errors }}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if not form.nitropodnikovy_subjekt.field.disabled %}
+            <div class="field-row">
+                <label for="{{ form.nitropodnikovy_subjekt.id_for_label }}">{{ form.nitropodnikovy_subjekt.label }}</label>
+                <div class="field-input field-input--checkbox-narrow">
+                    {{ form.nitropodnikovy_subjekt }}
+                    {% if form.nitropodnikovy_subjekt.help_text %}<small>{{ form.nitropodnikovy_subjekt.help_text }}</small>{% endif %}
+                    {{ form.nitropodnikovy_subjekt.errors }}
+                </div>
+            </div>
+        {% endif %}
+
+        {% if not form.system_generates_zpo.field.disabled %}
+            <div class="field-row">
+                <label for="{{ form.system_generates_zpo.id_for_label }}">{{ form.system_generates_zpo.label }}</label>
+                <div class="field-input field-input--checkbox-narrow">
+                    {{ form.system_generates_zpo }}
+                    {% if form.system_generates_zpo.help_text %}<small>{{ form.system_generates_zpo.help_text }}</small>{% endif %}
+                    {{ form.system_generates_zpo.errors }}
+                </div>
+            </div>
+        {% endif %}
+
+        <h2 class="form-section-title">Adresy</h2>
+
+        <div class="field-row">
+            {{ form.facility_address_value.label_tag }}
+            <div class="field-input">
+                {{ form.facility_address_value }}
+                <datalist id="facility-address-suggestions"></datalist>
+                <small>Formát: Ulice č.p. Město (automaticky se normalizuje).</small>
+                {{ form.facility_latitude }}
+                {{ form.facility_longitude }}
+                {{ form.facility_address_value.errors }}
+            </div>
+        </div>
+
+        <div class="field-row">
+            {{ form.contact_phone.label_tag }}
+            <div class="field-input">
+                {{ form.contact_phone }}
+                {% if form.contact_phone.help_text %}<small>{{ form.contact_phone.help_text }}</small>{% endif %}
+                {{ form.contact_phone.errors }}
+            </div>
+        </div>
+
+        <div class="field-row">
+            {{ form.contact_note.label_tag }}
+            <div class="field-input">
+                {{ form.contact_note }}
+                {{ form.contact_note.errors }}
+            </div>
+        </div>
+
+        <div class="field-row">
+            {{ form.fulfillment_address_value.label_tag }}
+            <div class="field-input">
+                <div class="field-toolbar">
+                    <button type="button" class="btn secondary" id="map-open-btn" title="Otevře mapu pro výběr souřadnic adresy plnění; adresa a ORP/IČZÚJ se mohou dopočítat.">Vybrat polohu na mapě</button>
+                </div>
+                {{ form.fulfillment_address_value }}
+                <datalist id="fulfillment-address-suggestions"></datalist>
+                <small>Formát: Ulice, č.p. Město nebo Město (vesnice) č.p.</small>
+                {{ form.fulfillment_latitude }}
+                {{ form.fulfillment_longitude }}
+                {{ form.fulfillment_address_value.errors }}
+            </div>
+        </div>
+
+        <div class="field-row">
+            {{ form.fulfillment_orp.label_tag }}
+            <div class="field-input">
+                {{ form.fulfillment_orp }}
+                {% if form.fulfillment_orp.help_text %}<small>{{ form.fulfillment_orp.help_text }}</small>{% endif %}
+                {{ form.fulfillment_orp.errors }}
+            </div>
+        </div>
+
+        <div class="field-row">
+            {{ form.fulfillment_iczuj.label_tag }}
+            <div class="field-input">
+                {{ form.fulfillment_iczuj }}
+                {% if form.fulfillment_iczuj.help_text %}<small>{{ form.fulfillment_iczuj.help_text }}</small>{% endif %}
+                {{ form.fulfillment_iczuj.errors }}
+            </div>
+        </div>
+
+        <h2 class="form-section-title">PIO (profilová šablona)</h2>
+        <p class="dash-muted" style="margin:0 0 12px;font-size:0.9rem;">
+            Údaje pro jednorázové vygenerování šablony — po uložení subjektu se neukládají.
+            Předvyplněná je jen adresa provozovny (zrcadlo níže). Druh odpadu a koncovka pro stažení šablony
+            se berou z prvního řádku v části „Povolené odpady a koncovky“, pokud je zde nevyberete.
+        </p>
+
+        <div class="field-row">
+            <label for="pio-facility-input">Adresa (= provozovna)</label>
+            <div class="field-input">
+                <input
+                    type="text"
+                    id="pio-facility-input"
+                    class="same-as-facility-mirror"
+                    list="facility-address-suggestions"
+                    autocomplete="street-address"
+                    placeholder="Totéž co adresa provozovny výše — lze měnit zde i v sekci Adresy"
+                >
+                <small>Stejný údaj jako „Adresa provozovny“ v sekci výše; úpravy se synchronizují oběma směry.</small>
+            </div>
+        </div>
+        <div class="field-row">{{ form.pio_officer_name.label_tag }}<div class="field-input">{{ form.pio_officer_name }}{{ form.pio_officer_name.errors }}</div></div>
+        <div class="field-row">{{ form.pio_officer_phone.label_tag }}<div class="field-input">{{ form.pio_officer_phone }}{{ form.pio_officer_phone.errors }}</div></div>
+        <div class="field-row">{{ form.pio_officer_email.label_tag }}<div class="field-input">{{ form.pio_officer_email }}{{ form.pio_officer_email.errors }}</div></div>
+        <div id="pio-subject-block">
+            <div class="field-row">{{ form.pio_waste_type.label_tag }}<div class="field-input">{{ form.pio_waste_type }}{{ form.pio_waste_type.errors }}</div></div>
+            <div class="field-row">{{ form.pio_suffix.label_tag }}<div class="field-input">{{ form.pio_suffix }}{{ form.pio_suffix.errors }}</div></div>
+        </div>
+        {{ form.pio_outside_map_lat }}
+        {{ form.pio_outside_map_lng }}
+        <details class="pio-outside-details">
+            <summary>Odpad mimo provozovnu — mapa</summary>
+            <div class="field-toolbar pio-outside-details__toolbar">
+                <button type="button" class="btn secondary" id="pio-outside-map-btn">Označit na mapě (podle adresy plnění)</button>
+            </div>
+            <div class="field-row">{{ form.pio_outside_map_orp.label_tag }}<div class="field-input">{{ form.pio_outside_map_orp }}{{ form.pio_outside_map_orp.errors }}</div></div>
+            <div class="field-row">{{ form.pio_outside_map_iczuj.label_tag }}<div class="field-input">{{ form.pio_outside_map_iczuj }}{{ form.pio_outside_map_iczuj.errors }}</div></div>
+        </details>
+        {% if role_access.can_export_name_subject_pio_profile %}
+        <div class="field-row">
+            <label>Stažení</label>
+            <div class="field-input">
+                <button type="button" class="btn" id="pio-profile-excel-btn">Vygenerovat PIO (profilová šablona)</button>
+                <small>Předvyplněný soubor (.xlsx) z <strong>aktuálních hodnot</strong> ve formuláři (uložení před tím není nutné). Tabulku „Povolené odpady a koncovky“ tímto tlačítkem neměníte — řádek přidáte ručně a uložíte subjekt.</small>
+            </div>
+        </div>
+        {% endif %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Potvrdit propojení{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Propojení účtu</h1>
+    <p style="font-size:1.2rem;font-weight:700;letter-spacing:0.06em;text-align:center;margin:12px 0 6px;color:var(--color-primary-dark);">Kód pozvánky</p>
+    <p style="font-size:1.75rem;font-weight:800;letter-spacing:0.1em;text-align:center;margin:0 0 20px;font-family:Consolas,monospace;">{{ token.display_code }}</p>
+    {% if already_linked %}
+    <p>Tento účet je již propojen s profilem řidiče <strong>{{ token.driver.last_name }} {{ token.driver.first_name }}</strong>.</p>
+    <p><a class="btn" href="{% url 'driver_portal:day_list' %}">Přejít do portálu</a></p>
+    {% else %}
+    <p style="color:var(--color-muted); font-size:0.95rem; margin-bottom:14px;">Kód z QR patří <strong>tomuto řidiči v systému</strong> (osoba z dispečinku). <strong>Jméno pod ním</strong> je to, k čemu se mobilní účet sváže.</p>
+    <div style="background:var(--color-surface-muted, #f4f4f4); padding:14px; border-radius:8px; margin-bottom:16px;">
+        <p style="margin:0 0 10px;"><strong>Řidič z pozvánky (QR):</strong><br>
+        {{ token.driver.last_name }} {{ token.driver.first_name }} <span style="color:var(--color-muted);">({{ token.driver.personal_number }})</span></p>
+        <p style="margin:0;"><strong>V tomto prohlížeči jste přihlášeni jako:</strong><br>
+        <span style="font-family:Consolas,monospace;">{{ request.user.username }}</span></p>
+    </div>
+    <p>Potvrzením propojíte právě účet <strong>{{ request.user.username }}</strong> s řidičem výše. Ten pak uvidí v portálu jízdy přiřazené <em>tomuto profilu řidiče</em>.</p>
+    <p style="color:var(--color-muted); font-size:0.95rem;">Nejste to vy? (např. je tu ještě přihlášený kolega) — <strong>nejdřív se odhlaste</strong> a přihlaste účtem správného řidiče, nebo použijte tlačítko níže.</p>
+    <form method="post" style="margin:18px 0 12px;">
+        {% csrf_token %}
+        <button type="submit" class="btn" style="padding:14px 22px;font-size:1.05rem;">Potvrdit propojení</button>
+    </form>
+    <form method="post" action="{% url 'driver_portal:pair_logout_retry' token.secret %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn secondary" style="padding:12px 18px;">Odhlásit se a přihlásit jiný účet k tomuto QR</button>
+    </form>
+    {% endif %}
+</div>
+{% endblock %}

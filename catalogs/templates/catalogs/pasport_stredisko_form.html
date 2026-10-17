@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Úprava střediska{% else %}Nové středisko{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Úprava střediska{% else %}Nové středisko{% endif %}</h1>
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="field-row">
+            {{ field.label_tag }}
+            <div class="field-input">{{ field }}{{ field.errors }}</div>
+        </div>
+        {% endfor %}
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'catalogs:pasport_stredisko_list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

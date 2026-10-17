@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Druhy odpadu{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Druhy odpadu</h1>
+    <div class="actions">
+        <a class="btn" href="{% url 'catalogs:waste_type_create' %}">Nová položka</a>
+        <a class="btn secondary" href="{% url 'catalogs:waste_type_import' %}">Načíst z Katalog-odpadu-2025.xlsx</a>
+    </div>
+    <form method="get" style="margin-top: 12px;" id="waste-type-filter-form">
+        <p>
+            <label for="q">Vyhledat podle kódu nebo názvu</label>
+            <input id="q" name="q" type="text" value="{{ q|default:'' }}" placeholder="např. 16 01 03, 160103 nebo text odpadu">
+        </p>
+        <div class="actions">
+            <button class="btn" type="submit">Filtrovat</button>
+            <a class="btn secondary" href="{% url 'catalogs:waste_type_list' %}">Reset</a>
+        </div>
+    </form>
+    <p><small>Nalezeno položek: {{ results_count }}</small></p>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const form = document.getElementById("waste-type-filter-form");
+    const input = document.getElementById("q");
+    if (!form || !input) return;
+
+    let timer = null;
+    input.addEventListener("input", function () {
+        clearTimeout(timer);
+        timer = setTimeout(function () {
+            form.submit();
+        }, 300);
+    });
+});
+</script>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Kód odpadu</th>
+                <th>Popis / název</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{% if item.code_display %}<code>{{ item.code_display }}</code>{% endif %}</td>
+                <td>{{ item.value_display }}</td>
+                <td class="actions">
+                    <a class="btn" href="{% url 'catalogs:waste_type_edit' item.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'catalogs:waste_type_delete' item.pk %}">Smazat</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">Zatím bez položek.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat jízdu #{{ item.pk }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat jízdu (bezpečně)</h1>
+    <p>Jízda se <strong>neodstraní z databáze</strong> — bude archivována a zůstane dohledatelná v seznamu smazaných jízd.</p>
+
+    <table style="margin: 1rem 0;">
+        <tbody>
+            <tr><th>Číslo listu/jízdy</th><td>{{ item.snd_cislo_listu|default:"—" }}</td></tr>
+            <tr><th>Datum jízdy</th><td>{{ item.drive_date|date:"d.m.Y"|default:"—" }}</td></tr>
+            <tr><th>Název F/P</th><td>{{ item.name_snapshot|default:"—" }}</td></tr>
+            <tr><th>RZ</th><td>{{ item.vehicle_rz_snapshot|default:"—" }}</td></tr>
+            <tr><th>Řidič</th><td>{{ item.driver_snapshot|default:"—" }}</td></tr>
+        </tbody>
+    </table>
+
+    <form method="post">
+        {% csrf_token %}
+        <label for="soft-delete-reason">Důvod smazání <span style="color:#b42318;">*</span></label>
+        <textarea
+            id="soft-delete-reason"
+            name="reason"
+            rows="4"
+            maxlength="{{ max_reason_len }}"
+            required
+            placeholder="Uveďte důvod smazání (min. {{ min_reason_len }} znaků)…"
+            style="width:100%; max-width:40rem;"
+        >{{ reason_value }}</textarea>
+        <p><small>Povinné pole, {{ min_reason_len }}–{{ max_reason_len }} znaků.</small></p>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:1rem;">
+            <button type="submit" class="btn" style="border-color:#b42318; background:#b42318; color:#fff;">Smazat jízdu (bezpečně)</button>
+            <a class="btn secondary" href="{% url 'waste_docs:detail' item.pk %}">Zrušit</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

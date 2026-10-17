@@ -1,0 +1,130 @@
+/* Pořadí zastávek jízdy — modal Detail jízdy */
+
+.dash-rides-modal__header-actions .ride-route-reorder__header-btn {
+    padding: 6px 10px;
+    font-size: 0.82rem;
+    border-color: #bfd0c1;
+    background: #f4f8f5;
+    color: var(--color-primary, #2d7c42);
+}
+.dash-rides-modal__header-actions .ride-route-reorder__header-btn:hover {
+    background: #e8f5ec;
+}
+.dash-rides-modal__header-actions .dash-ride-reorder-toggle.is-active {
+    background: #eef6ef;
+    border-color: var(--color-primary, #2d7c42);
+}
+
+.dash-ride-reorder-notice {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #fff8f0;
+    border: 1px solid #e8c9a0;
+    font-size: 0.9rem;
+    line-height: 1.45;
+}
+.dash-ride-reorder-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.dash-ride-reorder-toolbar .btn {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+}
+.dash-ride-reorder-feedback {
+    margin: 0 0 10px;
+    font-size: 0.9rem;
+    color: var(--color-primary, #2d7c42);
+}
+.dash-ride-reorder-feedback.is-error {
+    color: #9b1c1c;
+}
+.dash-ride-reorder-col-handle {
+    width: 4.5rem;
+    text-align: center;
+    vertical-align: middle;
+}
+.dash-ride-reorder-handle-wrap {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+.dash-ride-reorder-up,
+.dash-ride-reorder-down {
+    display: none;
+    padding: 0 4px;
+    min-width: 1.6rem;
+    height: 1.25rem;
+    line-height: 1;
+    font-size: 0.75rem;
+    border: 1px solid #bfd0c1;
+    border-radius: 4px;
+    background: #f4f8f5;
+    color: var(--color-primary, #2d7c42);
+    cursor: pointer;
+}
+.dash-ride-reorder-root.is-reorder-mode .dash-ride-reorder-up,
+.dash-ride-reorder-root.is-reorder-mode .dash-ride-reorder-down {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+.dash-ride-reorder-up:hover:not(:disabled),
+.dash-ride-reorder-down:hover:not(:disabled) {
+    background: #e8f5ec;
+}
+.dash-ride-reorder-up:disabled,
+.dash-ride-reorder-down:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+.dash-ride-reorder-handle {
+    cursor: grab;
+    color: var(--color-muted);
+    user-select: none;
+    font-size: 1.1rem;
+    line-height: 1;
+    touch-action: none;
+}
+.dash-ride-reorder-handle:active {
+    cursor: grabbing;
+}
+.dash-ride-reorder-root.is-reorder-mode .dash-ride-reorder-handle {
+    color: var(--color-primary, #2d7c42);
+}
+body.dash-ride-reorder-dragging {
+    user-select: none;
+    cursor: grabbing;
+}
+body.dash-ride-reorder-dragging .dash-ride-reorder-handle {
+    cursor: grabbing;
+}
+.dash-ride-reorder-row--dragging {
+    opacity: 0.55;
+    background: #eef6ef;
+    pointer-events: none;
+}
+.dash-ride-detail-modal--reorder-editing .dash-rides-modal__backdrop {
+    cursor: default;
+}
+.dash-ride-route-order {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.5rem;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: #eef6ef;
+    color: var(--color-primary, #2d7c42);
+    font-weight: 600;
+    font-size: 0.88rem;
+}
+.dash-ride-reorder-root:not(.is-reorder-mode) .dash-ride-reorder-col-handle,
+.dash-ride-reorder-root:not(.is-reorder-mode) .dash-ride-reorder-col-seq {
+    display: none;
+}

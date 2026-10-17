@@ -1,0 +1,598 @@
+{% extends "base.html" %}
+{% load static %}
+{% load pruvodka_tags %}
+
+{% block title %}{{ page_title|default:"Nová jízda" }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .jedis-ico-lookup-create-hint { margin: 10px 0 0; font-size: 0.95rem; line-height: 1.45; }
+    .jedis-ico-lookup-create-hint .btn { margin-left: 8px; vertical-align: middle; padding: 7px 12px; font-size: 0.9rem; }
+    .jedis-pruvodka-split {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(17rem, 24rem);
+        gap: clamp(18px, 2.5vw, 28px);
+        align-items: start;
+    }
+    .jedis-pruvodka-split__aside {
+        position: sticky;
+        top: 0.75rem;
+    }
+    @media (max-width: 960px) {
+        .jedis-pruvodka-split {
+            grid-template-columns: 1fr;
+        }
+        .jedis-pruvodka-split__aside {
+            position: static;
+        }
+    }
+    .jedis-pruvodka-attachments input[type="file"] {
+        width: 100%;
+        max-width: 36rem;
+        padding: 6px 0;
+        font-size: 0.9rem;
+    }
+    .form-grid .form-actions {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: #f4faf5;
+        border-top: 2px solid var(--color-border);
+        padding: 14px 24px;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        justify-content: center;
+        /* Nad ZPO dockem (z-index 8000), ať „Uložit“ zůstane klikatelné. */
+        z-index: 9000;
+        box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+    }
+    .form-grid {
+        padding-bottom: 70px;
+    }
+    .jedis-pruvodka-form-error-summary {
+        margin: 0 0 16px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        background: #fff0f0;
+        border: 1px solid #e0a0a0;
+        color: #5a1a1a;
+        font-size: 0.95rem;
+        line-height: 1.45;
+    }
+    .jedis-pruvodka-form-error-summary ul {
+        margin: 8px 0 0;
+        padding-left: 1.25rem;
+    }
+    .field-row.field-row--has-error {
+        border-left: 3px solid #c62828;
+        padding-left: 10px;
+        background: #fff8f8;
+        border-radius: 4px;
+    }
+    .field-row.field-row--has-error .errorlist {
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    {% if not is_edit %}
+    <div class="jedis-pruvodka-split">
+    <div class="jedis-pruvodka-split__main">
+    {% endif %}
+    <h1>{{ page_title|default:"Nová jízda" }}</h1>
+    {% if show_follow_up_banner %}
+    <p class="jedis-follow-up-banner" style="padding:10px 12px; border-radius:8px; background:var(--color-surface-alt, #f4f6f4); border:1px solid var(--color-border); font-size:0.95rem;">
+        <strong>Navazující jízda (2. část):</strong>
+        subjekt, adresa plnění, provozovna, telefon, smlouva, odpad, koncovka a <strong>RZ</strong> se předvyplní z 1. části (zkontrolujte). Pokud 1. část jela jiným druhem vozidla (např. 3H místo H), zaškrtněte <strong>ruční změnu RZ</strong> a zvolte správné vozidlo. <strong>Řidiče</strong> zvolte znovu — nabídka je podle činnosti a data jízdy. <strong>Datum jízdy</strong> a případně kontejnery / poznámku doplňte podle aktuální jízdy. Vazba na čekající záznam zůstane po uložení.
+        <strong>Navazující druh činnosti</strong> vždy zvolte v poli <strong>Činnost</strong> níže — jde o stejný číselník jako u běžné jízdy, u dokončení návaznosti je nabídka záměrně omezená na přípustné návaznosti z 1. části.
+    </p>
+    {% endif %}
+    {% if is_blank_pruvodka %}
+    <p class="jedis-follow-up-banner" style="padding:10px 12px; border-radius:8px; background:#fff8e6; border:1px solid #e6c200; font-size:0.95rem;">
+        <strong>Bianko průvodka</strong> — doplňte údaje o jízdě. Číslo listu (SND) je již přiřazené na vytištěné průvodce.
+    </p>
+    {% endif %}
+    <p>{{ form_intro|default:"Vyplňte údaje jízdy a uložte záznam." }}</p>
+    <form method="post" enctype="multipart/form-data" class="form-grid form-grid--wide" novalidate>
+        {% csrf_token %}
+        {% if svoz_task_active_pk %}
+        <input type="hidden" name="svoz_task" value="{{ svoz_task_active_pk }}">
+        {% endif %}
+        {% if yard_hazard_request_active_pk %}
+        <input type="hidden" name="yard_hazard_request" value="{{ yard_hazard_request_active_pk }}">
+        {% endif %}
+        {% if yard_hazard_request_active_pk %}
+        <p class="jedis-ico-lookup-create-hint" style="margin: 0 0 12px; border-left: 3px solid #d4a017; padding-left: 10px; background: #fff8e6;">
+            <strong>Nebezpečný odpad ze dvora</strong> — po uložení se požadavek označí jako vyřízený a zmizí z fronty na dashboardu.
+        </p>
+        {% endif %}
+        {% if customer_request_active_pk %}
+        <input type="hidden" name="customer_request" value="{{ customer_request_active_pk }}">
+        {% endif %}
+        {% if customer_request_active %}
+        {% with vk_label=customer_request_active|customer_request_effective_vehicle_kind_label %}
+        {% if vk_label %}
+        <p class="jedis-ico-lookup-create-hint" style="margin: 0 0 12px; border-left: 3px solid #86b6ff; padding-left: 10px; background: #eef5ff;">
+            <strong>Požadovaný druh vozidla:</strong> {{ vk_label }} — RZ a řidič jsou předvybráni podle dostupnosti; zkontrolujte.
+        </p>
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+        {% if customer_request_active and customer_request_active.has_follow_up %}
+        <p class="jedis-ico-lookup-create-hint" style="margin: 0 0 12px; border-left: 3px solid #86b6ff; padding-left: 10px;">
+            Požadavek <strong>#{{ customer_request_active.pk }}</strong> má navazující činnost
+            {% if customer_request_active.follow_up_target_date %}
+            (termín {{ customer_request_active.follow_up_target_date|date:"j. n. Y" }}) — po uložení primární jízdy lze založit navazující z detailu průvodky.
+            {% else %}
+            — termín v požadavku není uveden; po uložení primární jízdy založte navazující z detailu průvodky až bude znám.
+            {% endif %}
+        </p>
+        {% endif %}
+
+        <p id="jedis-vehicle-kind-constraint-hint" class="jedis-ico-lookup-create-hint" hidden
+           style="margin: 0 0 12px; border-left: 3px solid #d4a017; padding-left: 10px; background: #fff8e6;">
+        </p>
+
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        {% if form.errors %}
+        <div id="pruvodka-form-error-summary" class="jedis-pruvodka-form-error-summary" role="alert">
+            <strong>Jízdu nelze uložit</strong>
+            <ul>
+                {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                {% if form.fulfillment_address_value.errors %}
+                <li><em>Tip: u zvolené činnosti vyplňte adresu plnění — můžete použít adresu subjektu z pole níže ve formuláři.</em></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <h2 class="form-section-title">{% if yard_standalone_pruvodka %}Činnost a datum jízdy{% else %}Činnost a odpad{% endif %}</h2>
+
+        {% if yard_standalone_pruvodka %}
+        <p class="jedis-ico-lookup-create-hint" style="margin-bottom:12px;">
+            <strong>Jízda ze sběrného dvora:</strong> nejprve zvolte <strong>druh odpadu a koncovku</strong> (hned pod datem). Nabídka odpovídá řádkům se zapnutým <strong>Svoz (matice)</strong>. Datum jízdy je dnešní a nelze ho měnit. Činnost v záznamu jízdy a omezení RZ vozidla se vezmou z tohoto řádku.
+        </p>
+        {% endif %}
+        <div class="field-row">
+            {% if yard_standalone_pruvodka %}
+            <label for="{{ form.activity.id_for_label }}">Činnost</label>
+            {% else %}
+            {{ form.activity.label_tag }}
+            {% endif %}
+            <div class="field-input">
+                {{ form.activity }}
+                {% if yard_standalone_pruvodka %}<small>Určuje se automaticky podle zvoleného odpadu a koncovky.</small>{% endif %}
+                {% if form.activity.help_text %}<small>{{ form.activity.help_text }}</small>{% endif %}
+                {{ form.activity.errors }}
+                <p id="jedis-follow-up-activity-hint" class="jedis-follow-up-activity-hint" style="display:none;margin:8px 0 0;font-size:0.95rem;line-height:1.45;max-width:42rem;">
+                    <strong>Návaznost:</strong> navazující druh činnosti vyberte v poli <strong>Činnost</strong> výše (stejné položky jako v číselníku činností). Po výběru záznamu v „Dokončit otevřenou návaznost“ může být seznam zúžen jen na přípustné návaznosti z 1. části.
+                </p>
+            </div>
+        </div>
+        {% if not is_edit %}
+        <div class="field-row">
+            {{ form.drive_date.label_tag }}
+            <div class="field-input">
+                {{ form.drive_date }}
+                {% if yard_standalone_pruvodka %}<small>Dnešní datum (pro tento režim nelze měnit).</small>{% endif %}
+                {{ form.drive_date.errors }}
+            </div>
+        </div>
+        {% endif %}
+        {% if not is_edit %}
+        <div class="field-row">
+            <label for="ride-template-select">Šablona jízdy</label>
+            <div class="field-input">
+                <select id="ride-template-select">
+                    <option value="">--- vyberte šablonu ---</option>
+                </select>
+                <div style="margin-top:8px;">
+                    <button type="button" id="ride-template-apply-btn" class="btn secondary">Použít šablonu</button>
+                </div>
+                <small>Šablony se nabízejí podle všech druhů vozidla u vybrané RZ (nebo podle činnosti). Uživatelé s přístupem ke všem jízdám vidí šablony všech účtů. Nepřepisuje se datum jízdy a řidič.</small>
+            </div>
+        </div>
+        {% endif %}
+        {% if not is_edit %}
+        <div class="field-row">
+            {{ form.repeat_count.label_tag }}
+            <div class="field-input">
+                {{ form.repeat_count }}
+                <small>Výchozí je 1. Např. 3 = založí se 3 stejné jízdy.</small>
+                {{ form.repeat_count.errors }}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if yard_standalone_pruvodka %}
+        <h2 class="form-section-title">Odpad a koncovka</h2>
+
+        <div data-field-key="waste_type">
+            <div class="field-row">
+                {{ form.waste_type.label_tag }}
+                <div class="field-input">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <input id="waste-type-combobox" type="text" placeholder="Kód nebo název odpadu (např. 16 01 03)" style="flex:1 1 auto;">
+                        <button type="button" id="waste-type-clear" class="btn secondary" title="Smazat výběr odpadu" aria-label="Smazat výběr odpadu">x</button>
+                    </div>
+                    <datalist id="waste-type-datalist"></datalist>
+                    {{ form.waste_type }}
+                    {{ form.waste_type.errors }}
+                </div>
+            </div>
+
+            <div class="field-row">
+                {{ form.waste_code_display.label_tag }}
+                <div class="field-input">
+                    {{ form.waste_code_display }}
+                    {{ form.waste_code_display.errors }}
+                </div>
+            </div>
+
+            <div class="field-row">
+                {{ form.waste_category_display.label_tag }}
+                <div class="field-input">
+                    {{ form.waste_category_display }}
+                    {{ form.waste_category_display.errors }}
+                </div>
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="suffix">
+            {{ form.suffix.label_tag }}
+            <div class="field-input">
+                {{ form.suffix }}
+                <small>Koncovky podle řádků <strong>matice svozu</strong> a adresy plnění (vzdálenost). Nejprve vyberte druh odpadu.</small>
+                <small id="suffix-filter-note" style="color: #a61c1c;"></small>
+                {{ form.suffix.errors }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="field-row" data-field-key="driver">
+            {{ form.driver.label_tag }}
+            <div class="field-input">
+                <input id="driver-combobox" type="text" autocomplete="off" placeholder="-----" title="Řidič podle činnosti — psaním zužujete seznam, šipkami nebo kliknutím vyberete">
+                <datalist id="driver-datalist"></datalist>
+                {{ form.driver }}
+                {% if form.driver.help_text %}<small>{{ form.driver.help_text }}</small>{% endif %}
+                {% if not is_edit %}<small>Povinné — vyberte řidiče ze seznamu podle činnosti a data jízdy.</small>{% endif %}
+                <small id="driver-hint"></small>
+                {{ form.driver.errors }}
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="vehicle_rz">
+            {{ form.vehicle_rz.label_tag }}
+            <div class="field-input">
+                <input id="vehicle-rz-combobox" type="text" autocomplete="off" placeholder="-----" title="RZ podle činnosti — po výběru řidiče se nabídka může zúžit">
+                <datalist id="vehicle-rz-datalist"></datalist>
+                {{ form.vehicle_rz }}
+                {% if form.vehicle_rz.help_text %}<small>{{ form.vehicle_rz.help_text }}</small>{% endif %}
+                {{ form.vehicle_rz.errors }}
+            </div>
+        </div>
+
+        {% if show_follow_up_banner and not is_edit %}
+        <div class="field-row" data-field-key="follow_up_vehicle_rz_manual" id="follow-up-vehicle-rz-manual-row">
+            <label for="{{ form.follow_up_vehicle_rz_manual.id_for_label }}">{{ form.follow_up_vehicle_rz_manual.label }}</label>
+            <div class="field-input field-input--checkbox-narrow">
+                {{ form.follow_up_vehicle_rz_manual }}
+                {% if form.follow_up_vehicle_rz_manual.help_text %}<small>{{ form.follow_up_vehicle_rz_manual.help_text }}</small>{% endif %}
+                {{ form.follow_up_vehicle_rz_manual.errors }}
+            </div>
+        </div>
+        {% else %}
+        {{ form.follow_up_vehicle_rz_manual }}
+        {% endif %}
+
+        {% if is_edit %}
+        <div class="field-row" data-field-key="container_passport">
+            {{ form.container_passport.label_tag }}
+            <div class="field-input">
+                {{ form.container_passport }}
+                {% if form.container_passport.help_text %}<small>{{ form.container_passport.help_text }}</small>{% endif %}
+                {{ form.container_passport.errors }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="field-row" data-field-key="container_1">
+            {{ form.container_number.label_tag }}
+            <div class="field-input">
+                {{ form.container_number }}
+                {{ form.container_number.errors }}
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="container_2">
+            {{ form.container_number_2.label_tag }}
+            <div class="field-input">
+                {{ form.container_number_2 }}
+                {{ form.container_number_2.errors }}
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="contact_note">
+            {{ form.contact_note.label_tag }}
+            <div class="field-input">
+                {{ form.contact_note }}
+                {{ form.contact_note.errors }}
+            </div>
+        </div>
+
+        <h2 class="form-section-title">Subjekt a adresa plnění</h2>
+
+        {% if is_edit %}
+        <div class="field-row">
+            {{ form.drive_date.label_tag }}
+            <div class="field-input">
+                {{ form.drive_date }}
+                {{ form.drive_date.errors }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="field-row" data-field-key="name">
+            {{ form.ico_lookup.label_tag }}
+            <div class="field-input">
+                {{ form.ico_lookup }}
+                <datalist id="ico-lookup-list"></datalist>
+                <small>
+                    Zadejte název nebo IČO a <strong>vyberte subjekt z našeptávače</strong> (povinné pro uložení).
+                    Nový subjekt se zakládá v číselníku <strong>Názvy F/P osoby</strong> s vyplněným polem IČO — psaní IČO sem ho neuloží.
+                </small>
+                {% if can_edit_name_subject_pairs %}
+                <div style="margin-top: 8px;">
+                    <button type="button" class="btn secondary" id="jedis-edit-subject-pairs-btn" title="Upravit páry odpad–koncovka u vybraného subjektu (po výběru z našeptávače)">Upravit páry odpad–koncovka</button>
+                    <small style="display: block; margin-top: 6px; max-width: 42rem; line-height: 1.45;">
+                        Nejdřív vyberte subjekt z našeptávače (klik na řádek v seznamu), pak tlačítkem upravíte páry odpad–koncovka bez opuštění jízdy.
+                        Po uložení se nabídka koncovek v tomto formuláři sama obnoví.
+                    </small>
+                </div>
+                {% endif %}
+                <p id="jedis-subject-open-followups-hint" class="jedis-subject-open-followups-hint" hidden style="margin:10px 0 0;font-size:0.95rem;line-height:1.45;max-width:44rem;padding:8px 10px;border-radius:8px;background:var(--color-surface-alt, #f4f6f4);border:1px solid var(--color-border);"></p>
+                {% if can_edit_name_subject_pairs %}
+                    <p id="jedis-ico-lookup-create-hint" class="jedis-ico-lookup-create-hint" hidden>
+                        V číselníku F/P nic nenalezeno (zkontrolujte, že má subjekt vyplněné IČO v poli IČO, ne jen v názvu).
+                        <a class="btn secondary" href="{% url 'catalogs:name_create' %}">Založit nový subjekt F/P</a>
+                    </p>
+                {% endif %}
+                {{ form.ico_lookup.errors }}
+                {{ form.ico }}
+                {{ form.name }}
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="fulfillment_address">
+            {{ form.fulfillment_address_value.label_tag }}
+            <div class="field-input">
+                <div class="field-toolbar" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+                    <button type="button" class="btn secondary" id="waste-docs-map-open-btn" title="Interaktivní mapa v JeDiS — nastaví adresu plnění">Vybrat polohu na mapě (JeDiS)</button>
+                    <a id="jedis-fulfillment-map-link" class="btn secondary" href="#" target="_blank" rel="noopener noreferrer" title="Stejná adresa v Google Maps (náhled nebo navigace na mobilu)" hidden>Otevřít v Google Maps</a>
+                </div>
+                <div id="pruvodka-pair-address-select-wrap" style="display:none;margin:8px 0;">
+                    <label for="pruvodka-pair-address-select" style="display:block;font-size:0.9rem;margin-bottom:4px;">Adresa z požadavku / páru odpad–koncovka</label>
+                    <select id="pruvodka-pair-address-select" class="form-control" title="Více adres plnění u odpadu — výchozí je z požadavku"></select>
+                    <small>Výchozí je adresa z požadavku; další položky jsou z Povolených odpadů a koncovek.</small>
+                </div>
+                <small style="display:block;margin:6px 0 4px;max-width:42rem;">Tlačítko vlevo zapisuje polohu přímo do formuláře. Odkaz vpravo se zobrazí po vyplnění adresy a pouze ji otevře v externí mapě.</small>
+                {{ form.fulfillment_address_value }}
+                <datalist id="waste-docs-address-suggestions"></datalist>
+                <small>Našeptávač začíná podle města z Nastavení mapy: {{ default_city|default:"Česko" }}</small>
+                {{ form.fulfillment_address_value.errors }}
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="name">
+            {{ form.facility_address_display.label_tag }}
+            <div class="field-input">
+                {{ form.facility_address_display }}
+                {{ form.facility_address_display.errors }}
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="contact_phone">
+            {{ form.contact_phone.label_tag }}
+            <div class="field-input">
+                {{ form.contact_phone }}
+                {{ form.contact_phone.errors }}
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="contract_number">
+            {{ form.contract_number.label_tag }}
+            <div class="field-input">
+                {{ form.contract_number }}
+                {{ form.contract_number.errors }}
+            </div>
+        </div>
+
+        {% if not yard_standalone_pruvodka %}
+        <h2 class="form-section-title">Odpad a koncovka</h2>
+
+        <div data-field-key="waste_type">
+            <div class="field-row">
+                {{ form.waste_type.label_tag }}
+                <div class="field-input">
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <input id="waste-type-combobox" type="text" placeholder="Kód nebo název odpadu (např. 16 01 03)" style="flex:1 1 auto;">
+                        <button type="button" id="waste-type-clear" class="btn secondary" title="Smazat výběr odpadu" aria-label="Smazat výběr odpadu">x</button>
+                    </div>
+                    <datalist id="waste-type-datalist"></datalist>
+                    {{ form.waste_type }}
+                    {{ form.waste_type.errors }}
+                </div>
+            </div>
+
+            <div class="field-row">
+                {{ form.waste_code_display.label_tag }}
+                <div class="field-input">
+                    {{ form.waste_code_display }}
+                    {{ form.waste_code_display.errors }}
+                </div>
+            </div>
+
+            <div class="field-row">
+                {{ form.waste_category_display.label_tag }}
+                <div class="field-input">
+                    {{ form.waste_category_display }}
+                    {{ form.waste_category_display.errors }}
+                </div>
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="suffix">
+            {{ form.suffix.label_tag }}
+            <div class="field-input">
+                {{ form.suffix }}
+                <small>Koncovky podle <strong>druhu odpadu</strong> a adresy plnění (vzdálenost); pokud má subjekt u sebe povolené odpady/koncovky, výběr se s nimi průměje.</small>
+                <small id="suffix-filter-note" style="color: #a61c1c;"></small>
+                {{ form.suffix.errors }}
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="field-row" data-field-key="skip_follow_up_row" style="display: none;">
+            <label for="{{ form.skip_follow_up.id_for_label }}">{{ form.skip_follow_up.label }}</label>
+            <div class="field-input field-input--checkbox-narrow">
+                {{ form.skip_follow_up }}
+                {% if form.skip_follow_up.help_text %}<small>{{ form.skip_follow_up.help_text }}</small>{% endif %}
+                {{ form.skip_follow_up.errors }}
+            </div>
+        </div>
+
+        <div class="field-row" data-field-key="follow_up_pick_row" style="display: none;">
+            <label for="follow-up-pick">Dokončit otevřenou návaznost</label>
+            <div class="field-input">
+                <select id="follow-up-pick" autocomplete="off">
+                    <option value="">— nová jízda bez vazby na 1. část —</option>
+                </select>
+                <small>Combobox s možnostmi první části návaznosti podle činnosti.</small>
+                {{ form.follow_up_parent }}
+                {{ form.follow_up_parent.errors }}
+            </div>
+        </div>
+
+        {% if not is_edit or form.instance.attachments.exists or form.attachment_upload_slots %}
+        <div class="jedis-pruvodka-attachments" id="prilohy-jizdy">
+        <h2 class="form-section-title">Přílohy k jízdě</h2>
+        {% if is_edit and form.instance.attachments.exists %}
+        <div style="margin: 0 0 12px;">
+            <strong>Stávající přílohy:</strong>
+            <ul style="margin: 8px 0 0; padding-left: 1.25rem; line-height: 1.55;">
+                {% for att in form.instance.attachments.all %}
+                <li>
+                    <a href="{{ att.file.url }}" target="_blank" rel="noopener">{{ att.filename_display }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% elif customer_request_active %}
+        {% with cr_atts=customer_request_active.attachments.all %}
+        {% if cr_atts %}
+        <div style="margin: 0 0 12px;">
+            <strong>Přílohy z požadavku #{{ customer_request_active.pk }}</strong>
+            <span class="dash-muted" style="font-size: 0.9rem;"> (po uložení jízdy se zkopírují)</span>
+            <ul style="margin: 8px 0 0; padding-left: 1.25rem; line-height: 1.55;">
+                {% for att in cr_atts %}
+                <li>
+                    <a href="{{ att.file.url }}" target="_blank" rel="noopener">{{ att.filename_display }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% endif %}
+        {% if form.attachment_upload_slots %}
+        <p class="dash-muted" style="margin: 0 0 12px; font-size: 0.95rem; line-height: 1.5; padding: 10px 12px; border-radius: 8px; background: var(--color-surface-alt, #f4f6f4); border: 1px solid var(--color-border);">
+            {% if is_edit %}
+            <strong>Přílohy</strong> jsou volitelné. Můžete doplnit další soubory (celkem max. <strong>3</strong> u jedné jízdy).
+            {% else %}
+            <strong>Přílohy</strong> jsou volitelné. Uloží se u této jízdy a zobrazí se na <strong>detailu jízdy</strong> (odkaz ke stažení).
+            Můžete nahrát až tři soubory (např. smlouva, sken, instrukce).
+            Při <strong>převodu z požadavku</strong> (tlačítko u požadavku) se k jízdě stejně připojí i <strong>kopie příloh</strong> z toho požadavku.
+            {% endif %}
+            <br>
+            <strong>Povolené formáty:</strong> PDF, JPEG, PNG, Word (DOC, DOCX).
+        </p>
+        {% for slot in form.attachment_upload_slots %}
+        <div class="field-row">
+            {% if slot == 1 %}
+            <label for="{{ form.attachment_1.id_for_label }}">{{ form.attachment_1.label }}</label>
+            <div class="field-input">
+                {{ form.attachment_1 }}
+                {{ form.attachment_1.errors }}
+            </div>
+            {% elif slot == 2 %}
+            <label for="{{ form.attachment_2.id_for_label }}">{{ form.attachment_2.label }}</label>
+            <div class="field-input">
+                {{ form.attachment_2 }}
+                {{ form.attachment_2.errors }}
+            </div>
+            {% elif slot == 3 %}
+            <label for="{{ form.attachment_3.id_for_label }}">{{ form.attachment_3.label }}</label>
+            <div class="field-input">
+                {{ form.attachment_3 }}
+                {{ form.attachment_3.errors }}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+        {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn">{% if is_edit %}Uložit změny{% else %}Založit jízdu{% endif %}</button>
+            <a class="btn secondary" href="{% url 'waste_docs:list' %}">Zpět</a>
+        </div>
+    </form>
+    {% if not is_edit %}
+    </div>
+    <aside class="jedis-pruvodka-split__aside" aria-label="Požadavky na svoz">
+        {% include "waste_docs/partials/pruvodka_day_kind_counts.html" %}
+        {% for w in svoz_dispatch_warnings %}
+        <p class="dash-muted" style="margin: 0 0 10px; font-size: 0.9rem; padding: 8px 10px; border-radius: 8px; border: 1px solid #c9a227; background: #fffbeb;">{{ w }}</p>
+        {% endfor %}
+        {% include "waste_docs/partials/svoz_tasks_panel.html" %}
+    </aside>
+    </div>
+    {% endif %}
+</div>
+
+{% if can_edit_name_subject_pairs %}
+<link rel="stylesheet" href="{% static 'catalogs/css/name_subject_form.css' %}">
+{% endif %}
+<link rel="stylesheet" href="{% static 'waste_docs/css/zpo_pairing_dock.css' %}">
+
+{% include "waste_docs/partials/zpo_pairing_dock.html" with dock_title="ZPO + detail jízdy (párování pasů)" %}
+
+<script>
+window.JEDIS_ZPO_PAIRING = { endpoint: "{% url 'waste_docs:zpo_pairing_draft' %}" };
+</script>
+<script src="{% static 'waste_docs/js/zpo_pairing_panel.js' %}"></script>
+<script src="{% static 'core/js/fulfillment_address_field.js' %}"></script>
+
+{% if can_edit_name_subject_pairs %}
+{% include "waste_docs/partials/subject_pairs_edit_modal.html" %}
+<script src="{% static 'catalogs/js/name_subject_waste_combo.js' %}"></script>
+<script src="{% static 'catalogs/js/pair_fulfillment_address_field.js' %}"></script>
+<script src="{% static 'catalogs/js/name_subject_pairs_formset.js' %}"></script>
+<script src="{% static 'catalogs/js/zpo_pair_library.js' %}"></script>
+{% endif %}
+{{ pruvodka_form_config|json_script:"jedis-pruvodka-form-config" }}
+<script type="module" src="{% static 'waste_docs/js/pruvodka/main.js' %}?v=20260910-ful-not-facility"></script>
+{% endblock %}

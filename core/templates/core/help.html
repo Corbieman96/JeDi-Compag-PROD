@@ -1,0 +1,707 @@
+{% extends "base.html" %}
+
+{% block title %}Nápověda | JeDiS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .help-layout {
+        display: grid;
+        grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
+        gap: 16px;
+        align-items: start;
+    }
+    .help-sticky {
+        position: sticky;
+        top: 14px;
+    }
+    .help-search {
+        margin-bottom: 12px;
+    }
+    .help-search input {
+        max-width: 100%;
+    }
+    .help-summary {
+        margin: 0;
+        color: var(--color-muted);
+        font-size: 0.92rem;
+    }
+    .help-credit {
+        margin: 12px 0 0;
+        padding: 10px 12px;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background: #f2f8f3;
+        color: var(--color-primary-dark);
+        font-size: 0.92rem;
+    }
+    .help-credit strong {
+        font-weight: 700;
+    }
+    .help-footer-credit {
+        margin-top: 16px;
+        text-align: center;
+        color: var(--color-muted);
+        font-size: 0.9rem;
+    }
+    .help-nav {
+        margin: 0;
+        padding-left: 1rem;
+        display: grid;
+        gap: 6px;
+    }
+    .help-nav a {
+        text-decoration: none;
+        color: var(--color-primary-dark);
+        font-weight: 600;
+    }
+    .help-section {
+        margin-bottom: 14px;
+        scroll-margin-top: 86px;
+    }
+    .help-section h2 {
+        margin-bottom: 10px;
+    }
+    .help-block {
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+        background: #fbfdfb;
+    }
+    .help-block h3 {
+        margin: 0 0 8px;
+        font-size: 1rem;
+    }
+    .help-block p {
+        margin: 0 0 8px;
+    }
+    .help-block p:last-child {
+        margin-bottom: 0;
+    }
+    .help-tag {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--color-border);
+        font-size: 0.78rem;
+        color: #35553c;
+        background: #f2f8f3;
+        margin-right: 6px;
+        margin-bottom: 4px;
+    }
+    .help-mark {
+        background: #fff0a8;
+        color: #3f3500;
+        border-radius: 3px;
+        padding: 0 2px;
+    }
+    .help-empty {
+        display: none;
+    }
+    .help-empty.is-visible {
+        display: block;
+    }
+    .help-section.is-targeted {
+        outline: 2px solid rgba(45, 124, 66, 0.28);
+        outline-offset: 2px;
+        border-radius: 12px;
+    }
+    .help-steps {
+        margin: 0;
+        padding-left: 1.35rem;
+        display: grid;
+        gap: 10px;
+    }
+    .help-steps li {
+        padding-left: 4px;
+    }
+    .help-steps strong {
+        color: var(--color-primary-dark);
+    }
+    @media (max-width: 980px) {
+        .help-layout {
+            grid-template-columns: 1fr;
+        }
+        .help-sticky {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Nápověda JeDiS</h1>
+    <p class="help-summary">Podrobný manuál ke každodenní práci v aplikaci: průvodky, ZPO, PIO, protokoly, požadavky a zálohy, reporty, portál řidiče, role, číselníky i nastavení.</p>
+    <p class="help-credit"><strong>JeDiS</strong> — <em>Jednoduchý Dispečerský Systém</em> (průvodky, ZPO, PIO, plán svozů, dashboard, číselníky, tisk). <strong>© Holub Stanislav</strong></p>
+</div>
+
+<div class="help-layout">
+    <aside class="card help-sticky">
+        <div class="help-search">
+            <label for="help-search-q"><strong>Fulltext v nápovědě</strong></label>
+            <input type="search" id="help-search-q" placeholder="Hledat: plán svozů, zálohy, reporty, portál, PIO..." autocomplete="off">
+            <small id="help-search-count">Zobrazeno vše.</small>
+        </div>
+        <h2 style="font-size:1rem;">Obsah</h2>
+        <ul class="help-nav">
+            <li><a href="#help-daily-workflow">Denní postup dispečinku</a></li>
+            <li><a href="#help-dashboard">Dashboard</a></li>
+            <li><a href="#help-driver-reassign">Výměna řidiče / RZ</a></li>
+            <li><a href="#help-svoz-yards">Sběrné dvory a plán svozů</a></li>
+            <li><a href="#help-rides">Jízdy</a></li>
+            <li><a href="#help-customer-requests">Požadavky a zálohy</a></li>
+            <li><a href="#help-pruvodky">Průvodky (Excel)</a></li>
+            <li><a href="#help-zpo">ZPO</a></li>
+            <li><a href="#help-pio">PIO</a></li>
+            <li><a href="#help-protokoly">Protokoly (jizda.xlsx)</a></li>
+            <li><a href="#help-reports">Reporty</a></li>
+            <li><a href="#help-driver-portal">Portál řidiče</a></li>
+            <li><a href="#help-catalogs">Číselníky</a></li>
+            <li><a href="#help-roles">Role a oprávnění</a></li>
+            <li><a href="#help-users">Uživatelé</a></li>
+            <li><a href="#help-settings">Nastavení</a></li>
+            <li><a href="#help-addresses">Adresy (offline)</a></li>
+            <li><a href="#help-about">O programu</a></li>
+        </ul>
+    </aside>
+
+    <section>
+        <article class="card help-section" id="help-daily-workflow" data-help-section>
+            <h2>Denní postup dispečinku</h2>
+            <div class="help-block" data-help-item>
+                <h3>Jak zadat jízdy na daný den (krok za krokem)</h3>
+                <p>Doporučené pořadí práce na <strong>dashboardu</strong> pro jeden den realizace — od výběru data až po tisk dokumentů.</p>
+                <ol class="help-steps">
+                    <li>
+                        <strong>Vyberte správné datum</strong> — v záhlaví dashboardu kalendářem nebo šipkami ← / →.
+                        Všechny další kroky se vztahují k tomuto dni.
+                    </li>
+                    <li>
+                        <strong>Zadejte nepřítomnosti řidičů</strong> — v panelu Řidiči (nebo v číselníku řidičů).
+                        Celodenní nepřítomnost řidiče schová z přehledu; půldenní ho ponechá viditelného.
+                    </li>
+                    <li>
+                        <strong>Plán SD — přiřaďte řidiče ke sběrným dvorům</strong> — na stránce
+                        <code>/waste-docs/svoz-plan/?date=…</code> (tlačítko <span class="help-tag">Plán svozů</span> v záhlaví dashboardu, stejné datum jako den realizace).
+                        U každého sběrného dvora a druhu vozidla vyberte řidiče, RZ a případně výjimkové sloty V1–V4.
+                        Uložte plán; bez něj se požadavky ze sběrných dvorů nepřiřadí správnému řidiči.
+                        Po změně řidičů plán znovu uložte — systém srovná otevřené úkoly svozu.
+                        Podrobnosti: <a href="#help-svoz-plan">Plán svozů — jak to funguje</a>.
+                    </li>
+                    <li>
+                        <strong>Postupně zadávejte jízdy a činnosti</strong> — u jednotlivých řidičů přidávejte jízdy
+                        (menu Jízdy nebo z dashboardu). U každé jízdy zvolte správnou činnost, subjekt, odpad a koncovku.
+                    </li>
+                    <li>
+                        <strong>Počkejte na sběrné dvory</strong> — sběrné dvory odesílají matici na
+                        <code>/waste-docs/svoz-pozadavek/</code>. Z běžného odpadu vznikají úkoly svozu a po přiřazení řidiče z plánu i průvodky;
+                        <strong>nebezpečný odpad</strong> (kategorie N u druhu odpadu) jde do plovoucí fronty na dashboardu — viz
+                        <a href="#help-hazardous-yard">Nebezpečný odpad ze dvora</a>.
+                        V seznamu jízd na dashboardu je uvidíte (u řidiče může být značka „P“ — čeká na průvodky z dvora).
+                    </li>
+                    <li>
+                        <strong>Vygenerujte průvodky</strong> — až už nečekáte další změny jízd za den, v panelu
+                        <span class="help-tag">Seznam jízd</span> spusťte hromadné přegenerování průvodek
+                        (ikona generování v záhlaví panelu). U činností „bez Excelu“ se průvodka negeneruje — to je v pořádku.
+                    </li>
+                    <li>
+                        <strong>Vygenerujte protokol jízd (Protokol STASKA)</strong> — stáhněte denní protokol
+                        ze šablony <code>jizda.xlsx</code> (ikona protokolu v panelu Seznam jízd, nebo skupinově u řidiče / RZ).
+                        Protokol shrnuje jízdy za vybraný den podle řidičů.
+                    </li>
+                    <li>
+                        <strong>Vytiskněte vše</strong> — otevřete <span class="help-tag">Tisk</span> z dashboardu
+                        (ikona tiskárny): průvodky, ZPO, <span class="help-tag">PIO</span> (pokud je u páru subjekt–odpad–koncovka nahrané)
+                        a další soubory za den nebo jen pro vybranou skupinu jízd.
+                    </li>
+                </ol>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Kdy co dělat znovu</h3>
+                <p>Přidáte-li nebo upravíte jízdu po vygenerování průvodek nebo protokolu, dokumenty znovu vygenerujte a zkontrolujte tisk.
+                U svozu ze sběrného dvora po změně plánu svozů uložte plán znovu — systém srovná otevřené úkoly s aktuálními řidiči.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-dashboard" data-help-section>
+            <h2>Dashboard</h2>
+            <div class="help-block" data-help-item>
+                <h3>K čemu slouží</h3>
+                <p>Dashboard je denní dispečerský přehled. Pro vybrané datum zobrazuje řidiče, seznam jízd, detail vybrané jízdy, nepřítomnosti a panel
+                <strong>Poslední úkoly / poznámky</strong> (požadavky na svoz, nebezpečný odpad ze dvora, požadavky zákazníků, denní poznámky).</p>
+                <p>Podrobný doporučený postup práce za den je v sekci <a href="#help-daily-workflow">Denní postup dispečinku</a>.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Hlavní akce</h3>
+                <p><span class="help-tag">Seznam jízd</span><span class="help-tag">Tisk</span><span class="help-tag">Protokol</span></p>
+                <p>V panelu Seznam jízd můžete spouštět tiskové akce, hromadné generování průvodek a přehled jízd v modal okně podle druhů vozidel.
+                Neúplný plán svozů za den zvýrazní tlačítko <span class="help-tag">Plán svozů</span> červeně (blikání) a alert „Plán svozů — zkontrolovat“.</p>
+            </div>
+            <div class="help-block" data-help-item id="help-driver-reassign">
+                <h3>Výměna řidiče / RZ</h3>
+                <p><span class="help-tag">Detail jízdy</span><span class="help-tag">Hromadná úprava</span></p>
+                <p>Na dashboardu otevřete skupinu jízd (den + RZ + řidič) přes <strong>celostránkový Detail jízdy</strong>.
+                V záhlaví modalu je tlačítko <span class="help-tag">Výměna řidiče</span>.</p>
+                <p>Vyberete <strong>všechny</strong> nebo jen některé jízdy ze skupiny, nového řidiče a volitelně jinou RZ.
+                Nový řidič musí mít v číselníku povolený <strong>daný druh vozidla</strong>.
+                RZ zůstane výchozí stávající; po výběru řidiče se nabídnou <strong>všechny RZ všech druhů</strong>,
+                které řidič smí řídit (ne jen výslovně přiřazené SPZ).
+                V nabídce uvidíte poznámku k vozidlu a zkratky druhů.</p>
+                <p>Po uložení vybrané jízdy přejdou do nové skupiny na dashboardu (nový klíč den + RZ + řidič).
+                Čísla SND na průvodkách se nemění.</p>
+            </div>
+            <div class="help-block" data-help-item id="help-dashboard-notes">
+                <h3>Poslední úkoly / poznámky</h3>
+                <p>Panel vpravo na dashboardu shrnuje denní provoz: požadavky na svoz, nebezpečný odpad ze dvora, požadavky zákazníků a <strong>denní poznámky</strong>.</p>
+                <p><span class="help-tag">Nová poznámka</span> (ikona +) — založíte interní poznámku / úkol na vybraný den (oprávnění Admin / Dispečer dle profilu).</p>
+                <p><span class="help-tag">Údržba</span> — promazání dokončených poznámek. <span class="help-tag">Tisk</span> — tiskový náhled poznámek dne.</p>
+                <p>Poznámky ze sběrného dvora se v panelu zvýrazní bannerem, dokud je nevyřešíte. V panelu Řidiči u typu nepřítomnosti <strong>Jiné</strong> se zobrazí text poznámky (důvod).</p>
+            </div>
+            <div class="help-block" data-help-item id="help-svoz-error-log">
+                <h3>Log odeslání sběrných dvorů</h3>
+                <p>V záhlaví dashboardu se při chybách nebo neúspěšných odesláních matice zobrazí badge / tlačítko <span class="help-tag">Log SD</span> (např. „Log odeslání“).</p>
+                <p>Kliknutím se otevře modal s posledními záznamy (načítají se na vyžádání). Červený badge znamená nepřečtené / nové chyby — otevřete log a zkontrolujte, který dvůr a proč odeslání selhalo.</p>
+                <p>Další badge v záhlaví souvisejí s požadavky: <span class="help-tag">Zálohy</span> (čeká schválení zálohy), <span class="help-tag">Po splatnosti</span>, případně fronta ke schválení dispečerem — viz <a href="#help-customer-requests">Požadavky a zálohy</a>.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-svoz-yards" data-help-section>
+            <h2>Sběrné dvory a plán svozů</h2>
+            <div class="help-block" data-help-item id="help-svoz-plan">
+                <h3>Plán svozů — <code>/waste-docs/svoz-plan/?date=…</code></h3>
+                <p>Dispečerská obrazovka pro přiřazení <strong>řidiče a RZ vozidla</strong> ke sběrným dvorům za zvolený den.
+                Parametr <code>date</code> v URL musí odpovídat <strong>dni realizace</strong> na dashboardu (stejné jako <code>target_date</code> úkolů svozu).
+                Otevřete z tlačítka <span class="help-tag">Plán svozů</span> v záhlaví dashboardu — datum se předá automaticky.</p>
+                <p><span class="help-tag">Struktura</span> Jeden blok na každý sběrný dvůr. V tabulce jsou jen <strong>druhy vozidel</strong> z matice požadavku v číselníku F/P u daného subjektu.</p>
+                <p><span class="help-tag">Běžný svoz B1–B4</span> Čtyři sloty na řádek druhu vozidla. U každého slotu: řidič, RZ vozidla (RZ je povinné, je-li vyplněn řidič), volitelná poznámka k vozidlu.
+                U RZ v nabídce předpona <code>[průvodka]</code> = na tento den už existuje jízda s touto RZ; <code>[více slotů]</code> = stejná RZ ve více slotech.</p>
+                <p><span class="help-tag">Výjimky V1–V4</span> Samostatná tabulka pod běžným svozem. Patří sem řádky matice s <strong>vypnutým běžným svozem</strong> a platným slotem výjimky V1–V4 v číselníku F/P — podle konkrétního odpadu/koncovky, ne podle názvu dvora v matici požadavku.</p>
+                <p><span class="help-tag">Podíly mezi řidiči</span> U běžného svozu lze nastavit poměr rozdělení úkolů (B1–B4) od minimálního počtu kontejnerů v hlavičce dvora (výchozí 5). Pod tímto prahem jde vše prvnímu řidiči. Výjimky poměr nepoužívají.</p>
+                <p><span class="help-tag">Upozornění k plánu</span> Pokud kombinace dvůr + druh vozidla + skupina (běžný svoz / výjimky) nemá vyplněné řidiče, zobrazí se upozornění. U záměrného stavu použijte <strong>Potvrdit výjimku (OK bez řidičů)</strong>; potvrzení lze později zrušit v tabulce pod upozorněním.</p>
+                <p><span class="help-tag">Uložení plánu</span> Po uložení systém doplní otevřené úkoly svozu z matice a u přiřazených slotů s řidičem i RZ může <strong>automaticky založit průvodku</strong> (u běžného odpadu). Po změně plánu uložte znovu.</p>
+                <p><span class="help-tag">Admin — úklid souborů</span> V panelu Seznam jízd na dashboardu: ikona koše smaže vygenerované průvodky, ZPO, protokoly a print cache za vybraný den; druhá ikona koše (s čárou) smaže všechny tyto soubory ve všech adresářích (všechny dny).</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Matice požadavku — <code>/waste-docs/svoz-pozadavek/</code></h3>
+                <p>Sběrný dvůr vyplní matici kontejnerů podle řádků nastavených v číselníku F/P (sekce <strong>Činnost Dvůr a svoz</strong> u každého páru odpad–koncovka).
+                Odeslání je obvykle <strong>jednou denně</strong> (pokud není vypnutý denní limit v nastavení).</p>
+                <p>Z každého vyplněného čísla kontejneru vznikne záznam pro dispečera. U <strong>běžného odpadu</strong> systém vytvoří úkol svozu, přiřadí řidiče podle plánu a případně auto-průvodku.
+                Chování závisí na tom, zda je plán pro daný den vyplněný — viz výše.</p>
+            </div>
+            <div class="help-block" data-help-item id="help-hazardous-yard">
+                <h3>Nebezpečný odpad ze sběrného dvora</h3>
+                <p>Pokud má druh odpadu v číselníku <code>/catalogs/waste-type/</code> v poli <strong>Kategorie</strong> hodnotu pro nebezpečný odpad
+                (např. <code>N</code>, <code>Nebezpečný</code>), chová se řádek matice jinak než běžný svoz:</p>
+                <ul class="help-steps" style="list-style:disc;">
+                    <li><strong>Nezaloží se</strong> úkol svozu (<code>SvozTask</code>) ani automatická jízda.</li>
+                    <li>Vznikne <strong>plovoucí požadavek</strong> v panelu dashboardu <strong>Nebezpečný odpad ze dvora — čeká na jízdu</strong> (oranžový rámeček).</li>
+                    <li>Požadavek zůstane viditelný <strong>každý den</strong>, dokud dispečer nezaloží průvodku (klik na řádek → předvyplněná nová jízda).</li>
+                    <li>Po uložení jízdy požadavek zmizí z fronty.</li>
+                </ul>
+                <p>Na stejné matici mohou být současně běžné i nebezpečné řádky — každý se zpracuje podle kategorie odpadu.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-rides" data-help-section>
+            <h2>Jízdy</h2>
+            <div class="help-block" data-help-item>
+                <h3>Založení a editace</h3>
+                <p>Jízdu založíte přes menu Jízdy nebo z dashboardu. Formulář umí předvyplnění ze šablony, návazné jízdy, opakování více jízd jedním uložením a filtrované nabídky podle činnosti.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Doporučený postup</h3>
+                <p>Nejprve vyberte činnost, subjekt a odpad. Potom ověřte koncovku, RZ, řidiče a datum. Uložte až po kontrole povinných polí, aby navazující generování dokumentů proběhlo bez chyb.</p>
+                <p>Celý denní workflow (datum → nepřítomnosti → plán SD → jízdy → sběrné dvory → průvodky → protokol → tisk) je popsán v <a href="#help-daily-workflow">Denní postup dispečinku</a>.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-customer-requests" data-help-section>
+            <h2>Požadavky zákazníků a zálohy</h2>
+            <div class="help-block" data-help-item>
+                <h3>Kde to najdete</h3>
+                <p>Seznam: <code>/waste-docs/customer-requests/</code>. Nový požadavek: <code>/waste-docs/customer-requests/new/</code>.
+                Fronta záloh: <code>/waste-docs/customer-requests/invoice-queue/</code> (podle oprávnění i odkaz z dashboardu).</p>
+                <p>Na dashboardu se požadavky ukazují v panelu <strong>Poslední úkoly / poznámky</strong> a přes badge v záhlaví (<span class="help-tag">Zálohy</span>, <span class="help-tag">Po splatnosti</span>, fronta dispečera).</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Životní cyklus</h3>
+                <ol class="help-steps">
+                    <li><strong>Koncept (draft)</strong> — rozpracovaný požadavek, ještě neodeslaný.</li>
+                    <li><strong>Odesláno / záloha</strong> — pokud je zaškrtnuto <em>Vyžaduje zálohovou fakturu</em>, stav <code>SUBMITTED</code> čeká na schválení kontrolorem (badge Zálohy).</li>
+                    <li><strong>Záloha po splatnosti / zamítnuto</strong> — splatnost vypršela, nebo kontrolor zálohu zamítl; zadavatel opraví nebo doplní.</li>
+                    <li><strong>Ke schválení dispečerem</strong> — dispečer schválí, vrátí k opravě, nebo přeplánuje datum.</li>
+                    <li><strong>Viditelné pro dispečink</strong> — lze založit jízdu (řidič, RZ); po založení jízdy stav Plánováno / Dokončeno.</li>
+                    <li><strong>Zrušeno</strong> — zrušení nebo trvalé smazání vyžaduje <strong>důvod</strong> (pole důvod musí být vyplněné před odesláním).</li>
+                </ol>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Zálohové faktury</h3>
+                <p>Badge <span class="help-tag">Zálohy: N</span> počítá jen požadavky se zapnutým <em>Vyžaduje zálohovou fakturu</em>, které čekají ve stavu odesláno (bez dokončeného schválení zálohy).</p>
+                <p>Ve frontě záloh řešíte schválení / zamítnutí a splatnost. Po schválení pokračuje tok k dispečerovi. Požadavky bez zálohy badge nezatěžují.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Zrušení a smazání</h3>
+                <p>Tlačítka <span class="help-tag">Zrušit požadavek</span> a <span class="help-tag">Smazat trvale</span> odesílají formulář i bez validace ostatních polí — důležité je vyplnit <strong>důvod zrušení</strong>. Bez důvodu akce neprojde.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-pruvodky" data-help-section>
+            <h2>Průvodky (Excel)</h2>
+            <div class="help-block" data-help-item>
+                <h3>Generování</h3>
+                <p>Průvodka se generuje do XLSX podle šablony `pruvodka.xlsx`. Název souboru je ve tvaru `pruvodka_Číslo-listu-jízdy.xlsx`.</p>
+                <p>Pokud je v databázi záznam o souboru, ale soubor fyzicky chybí, systém při tisku/stahování průvodku automaticky přegeneruje a opraví odkaz v databázi.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Režim bez Excelu</h3>
+                <p>U činností se zapnutou volbou „Stačí evidence v databázi (bez Excelu)“ se průvodka negeneruje. To je správné očekávané chování.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-zpo" data-help-section>
+            <h2>ZPO</h2>
+            <div class="help-block" data-help-item>
+                <h3>Jak funguje ZPO</h3>
+                <p>ZPO se váže na kombinaci subjekt + druh odpadu + koncovka. Může být ručně nahrané nebo systémově generované ze zdrojového nastavení.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Typické příčiny, proč se ZPO nezobrazí</h3>
+                <p>Neúplné párování v číselníku, vypnuté systémové ZPO na páru/subjektu, nebo chybějící zdrojová koncovka pro režim „ZPO z koncovky“.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-pio" data-help-section>
+            <h2>PIO — Prvotní informace o odpadu</h2>
+            <div class="help-block" data-help-item>
+                <h3>K čemu slouží</h3>
+                <p><strong>PIO</strong> znamená <strong>Prvotní informace o odpadu</strong> — povinný informační dokument,
+                který původce (nebo jím pověřená osoba) předává příjemci odpadu před jeho převzetím. V JeDiS je PIO vázané
+                na kombinaci <strong>subjekt F/P + druh odpadu + koncovka</strong> (stejně jako ZPO). Při tisku jízdy z dashboardu
+                se nahrané PIO přidá do tiskového balíčku vedle průvodky a ZPO.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Legislativa (shrnutí)</h3>
+                <p>PIO vychází z české odpadové legislativy — zejména <strong>zákona č. 541/2020 Sb., o odpadech</strong>
+                a související <strong>vyhlášky č. 273/2021 Sb., o Katalogu odpadů a posuzování vlastností odpadů</strong>
+                (úprava povinností při nakládání s odpady a předávání informací).</p>
+                <p>PIO musí obsahovat údaje potřebné pro bezpečné nakládání s konkrétním druhem odpadu (identifikace odpadu,
+                vlastnosti, rizika, pokyny pro manipulaci a podobně podle platné šablony a typu odpadu). JeDiS
+                <strong>nepřebírá právní odpovědnost za úplnost PIO</strong> — aplikace předvyplní údaje z číselníků;
+                zbytek doplníte ve své šabloně <code>PIO.xlsx</code> podle interního postupu a požadavků pro daný odpad.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Co do PIO doplní aplikace (šablona PIO.xlsx)</h3>
+                <p>Tlačítkem <strong>Vygenerovat PIO (profilová šablona)</strong> v úpravě subjektu nebo v archivu páru
+                stáhnete Excel s nahrazenými tokeny. Aplikace doplní zejména:</p>
+                <p><span class="help-tag">Subjekt</span> název firmy, IČO, adresa provozovny, adresa plnění, ORP a IČZÚJ u plnění</p>
+                <p><span class="help-tag">Sekce PIO</span> jméno, telefon a e-mail odpovědné osoby; volitelně ORP a IČZÚJ z mapy „odpad mimo provozovnu“</p>
+                <p><span class="help-tag">Odpad a koncovka</span> kód odpadu (Katalog), název druhu, kategorie, popis z číselníku odpadů (FO nebo PO podle IČO), koncovka; u páru i číslo smlouvy</p>
+                <p><span class="help-tag">Automaticky</span> datum vygenerování šablony</p>
+                <p>Typické placeholdery ve šabloně: <code>{{menofirmy}}</code>, <code>{{ico}}</code>, <code>{{adresafirmy}}</code>,
+                <code>{{adresakde}}</code>, <code>{{odpad}}</code>, <code>{{nazevodpadu}}</code>, <code>{{druh}}</code>,
+                <code>{{koncovka}}</code>, <code>{{prijmeniosoby}}</code>, <code>{{telefonosoby}}</code>, <code>{{email}}</code>,
+                <code>{{datumvyplněni}}</code> a další (viz komentáře v šabloně <code>PIO.xlsx</code>).</p>
+                <p><strong>Co aplikace nedoplňuje:</strong> vlastnosti odpadu, klasifikace nebezpečnosti (HP), pokyny pro první pomoc,
+                hasicí prostředky, ochranné pomůcky a další texty, které ve vaší šabloně nemají token — ty vyplníte ručně offline
+                podle Katalogu odpadů a interního vzoru firmy, poté dokument uložíte jako PDF a nahrajete k páru.</p>
+            </div>
+            <div class="help-block" data-help-item id="help-pio-name-new">
+                <h3>Formulář nového subjektu — <code>/catalogs/name/new/</code></h3>
+                <p>Stejná struktura jako u úpravy subjektu. Po prvním uložení systém přesměruje na editaci, kde lze doplnit další páry a dokumenty.</p>
+                <p><span class="help-tag">Identifikace</span> IČO (volitelně načíst z ARES), název F/P, příznaky obce / sběrného dvora / nitropodnikového subjektu podle role.</p>
+                <p><span class="help-tag">Adresa plnění</span> Adresa provozovny a plnění — používá se v průvodkách, PIO a mapě „odpad mimo provozovnu“.</p>
+                <p><span class="help-tag">PIO (profilová šablona)</span> Odpovědná osoba, telefon, e-mail; adresa provozovny (synchronizovaná s adresou plnění); volitelně mapa mimo areál (ORP, IČZÚJ).
+                Pro stažení šablony <code>PIO.xlsx</code> je nutné vyplnit kontakt a zvolit ukázkový pár odpad + koncovka v této sekci — slouží jen pro náhled tokenů, ne jako finální dokument k tisku.</p>
+                <p><span class="help-tag">Povolené odpady a koncovky</span> Každý řádek = jeden pár <strong>druh odpadu + koncovka</strong>. Pořadí řádků určuje pořadí v matici svozu a v nabídce jízd (přetažením).</p>
+                <p><span class="help-tag">Činnost Dvůr a svoz</span> U páru nastavíte, zda se řádek objeví v matici požadavku (<code>/waste-docs/svoz-pozadavek/</code>), druh vozidla, sloty B1–B4 / V1–V4 a související svozové volby. Viz <a href="#help-svoz-plan">Plán svozů</a>.</p>
+                <p><span class="help-tag">Dokumenty a ZPO</span> U páru přiřadíte ZPO ze sdílené knihovny, nahrajete finální <strong>PIO</strong> (PDF/PNG/JPG) nebo spravujete revize přes <strong>Archiv PIO</strong>. Bez nahraného souboru u páru se PIO v tisku neobjeví.</p>
+                <p>Duplikace páru zkopíruje nastavení svozu a dokumentů, ale <strong>soubory PIO se nekopírují</strong> — nahrajte je znovu u nového řádku.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Příprava v číselníku subjektů</h3>
+                <p>V úpravě subjektu <code>/catalogs/name/</code> (nebo při zakládání na <code>/catalogs/name/new/</code>) vyplňte sekci <strong>PIO (profilová šablona)</strong>:
+                odpovědná osoba, kontakt, adresa provozovny, volitelně souřadnice mimo areál (mapa, ORP, IČZÚJ).</p>
+                <p>Tlačítkem pro stažení profilové šablony (<code>PIO.xlsx</code>) získáte předvyplněný Excel.
+                Dokument doplňte offline a výsledné PDF (nebo obrázek) nahrajte u konkrétního páru odpad–koncovka
+                v části <strong>Dokumenty a ZPO</strong>, nebo přes <span class="help-tag">Archiv PIO</span>.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Archiv revizí u páru</h3>
+                <p>U každého páru v subjektu je odkaz <strong>Archiv PIO</strong> (<code>/catalogs/name/…/pair/…/pio/</code>).
+                Tam můžete:</p>
+                <ul class="help-steps" style="list-style:disc;">
+                    <li>vygenerovat náhled z profilové šablony pro daný pár,</li>
+                    <li>nahrát novou revizi (PDF, PNG, JPG),</li>
+                    <li>prohlédnout historii nahraných verzí.</li>
+                </ul>
+                <p>Pro tisk u jízdy platí <strong>nejnovější revize</strong> v archivu; pokud archiv je prázdný,
+                použije se starší soubor z pole PIO přímo na páru (legacy).</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Tisk a denní postup</h3>
+                <p>PIO se negeneruje automaticky při založení jízdy — musí být předem nahrané u správného páru v číselníku.
+                Při finálním kroku dne (viz <a href="#help-daily-workflow">Denní postup dispečinku</a>, tisk)
+                se PIO zobrazí v seznamu souborů u jízd, kde je k dispozici.</p>
+                <p>Globální vyhledání nahraných revizí PIO (podle subjektu, odpadu, data): <code>/catalogs/name/pio/</code>
+                (přístup administrátora).</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Typické příčiny, proč se PIO v tisku neobjeví</h3>
+                <p>Chybí nahraný soubor u páru odpad–koncovka použitého na jízdě, nebo je PIO jen v profilové šabloně
+                bez nahrané finální revize PDF. Ověřte správný pár v číselníku a archiv revizí.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-protokoly" data-help-section>
+            <h2>Protokoly (jizda.xlsx)</h2>
+            <div class="help-block" data-help-item>
+                <h3>Protokol STASKA — kdy generovat</h3>
+                <p>Denní protokol jízd (v provozu „Protokol STASKA“) generujte až po dokončení zadávání jízd za den a po vygenerování průvodek — viz
+                <a href="#help-daily-workflow">Denní postup dispečinku</a>, krok 6.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Skupinový i individuální režim</h3>
+                <p>Protokol lze tisknout jednotlivě z detailu jízdy i skupinově z dashboardu. Vzniká jeden sešit XLSX ze šablony `jizda.xlsx`.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Listy a řádky v protokolu</h3>
+                <p>Data se dělí podle řidiče a RZ. Až 7 jízd na jednu záložku; při větším počtu se vytvoří další list (<code>str. 2</code>, …). Zachovává se formátování i ikony ze šablony.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Tisk protokolu</h3>
+                <p>Nastavení tisku (oblast stránky, jednostranný/oboustranný) se bere výhradně ze šablony <code>jizda.xlsx</code> — nastavte v Microsoft Excelu a uložte. Generátor mění jen data a placeholdery, layout tisku nepřepisuje.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-reports" data-help-section>
+            <h2>Reporty</h2>
+            <div class="help-block" data-help-item>
+                <h3>Přehled</h3>
+                <p>Modul <code>/reports/</code> — statistické přehledy za zvolené období (filtr data nahoře). Na hubu jsou KPI: počet jízd, % vygenerovaných, svoz ve frontě, nové požadavky, fronta záloh.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Dostupné reporty</h3>
+                <p><span class="help-tag">Jízdy</span> <code>/reports/jizdy/</code> — přehled jízd v období.</p>
+                <p><span class="help-tag">Koncovky</span> <code>/reports/koncovky/</code> — zátěž koncovek; export XLSX přes <code>/reports/koncovky.xlsx</code>.</p>
+                <p><span class="help-tag">Provoz</span> <code>/reports/provoz/</code> — provozní souhrn.</p>
+                <p><span class="help-tag">Svozy</span> <code>/reports/svozy/</code> — svozy a fronta.</p>
+                <p><span class="help-tag">Řidiči</span> <code>/reports/ridici/</code> — nepřítomnosti a souhrn řidičů; export <code>/reports/ridici.xlsx</code>.</p>
+                <p><span class="help-tag">Požadavky</span> <code>/reports/pozadavky/</code> — zákaznické požadavky ve zvoleném období.</p>
+                <p><span class="help-tag">Tisk</span> <code>/reports/tisk/</code> — přehled tiskových akcí.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Nepřítomnosti typu Jiné</h3>
+                <p>V reportu řidičů je karta / sekce <strong>Jiné (s poznámkou)</strong> — nepřítomnosti typu Jiné a text poznámky (důvod). Stejný list <strong>Jiné</strong> je i v XLSX exportu řidičů.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-driver-portal" data-help-section>
+            <h2>Portál řidiče</h2>
+            <div class="help-block" data-help-item>
+                <h3>Účel</h3>
+                <p>Samostatná mobilní část pro roli <strong>Řidič</strong>: <code>/driver-portal/</code>. Řidič vidí své jízdy vybraného dne a může doplnit povolené údaje u jízdy.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Přístup a párování</h3>
+                <p>Bez přihlášení se zobrazí brána <code>/driver-portal/pristup/</code>. Účet řidiče musí být propojen s kartou v číselníku řidičů.</p>
+                <p>Pozvánku (odkaz / QR) vytvoříte v <code>/catalogs/drivers/</code> u konkrétního řidiče — sekce portálu. První úspěšné párování přiřadí uživatelský účet. Propojení lze později odebrat a vystavit novou pozvánku.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Co řidič dělá</h3>
+                <p>Seznam dne: <code>/driver-portal/</code> (parametr <code>?date=</code>). Detail jízdy: <code>/driver-portal/jizda/&lt;id&gt;/</code> — uložení povolených polí formuláře. Odhlášení: <code>/driver-portal/odhlasit/</code>.</p>
+                <p>Dispečink dál řídí plán a dokumenty na dashboardu; portál slouží řidiči v terénu, ne jako náhrada dispečerského plánování.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-catalogs" data-help-section>
+            <h2>Číselníky</h2>
+            <div class="help-block" data-help-item>
+                <h3>Subjekty: klíčová logika systému</h3>
+                <p>V <code>/catalogs/name/</code> a <code>/catalogs/name/new/</code> je hlavní konfigurace provozu. U subjektu nastavujete páry odpad–koncovka, pořadí, svozové volby (sekce <strong>Činnost Dvůr a svoz</strong>), dokumenty ZPO a PIO a režim ZPO. To přímo řídí, co se nabídne v nové jízdě, v matici svozu a jak se budou generovat dokumenty. Podrobnosti k PIO jsou v sekci <a href="#help-pio">PIO</a> (včetně <a href="#help-pio-name-new">formuláře nového subjektu</a>); plán svozů a matice v <a href="#help-svoz-yards">Sběrné dvory a plán svozů</a>.</p>
+                <p>Pořadí karet odpadu u subjektu je závazné: určujete ho přetažením a ukládá se jako pořadí řádků. Toto pořadí se používá i v souvisejících přehledech matice/svozu.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Odpady, koncovky, činnosti</h3>
+                <p>Číselník druhů odpadu (<code>/catalogs/waste-type/</code>), koncovek (<code>/catalogs/suffix/</code>) a činností (<code>/catalogs/activity/</code>) tvoří základ validních kombinací. Pokud něco nejde vybrat v jízdě, nejdřív ověřte právě tato data a vazbu na subjekt.</p>
+                <p>U druhu odpadu pole <strong>Kategorie</strong> určuje chování v matici sběrného dvora — hodnota pro nebezpečný odpad (např. <code>N</code>) spouští plovoucí frontu na dashboardu místo auto-jízdy; viz <a href="#help-hazardous-yard">Nebezpečný odpad ze dvora</a>.</p>
+                <p>U činnosti rozhoduje volba „Stačí evidence v databázi (bez Excelu)“, zda se pro jízdu generuje průvodka XLSX. Tato volba má přímý dopad do tisku a generování souborů.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Detail: `/catalogs/activity/` a význam klíčových polí</h3>
+                <p><strong>Vnitropodnikový subjekt</strong> (v činnosti): když je u činnosti zapnuto, průvodka vyžaduje subjekt označený jako „Nitropodnikový subjekt“ v `/catalogs/name/`. Je to kontrola, že daná činnost může běžet jen pro interní subjekty firmy.</p>
+                <p><strong>Režim polí na průvodce</strong>: určuje, která pole formuláře jízdy budou povinná/volitelná/skrytá pro konkrétní činnost. Tím se průvodka zjednoduší podle typu práce a omezí chybné vyplnění.</p>
+                <p><strong>Chybějící řádek = výchozí režim aplikace.</strong> Pokud pravidlo pro konkrétní pole smažete, vrátí se standardní výchozí chování systému.</p>
+                <p><strong>Stačí evidence v databázi (bez Excelu)</strong>: u této činnosti se negeneruje průvodka XLSX. Jízda se eviduje jen v databázi; tiskové akce nebudou vyžadovat excel průvodku.</p>
+                <p><strong>Hlídat dokončení činnosti (návaznost)</strong>: po uložení první části jízdy vznikne stav „čeká návaznost“ a systém očekává navazující jízdu (např. přistavení → stažení). Na dashboardu i detailu jízdy se pak zobrazuje otevřená návaznost, dokud se neuzavře.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Řidiči, RZ a nepřítomnosti</h3>
+                <p>V číselníku řidičů (`/catalogs/drivers/`) spravujete osobní číslo, telefon, povolené druhy vozidel a nepřítomnosti. Na dashboardu mohou <strong>Admin i Dispečer</strong> u řidiče (⋮) zapsat nepřítomnost a vidět indikátory <strong>!</strong> (bez jízdy) / <strong>P</strong> (jen plán svozů). Celodenní nepřítomnost řidiče ho schová z panelu Řidiči; půldenní ho ponechá viditelného. Typ <strong>Jiné</strong> ukládá poznámku — ta se zobrazí na dashboardu i v reportu řidičů.</p>
+                <p>U řidiče také spravujete <strong>pozvánky do portálu řidiče</strong> (odkaz/QR) a případné odpojení uživatelského účtu — viz <a href="#help-driver-portal">Portál řidiče</a>.</p>
+                <p>V číselníku RZ (`/catalogs/vehicle-rz/`) nastavujete druhy vozidel. Ty ovlivňují filtrování šablon jízd, řidičů i nabídky RZ podle činnosti.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Nejčastější kontrolní postup při problému</h3>
+                <p>1) Zkontrolujte subjekt a páry odpad–koncovka. 2) Ověřte činnost a režim Excel/ZPO. 3) Ověřte RZ + druh vozidla + řidiče. 4) Teprve pak řešte samotné ukládání jízdy.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-roles" data-help-section>
+            <h2>Role a oprávnění</h2>
+            <div class="help-block" data-help-item>
+                <h3>Přístup podle role</h3>
+                <p>Menu i akce se liší podle role uživatele. Některé role vidí jen jízdy, které samy vytvořily; admin/dispečer může mít širší přístup. Role <strong>Řidič</strong> používá především <a href="#help-driver-portal">portál řidiče</a>, ne plný dispečerský dashboard.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Dopad do praxe</h3>
+                <p>Při řešení „nevidím položku v menu“ nebo „nejde mi akce“ nejdřív ověřte roli a příznaky přístupového profilu.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-users" data-help-section>
+            <h2>Uživatelé</h2>
+            <div class="help-block" data-help-item>
+                <h3>Správa uživatelů</h3>
+                <p>V modulu Uživatelé nastavujete účty, role a přístupová práva. Změna oprávnění se projeví v menu a dostupných akcích po dalším načtení stránky.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-settings" data-help-section>
+            <h2>Nastavení</h2>
+            <div class="help-block" data-help-item>
+                <h3>Mapa a globální parametry</h3>
+                <p>Stránka Nastavení (mapa) určuje výchozí střed mapového modalu při výběru místa na mapě. Změnu ukládejte jen po kontrole, že souřadnice odpovídají provozní oblasti.</p>
+                <p>Ostatní chování (role, navigace, číselníky) se nastavuje v modulech Role, Uživatelé a Číselníky — ne zde.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-addresses" data-help-section>
+            <h2>Adresy (offline)</h2>
+            <div class="help-block" data-help-item>
+                <h3>K čemu slouží</h3>
+                <p>Modul adres slouží jako interní cache/zdroj adresních dat pro stabilnější vyhledávání a doplňování adres bez závislosti na externích službách.</p>
+            </div>
+            <div class="help-block" data-help-item>
+                <h3>Doporučení</h3>
+                <p>Používejte normalizované tvary adres. Pokud se adresa nedohledá správně, zkontrolujte obec, č.p. a zápis bez překlepů.</p>
+            </div>
+        </article>
+
+        <article class="card help-section" id="help-about" data-help-section>
+            <h2>O programu</h2>
+            <div class="help-block" data-help-item>
+                <h3>Autor</h3>
+                <p>
+                    <strong>JeDiS</strong> (<em>Jednoduchý Dispečerský Systém</em>) vytvořil <strong>Holub Stanislav</strong>.
+                    Aplikace slouží dispečinku odpadů: evidence jízd a průvodek, dokumenty ZPO a PIO, plán svozů
+                    u sběrných dvorů, dashboard dne, číselníky subjektů a vozidel, tisk průvodek a denních protokolů.
+                </p>
+                <p style="margin-top:8px;"><strong>© Holub Stanislav</strong></p>
+            </div>
+        </article>
+
+        <div class="card help-empty" id="help-empty-state">
+            <h2>Nic nenalezeno</h2>
+            <p>Pro zadaný výraz nebyla v nápovědě nalezena žádná shoda. Zkuste obecnější výraz (např. „průvodka“, „zálohy“, „reporty“, „portál“, „svoz“).</p>
+        </div>
+    </section>
+</div>
+
+<p class="help-footer-credit card">JeDiS — Jednoduchý Dispečerský Systém · © Holub Stanislav</p>
+
+<script>
+(function () {
+    const searchInput = document.getElementById("help-search-q");
+    const countEl = document.getElementById("help-search-count");
+    const emptyEl = document.getElementById("help-empty-state");
+    const sections = Array.from(document.querySelectorAll("[data-help-section]"));
+    const items = Array.from(document.querySelectorAll("[data-help-item]"));
+    if (!searchInput || !countEl || !emptyEl || !sections.length) return;
+
+    function norm(s) {
+        return (s || "")
+            .toString()
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .trim();
+    }
+
+    const originalHtml = new Map();
+    items.forEach((item) => {
+        originalHtml.set(item, item.innerHTML);
+    });
+
+    function clearMarks() {
+        items.forEach((item) => {
+            const orig = originalHtml.get(item);
+            if (orig != null) item.innerHTML = orig;
+        });
+    }
+
+    function markMatches(queryRaw) {
+        if (!queryRaw) return;
+        const escaped = queryRaw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        const rx = new RegExp("(" + escaped + ")", "ig");
+        items.forEach((item) => {
+            item.querySelectorAll("p, h3, li, small, .help-tag").forEach((node) => {
+                if (!node.textContent) return;
+                node.innerHTML = node.textContent.replace(rx, "<mark class=\"help-mark\">$1</mark>");
+            });
+        });
+    }
+
+    function applySearch() {
+        const qRaw = searchInput.value || "";
+        const q = norm(qRaw);
+        clearMarks();
+        let shownSections = 0;
+        let shownItems = 0;
+
+        sections.forEach((section) => {
+            let sectionVisible = false;
+            section.querySelectorAll("[data-help-item]").forEach((item) => {
+                const text = norm(item.textContent || "");
+                const visible = !q || text.includes(q);
+                item.style.display = visible ? "" : "none";
+                if (visible) {
+                    sectionVisible = true;
+                    shownItems += 1;
+                }
+            });
+            section.style.display = sectionVisible ? "" : "none";
+            if (sectionVisible) shownSections += 1;
+        });
+
+        if (q) markMatches(qRaw);
+
+        if (!q) {
+            countEl.textContent = "Zobrazeno vše.";
+            emptyEl.classList.remove("is-visible");
+            return;
+        }
+
+        countEl.textContent = "Nalezené bloky: " + shownItems + " (sekce: " + shownSections + ").";
+        emptyEl.classList.toggle("is-visible", shownItems === 0);
+    }
+
+    function revealHashSection() {
+        sections.forEach((section) => section.classList.remove("is-targeted"));
+        const hash = window.location.hash || "";
+        if (!hash || !hash.startsWith("#help-")) return;
+        const target = document.querySelector(hash);
+        if (!target) return;
+        target.style.display = "";
+        target.querySelectorAll("[data-help-item]").forEach((item) => {
+            item.style.display = "";
+        });
+        target.classList.add("is-targeted");
+    }
+
+    searchInput.addEventListener("input", applySearch);
+    window.addEventListener("hashchange", revealHashSection);
+    revealHashSection();
+})();
+</script>
+{% endblock %}

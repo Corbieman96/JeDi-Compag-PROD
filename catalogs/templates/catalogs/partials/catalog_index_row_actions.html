@@ -1,0 +1,48 @@
+{% comment %}Akční tlačítka řádku přehledu /catalogs/ — sdílené mezi řádky.{% endcomment %}
+{% if row.slug == "name" %}
+    <a class="btn" href="{% url 'catalogs:name_list' %}">Seznam</a>
+    <a class="btn secondary" href="{% url 'catalogs:name_create' %}">Nová položka</a>
+    {% if request.user.is_superuser %}
+        <a class="btn secondary" href="{% url 'catalogs:name_pio_search' %}">PIO</a>
+    {% endif %}
+{% elif row.slug == "waste-type" %}
+    <a class="btn" href="{% url 'catalogs:waste_type_list' %}">Seznam</a>
+    <a class="btn secondary" href="{% url 'catalogs:waste_type_create' %}">Nová položka</a>
+{% elif row.slug == "vehicle-rz" %}
+    <a class="btn" href="{% url 'catalogs:vehicle_rz_list' %}">Seznam</a>
+    <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_create' %}">Nová položka</a>
+{% elif row.slug == "drivers" %}
+    <a class="btn" href="{% url 'catalogs:driver_list' %}">Seznam</a>
+    <a class="btn secondary" href="{% url 'catalogs:driver_create' %}">Nová položka</a>
+{% elif row.slug == "suffix" %}
+    <a class="btn" href="{% url 'catalogs:suffix_list' %}">Seznam</a>
+    <a class="btn secondary" href="{% url 'catalogs:suffix_create' %}">Nová položka</a>
+{% elif row.slug == "activity" %}
+    <a class="btn" href="{% url 'catalogs:activity_list' %}">Seznam</a>
+    <a class="btn secondary" href="{% url 'catalogs:activity_create' %}">Nová položka</a>
+{% elif row.slug == "offline_addresses" %}
+    <a class="btn" href="{% url 'address_data:list' %}">Seznam</a>
+    {% if address_data_create_url %}
+        <a class="btn secondary" href="{{ address_data_create_url }}">Nová položka</a>
+    {% endif %}
+{% elif row.slug == "ride_templates" %}
+    <a class="btn" href="{% url 'waste_docs:ride_template_list' %}">Seznam / správa</a>
+{% elif row.slug == "customer_request_templates" %}
+    <a class="btn" href="{% url 'customer_request_templates:list' %}">Seznam / správa</a>
+{% elif row.slug == "container_passport" %}
+    <a class="btn" href="{% url 'catalogs:container_passport_list' %}">Seznam</a>
+    {% if request.user.is_superuser %}
+        <a class="btn secondary" href="{% url 'catalogs:container_passport_create' %}">Nová položka</a>
+    {% endif %}
+{% elif row.slug == "pasport_stredisko" %}
+    <a class="btn" href="{% url 'catalogs:pasport_stredisko_list' %}">Seznam</a>
+    {% if request.user.is_superuser %}
+        <a class="btn secondary" href="{% url 'catalogs:pasport_stredisko_create' %}">Nová položka</a>
+    {% endif %}
+{% elif row.slug == "zpo_library" %}
+    <a class="btn" href="{% url 'catalogs:zpo_list' %}">Seznam</a>
+    <a class="btn secondary" href="{% url 'catalogs:zpo_create' %}">Nová položka</a>
+{% else %}
+    <a class="btn" href="{% url 'catalogs:list' row.slug %}">Seznam</a>
+    <a class="btn secondary" href="{% url 'catalogs:create' row.slug %}">Nová položka</a>
+{% endif %}

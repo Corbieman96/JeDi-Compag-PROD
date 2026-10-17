@@ -1,0 +1,5 @@
+# Zdroj vývojových závislostí. Uzamčení: pip-compile requirements-dev.in -o requirements-dev.txt
+-r requirements.in
+pytest>=8.0
+pytest-django>=4.8
+pip-tools>=7.4

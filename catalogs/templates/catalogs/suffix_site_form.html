@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Úprava koncovky{% else %}Nová koncovka{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Úprava koncovky{% else %}Nová koncovka{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-grid">
+            <div class="field-row">
+                {{ form.ico_value.label_tag }}
+                <div class="field-input">
+                    <div class="actions">
+                        {{ form.ico_value }}
+                        <button type="button" class="btn secondary" id="visoh-load-btn">Načíst z VISOH2</button>
+                    </div>
+                    {{ form.ico_value.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                {{ form.suffix_value.label_tag }}
+                <div class="field-input">{{ form.suffix_value }}{{ form.suffix_value.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.name.label_tag }}
+                <div class="field-input">{{ form.name }}{{ form.name.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.icz.label_tag }}
+                <div class="field-input">{{ form.icz }}{{ form.icz.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.facility_type.label_tag }}
+                <div class="field-input">{{ form.facility_type }}{{ form.facility_type.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.address_value.label_tag }}
+                <div class="field-input">
+                    {{ form.address_value }}
+                    <datalist id="suffix-address-suggestions"></datalist>
+                    {{ form.latitude }}{{ form.longitude }}
+                    <div class="form-actions">
+                        <button type="button" class="btn secondary" id="suffix-map-open-btn">Vybrat polohu na mapě</button>
+                    </div>
+                    {{ form.address_value.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                {{ form.zuj.label_tag }}
+                <div class="field-input">{{ form.zuj }}{{ form.zuj.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.accepted_waste_types.label_tag }}
+                <div class="field-input">
+                    <div style="max-width:560px; margin:0 0 6px 0;">
+                <input type="text" id="accepted-waste-filter" placeholder="Hledat odpad (kód nebo název)">
+                    </div>
+                    {{ form.accepted_waste_types }}
+                    {% if form.accepted_waste_types.help_text %}<small>{{ form.accepted_waste_types.help_text }}</small>{% endif %}
+                    {{ form.accepted_waste_types.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                {{ form.produced_waste_types.label_tag }}
+                <div class="field-input">
+                    <div style="max-width:560px; margin:0 0 6px 0;">
+                <input type="text" id="produced-waste-filter" placeholder="Hledat odpad (kód nebo název)">
+                    </div>
+                    {{ form.produced_waste_types }}
+                    {% if form.produced_waste_types.help_text %}<small>{{ form.produced_waste_types.help_text }}</small>{% endif %}
+                    {{ form.produced_waste_types.errors }}
+                </div>
+            </div>
+        </div>
+        {% if waste_types_empty %}
+            <p><small>Číselník odpadů je prázdný. Nejdřív doplňte položky v `Číselníky -> Název druhu odpadu`.</small></p>
+        {% endif %}
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'catalogs:suffix_list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+
+<div id="visoh-modal" class="map-modal" aria-hidden="true">
+    <div class="map-modal__card" style="max-width: 1100px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div>
+                <strong>Výsledky VISOH2</strong>
+                <small>Po načtení klikněte na řádek pro doplnění formuláře.</small>
+            </div>
+            <button type="button" class="btn secondary" id="visoh-modal-close">Zavřít</button>
+        </div>
+        <div style="overflow:auto; max-height: 60vh;">
+            <table id="visoh-results-table">
+                <thead>
+                    <tr>
+                        <th>IČZ</th>
+                        <th>Typ zařízení</th>
+                        <th>Adresa</th>
+                        <th>Provozovatel</th>
+                        <th>IČO</th>
+                    </tr>
+                </thead>
+                <tbody id="visoh-results-body">
+                    <tr><td colspan="5">Zatím bez načtených výsledků.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const icoInput = document.getElementById("id_ico_value");
+    const suffixInput = document.getElementById("id_suffix_value");
+    const nameInput = document.getElementById("id_name");
+    const iczInput = document.getElementById("id_icz");
+    const facilityTypeInput = document.getElementById("id_facility_type");
+    const addressInput = document.getElementById("id_address_value");
+    const zujInput = document.getElementById("id_zuj");
+    const latInput = document.getElementById("id_latitude");
+    const lngInput = document.getElementById("id_longitude");
+    const visohBtn = document.getElementById("visoh-load-btn");
+    const mapBtn = document.getElementById("suffix-map-open-btn");
+    const visohBody = document.getElementById("visoh-results-body");
+    const acceptedWasteFilter = document.getElementById("accepted-waste-filter");
+    const producedWasteFilter = document.getElementById("produced-waste-filter");
+    const acceptedWasteSelect = document.getElementById("id_accepted_waste_types");
+    const producedWasteSelect = document.getElementById("id_produced_waste_types");
+    let addressDebounceTimer = null;
+    function normalizeWasteText(text) {
+        return (text || "").toLowerCase().replace(/\s+/g, "");
+    }
+
+    function filterWasteOptions(selectEl, query) {
+        if (!selectEl) return;
+        const normalizedQuery = normalizeWasteText(query);
+        Array.from(selectEl.options).forEach((option) => {
+            const haystack = normalizeWasteText(option.textContent);
+            option.hidden = normalizedQuery ? !haystack.includes(normalizedQuery) : false;
+        });
+    }
+
+    const visohModal = document.getElementById("visoh-modal");
+    const visohModalClose = document.getElementById("visoh-modal-close");
+
+    function openVisohModal() {
+        if (!visohModal) return;
+        visohModal.classList.add("is-open");
+        visohModal.setAttribute("aria-hidden", "false");
+    }
+
+    function closeVisohModal() {
+        if (!visohModal) return;
+        visohModal.classList.remove("is-open");
+        visohModal.setAttribute("aria-hidden", "true");
+    }
+
+    if (visohModalClose) {
+        visohModalClose.addEventListener("click", closeVisohModal);
+    }
+    if (visohModal) {
+        visohModal.addEventListener("click", (e) => {
+            if (e.target === visohModal) closeVisohModal();
+        });
+    }
+    function renderVisohRows(rows) {
+        if (!visohBody) return;
+        visohBody.innerHTML = "";
+        if (!rows.length) {
+            visohBody.innerHTML = "<tr><td colspan='5'>Žádné výsledky.</td></tr>";
+            return;
+        }
+        rows.forEach((row) => {
+            const tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+            tr.innerHTML = `
+                <td>${row.icz || "-"}</td>
+                <td>${row.facility_type || "-"}</td>
+                <td>${row.address || "-"}</td>
+                <td>${row.name || "-"}</td>
+                <td>${row.ico || "-"}</td>
+            `;
+            tr.addEventListener("click", () => {
+                if (row.name) nameInput.value = row.name;
+                if (row.icz) iczInput.value = row.icz;
+                if (row.facility_type) facilityTypeInput.value = row.facility_type;
+                if (row.zuj) zujInput.value = row.zuj;
+                if (row.address) addressInput.value = row.address;
+                if (row.name) suffixInput.value = row.name.slice(0, 50);
+                if (row.ico) icoInput.value = row.ico;
+                closeVisohModal();
+            });
+            visohBody.appendChild(tr);
+        });
+    }
+
+
+    function fillDatalist(values) {
+        const list = document.getElementById("suffix-address-suggestions");
+        list.innerHTML = "";
+        values.forEach((value) => {
+            const option = document.createElement("option");
+            option.value = value;
+            list.appendChild(option);
+        });
+    }
+
+    async function fetchSuggestions(query) {
+        if (!query || query.length < 3) {
+            fillDatalist([]);
+            return;
+        }
+        const response = await fetch(`/catalogs/suffix/address-suggestions/?q=${encodeURIComponent(query)}`);
+        const payload = await response.json();
+        fillDatalist(payload.data || []);
+    }
+
+    addressInput.setAttribute("list", "suffix-address-suggestions");
+    addressInput.addEventListener("input", () => {
+        clearTimeout(addressDebounceTimer);
+        addressDebounceTimer = setTimeout(() => {
+            fetchSuggestions(addressInput.value);
+        }, 300);
+    });
+
+    if (visohBtn) {
+        visohBtn.addEventListener("click", async () => {
+            const ico = (icoInput.value || "").trim();
+            if (!ico) {
+                alert("Zadejte IČO.");
+                return;
+            }
+            const response = await fetch(`/catalogs/suffix/visoh2-lookup/?ico=${encodeURIComponent(ico)}`);
+            const payload = await response.json();
+            if (!payload.ok) {
+                alert(payload.error || "Nepodařilo se načíst data z VISOH2.");
+                return;
+            }
+            const rows = payload.data || [];
+            renderVisohRows(rows);
+            openVisohModal();
+            if (rows.length) {
+                const first = rows[0];
+                if (first.name) nameInput.value = first.name;
+                if (first.icz) iczInput.value = first.icz;
+                if (first.facility_type) facilityTypeInput.value = first.facility_type;
+                if (first.zuj) zujInput.value = first.zuj;
+                if (first.address) addressInput.value = first.address;
+                if (first.name) suffixInput.value = first.name.slice(0, 50);
+                if (first.ico) icoInput.value = first.ico;
+            }
+        });
+    }
+
+    if (mapBtn) {
+        mapBtn.addEventListener("click", async () => {
+            if (!window.MapModal) {
+                alert("Mapa ještě není připravená.");
+                return;
+            }
+            let lat = parseFloat(latInput.value || "{{ app_default_map_lat_js }}");
+            let lng = parseFloat(lngInput.value || "{{ app_default_map_lng_js }}");
+            const address = (addressInput.value || "").trim();
+            if ((!latInput.value || !lngInput.value) && address.length >= 3) {
+                try {
+                    const geocodeResp = await fetch(`/catalogs/suffix/address-geocode/?q=${encodeURIComponent(address)}`);
+                    const geocodePayload = await geocodeResp.json();
+                    if (geocodePayload.ok && geocodePayload.data) {
+                        lat = Number(geocodePayload.data.lat);
+                        lng = Number(geocodePayload.data.lng);
+                    }
+                } catch (e) {}
+            }
+            window.MapModal.open({
+                lat,
+                lng,
+                onSave: async (point) => {
+                    latInput.value = point.lat.toFixed(7);
+                    lngInput.value = point.lng.toFixed(7);
+                    try {
+                        const reverseResp = await fetch(
+                            `/catalogs/suffix/address-reverse-geocode/?lat=${encodeURIComponent(point.lat)}&lng=${encodeURIComponent(point.lng)}`
+                        );
+                        const reversePayload = await reverseResp.json();
+                        if (reversePayload.ok && reversePayload.data && reversePayload.data.label) {
+                            addressInput.value = reversePayload.data.label;
+                        }
+                    } catch (error) {
+                        console.warn("Reverzní geokódování adresy selhalo.", error);
+                    }
+                },
+            });
+        });
+    }
+
+    if (acceptedWasteFilter) {
+        acceptedWasteFilter.addEventListener("input", () => {
+            filterWasteOptions(acceptedWasteSelect, acceptedWasteFilter.value);
+        });
+    }
+
+    if (producedWasteFilter) {
+        producedWasteFilter.addEventListener("input", () => {
+            filterWasteOptions(producedWasteSelect, producedWasteFilter.value);
+        });
+    }
+});
+</script>
+{% endblock %}

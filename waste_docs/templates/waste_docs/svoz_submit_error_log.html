@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Log SD | JeDiS{% endblock %}
+
+{% block content %}
+<section class="card">
+    <div style="display:flex; flex-wrap:wrap; gap:10px; align-items:flex-start; justify-content:space-between;">
+        <div>
+            <h1 style="margin:0;">Log odeslání sběrných dvorů</h1>
+            <p class="dash-muted" style="margin:6px 0 0;">
+                Vyberte sběrný dvůr a načtěte jeho log. Nepřečtené odesílací chyby: {{ yard_submit_error_unread_count }}.
+            </p>
+        </div>
+        <form method="post" action="{% url 'waste_docs:svoz_submit_error_log_acknowledge' %}" style="margin:0;">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="log">
+            {% if selected_subject_id %}<input type="hidden" name="subject" value="{{ selected_subject_id }}">{% endif %}
+            <button type="submit" class="btn secondary">Označit vše jako přečtené</button>
+        </form>
+    </div>
+    <form method="get" action="{% url 'waste_docs:svoz_submit_error_log' %}" style="margin:14px 0 0; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+        <label for="log-sd-subject" class="dash-muted" style="margin:0;">Sběrný dvůr</label>
+        <select id="log-sd-subject" name="subject" required style="min-width:16rem; flex:1 1 18rem;" title="Vyberte sběrný dvůr">
+            <option value="">-- vyberte dvůr --</option>
+            {% for yard in yard_log_choices %}
+            <option value="{{ yard.id }}" title="{{ yard.label }}" {% if selected_subject_id == yard.id %}selected{% endif %}>{{ yard.label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn">Načíst</button>
+    </form>
+    <div style="margin-top:16px;">
+        {% if selected_subject_id %}
+            {% include "waste_docs/partials/svoz_submit_error_log_groups.html" %}
+        {% else %}
+            <p class="dash-muted">Vyberte sběrný dvůr a načtěte log.</p>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_footer_js %}
+{% if selected_subject_id %}
+<script src="{% static 'waste_docs/js/svoz_submit_error_log_select.js' %}?v=2" defer></script>
+{% endif %}
+{% endblock %}

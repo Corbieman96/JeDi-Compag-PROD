@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Historie kontejneru {{ item.container_number }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="actions" style="justify-content: space-between; align-items: center;">
+        <h1 style="margin:0;">Historie kontejneru {{ item.container_number }}</h1>
+        <a class="btn secondary" href="{% url 'catalogs:container_passport_list' %}">Zpět na pasporty</a>
+    </div>
+    <p>
+        Druh vozidla: <strong>{{ item.vehicle_kind.name }}</strong>
+        {% if item.stredisko %} · Středisko: <strong>{{ item.stredisko.code }}</strong>{% endif %}
+        · Počet jízd: <strong>{{ results_count }}</strong>
+    </p>
+    {% if history_truncated %}
+    <p class="muted">Zobrazeno posledních {{ history_limit }} jízd (historie byla oříznuta).</p>
+    {% endif %}
+
+    {% if rides %}
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Jízda</th>
+                <th>Činnost</th>
+                <th>Subjekt</th>
+                <th>Adresa</th>
+                <th>Řidič</th>
+                <th>Číslo kontejneru</th>
+                <th>Stav</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ride in rides %}
+            <tr>
+                <td>{{ ride.drive_date|date:"j.n.Y" }}</td>
+                <td><a href="{% url 'waste_docs:detail' ride.pk %}">#{{ ride.pk }}</a></td>
+                <td>{{ ride.activity_snapshot|default:ride.activity.name|default:"—" }}</td>
+                <td>{{ ride.name_snapshot|default:"—"|truncatechars:32 }}</td>
+                <td>{{ ride.address_snapshot|default:"—"|truncatechars:40 }}</td>
+                <td>{{ ride.driver_snapshot|default:"—"|truncatechars:24 }}</td>
+                <td>
+                    {{ ride.container_number|default:"—" }}
+                    {% if ride.container_number_2 %} / {{ ride.container_number_2 }}{% endif %}
+                </td>
+                <td>{% if ride.is_archived %}Archivováno{% else %}Aktivní{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Pro tento kontejner zatím není žádná jízda.</p>
+    {% endif %}
+</div>
+{% endblock %}

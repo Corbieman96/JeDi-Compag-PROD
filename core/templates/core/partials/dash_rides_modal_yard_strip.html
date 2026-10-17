@@ -1,0 +1,28 @@
+{% if dash_svoz_yard_assignment_cards %}
+<div class="dash-rides-modal__yard-strip-wrap">
+    {% if role_access.can_see_all_waste_docs %}
+    <div class="dash-rides-modal__yard-strip-toolbar">
+        <a class="dash-rides-modal__yard-strip-plan-link" href="{% url 'waste_docs:svoz_dispatch_plan' %}?date={{ selected_date_iso }}">Plán svozů</a>
+    </div>
+    {% endif %}
+    <div class="dash-rides-modal__yard-strip" role="region" aria-label="Přiřazení řidičů ke sběrným dvorům pro zvolený den">
+        {% for card in dash_svoz_yard_assignment_cards %}
+        <article class="dash-yyard-card{% if not card.has_drivers %} dash-yyard-card--empty{% endif %}">
+            <div class="dash-yyard-card__name">{{ card.yard_name }}</div>
+            {% if card.assignments %}
+            <ul class="dash-yyard-card__drivers">
+                {% for a in card.assignments %}
+                <li>
+                    <span class="dash-yyard-card__plan" title="Řádek plánu svozů">{{ a.plan_label }}</span>
+                    <span class="dash-yyard-card__driver">{{ a.driver_label }}</span>
+                    {% if a.rz_label %}<span class="dash-yyard-card__rz">{{ a.rz_label }}</span>{% endif %}
+                    {% if a.vehicle_kind_short %}<span class="dash-yyard-card__vk">{{ a.vehicle_kind_short }}</span>{% endif %}
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </article>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}

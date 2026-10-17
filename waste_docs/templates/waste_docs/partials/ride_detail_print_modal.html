@@ -1,0 +1,96 @@
+{% load static %}
+<style>
+    .print-modal-backdrop {
+        position: fixed; inset: 0; background: rgba(0,0,0,.35);
+        display: none; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .print-modal {
+        width: min(420px, calc(100vw - 32px)); background: #fff; border-radius: 12px;
+        border: 1px solid var(--color-border); padding: 16px;
+    }
+    .print-modal h3 { margin: 0 0 6px; }
+    .print-modal .hint { margin: 0 0 12px; color: var(--color-muted); font-size: 0.9rem; }
+    .print-modal .opts { display: grid; gap: 8px; margin-bottom: 14px; }
+    .print-modal .opt-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-height: 32px;
+        padding: 6px 8px;
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background: #fff;
+    }
+    .print-modal .opt-row.is-disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+    }
+    .print-modal .opt-row input[type="radio"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        flex: 0 0 auto;
+    }
+    .print-modal .opt-row span { line-height: 1.2; }
+    .print-modal .acts { display: flex; gap: 8px; justify-content: flex-end; align-items: center; flex-wrap: wrap; }
+    .print-modal .acts .btn {
+        box-sizing: border-box;
+        min-height: 2.5rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font: inherit;
+        font-weight: 600;
+    }
+    .detail-print-status {
+        margin: 0 0 10px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        display: none;
+        font-size: 0.9rem;
+    }
+    .detail-print-status.is-visible { display: block; }
+    .detail-print-status.is-error { background: #fff8e6; color: #7a4b00; border: 1px solid #e8c878; }
+</style>
+
+<div class="print-modal-backdrop" id="detail-print-modal">
+    <div class="print-modal" role="dialog" aria-modal="true" aria-labelledby="detail-print-title">
+        <h3 id="detail-print-title">Co vytisknout</h3>
+        <p class="hint">Tisk proběhne v prohlížeči na tomto počítači. Soubory se připraví jako PDF.</p>
+        <p id="detail-print-status" class="detail-print-status" role="status" aria-live="polite"></p>
+        <div class="opts" id="detail-print-options">
+            {% for row in detail_print.file_rows %}
+            <label class="opt-row{% if row.disabled %} is-disabled{% endif %}">
+                <input
+                    type="radio"
+                    name="detail_print_kind"
+                    value="{{ row.kind }}"
+                    data-print-url="{{ row.print_url }}"
+                    {% if row.disabled %}disabled{% endif %}
+                >
+                <span>{{ row.label }}</span>
+            </label>
+            {% endfor %}
+        </div>
+        <div class="acts">
+            {% if detail_print.full_print_bundle_url %}
+            <a class="btn secondary" href="{{ detail_print.full_print_bundle_url }}">Plný tisk skupiny</a>
+            {% endif %}
+            <button type="button" class="btn secondary" id="detail-print-cancel">Zrušit</button>
+            <a class="btn" id="detail-print-run" href="#" target="_blank" rel="noopener noreferrer">Otevřít PDF</a>
+        </div>
+    </div>
+</div>
+{{ ride_attachment_print_items|json_script:"jedis-ride-attachment-print" }}
+<script>
+(function () {
+    var el = document.getElementById("jedis-ride-attachment-print");
+    try {
+        window.__JEDIS_RIDE_ATTACHMENT_PRINT__ = el ? JSON.parse(el.textContent) : [];
+    } catch (e) {
+        window.__JEDIS_RIDE_ATTACHMENT_PRINT__ = [];
+    }
+})();
+</script>
+<script src="{% static 'waste_docs/js/ride_detail_print.js' %}?v=20260326-att-detail"></script>
+<script src="{% static 'waste_docs/js/ride_attachment_print_prompt.js' %}?v=20260326-att-detail"></script>

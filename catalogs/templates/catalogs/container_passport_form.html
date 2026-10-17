@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Úprava pasportu kontejneru{% else %}Nový pasport kontejneru{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Úprava pasportu kontejneru{% else %}Nový pasport kontejneru{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data" class="form-grid form-grid--wide">
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="form-errors">{{ form.non_field_errors }}</div>{% endif %}
+        {% for field in form %}
+        <div class="field-row">
+            {{ field.label_tag }}
+            <div class="field-input">
+                {{ field }}
+                {{ field.errors }}
+            </div>
+        </div>
+        {% endfor %}
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'catalogs:container_passport_list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

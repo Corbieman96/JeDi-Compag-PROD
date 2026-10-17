@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Požadavek na svoz{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px;">
+    <h1>Požadavek na svoz odpadu</h1>
+    <p class="dash-muted" style="margin-top:0;">Subjekt: <strong>{{ subject.company_name }}</strong>
+        {% if subject.name %}({{ subject.name.value }}){% endif %}</p>
+    <p style="font-size:0.95rem;">Zvolte druh odpadu s koncovkou a uveďte čísla kontejnerů. Úkol se zobrazí dispečerovi na dashboardu
+        <strong>{{ next_target_hint|date:"l j. n. Y" }}</strong> (následující den, bez neděle).</p>
+
+    <form method="post" class="form-grid" style="max-width: 100%;">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="field-row">
+            {{ form.pair.label_tag }}
+            <div class="field-input">
+                {{ form.pair }}
+                {{ form.pair.errors }}
+            </div>
+        </div>
+        <div class="field-row">
+            {{ form.container_numbers.label_tag }}
+            <div class="field-input">
+                {{ form.container_numbers }}
+                {% if form.container_numbers.help_text %}<small>{{ form.container_numbers.help_text }}</small>{% endif %}
+                {{ form.container_numbers.errors }}
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn">Odeslat požadavek</button>
+            <a class="btn secondary" href="{% url 'core:dashboard' %}">Zpět na dashboard</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

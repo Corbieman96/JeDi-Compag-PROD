@@ -1,0 +1,40 @@
+<div class="card reports-date-filter">
+
+    <form method="get" class="reports-date-filter__form">
+
+        <span>
+
+            <label for="id_date_from">Od</label>
+
+            <input id="id_date_from" type="date" name="date_from" value="{{ date_range.date_from|date:'Y-m-d' }}">
+
+        </span>
+
+        <span>
+
+            <label for="id_date_to">Do</label>
+
+            <input id="id_date_to" type="date" name="date_to" value="{{ date_range.date_to|date:'Y-m-d' }}">
+
+        </span>
+
+        <button type="submit" class="btn">Zobrazit</button>
+
+        {% if export_url_name %}
+
+        <a class="btn secondary" href="{% url export_url_name %}?date_from={{ date_range.date_from|date:'Y-m-d' }}&amp;date_to={{ date_range.date_to|date:'Y-m-d' }}">Export XLSX</a>
+
+        {% endif %}
+
+        {% if active_report_slug %}
+
+        <a class="btn secondary" href="{% url 'reports:index' %}?date_from={{ date_range.date_from|date:'Y-m-d' }}&amp;date_to={{ date_range.date_to|date:'Y-m-d' }}">← Přehled reportů</a>
+
+        {% endif %}
+
+    </form>
+
+    <p class="reports-date-filter__hint"><small>Období: {{ date_range.label }}</small></p>
+
+</div>
+

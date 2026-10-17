@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Dashboard | JeDiS{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'core/css/dashboard.css' %}?v=37">
+<link rel="stylesheet" href="{% static 'core/css/dash_cr_dispatch_panel.css' %}">
+<style>
+    @keyframes dashAttentionBlink {
+        0%, 49% { opacity: 1; }
+        50%, 100% { opacity: 0.22; }
+    }
+    .dash-svoz-plan-needs-attention,
+    .dash-dispatcher-pending-attention,
+    .dash-svoz-error-log-attention {
+        animation: dashAttentionBlink 0.9s step-end infinite !important;
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .dash-svoz-plan-needs-attention,
+        .dash-dispatcher-pending-attention,
+        .dash-svoz-error-log-attention {
+            animation: none !important;
+        }
+    }
+    a.btn.secondary.dash-svoz-plan-needs-attention {
+        background: #fef3f2 !important;
+        border: 2px solid #b42318 !important;
+        color: #b42318 !important;
+    }
+    a.btn.secondary.dash-svoz-plan-needs-attention:hover {
+        background: #fecdca !important;
+        color: #7a1811 !important;
+    }
+
+    .dash-yard-svoz-attention-banner {
+        margin-bottom: 14px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 2px solid #b45309;
+        background: #fffbeb;
+        color: #92400e;
+        font-weight: 600;
+        font-size: 0.92rem;
+        line-height: 1.45;
+    }
+    a.dash-masthead-alert.dash-svoz-plan-needs-attention {
+        border-color: #b42318 !important;
+        background: #fef3f2 !important;
+        color: #912018 !important;
+        overflow: visible;
+    }
+    a.dash-masthead-alert.dash-dispatcher-pending-attention {
+        border: 2px solid #b45309 !important;
+        background: #fff3cd !important;
+        color: #92400e !important;
+        font-size: 0.86rem;
+        font-weight: 700;
+        overflow: visible;
+    }
+    a.dash-masthead-alert.dash-dispatcher-pending-attention:hover {
+        background: #ffe8a3 !important;
+        color: #78350f !important;
+    }
+    button.dash-masthead-alert {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 11px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        line-height: 1.25;
+        cursor: pointer;
+        font-family: inherit;
+        white-space: nowrap;
+    }
+    button.dash-masthead-alert.dash-svoz-error-log-attention {
+        border: 2px solid #b42318 !important;
+        background: #fef3f2 !important;
+        color: #912018 !important;
+    }
+</style>
+{% endblock %}
+
+{% block site_messages %}{% endblock %}
+
+{% block content %}
+<div class="dash-board">
+    <div class="dash-board__masthead">
+        {% include "core/partials/dash_board_masthead_main.html" %}
+    </div>
+
+    <div class="dash-board__body-cols">
+        <div class="dash-grid__stack">
+            {% include "core/partials/dash_board_panel_drivers.html" %}
+            {% include "core/partials/dash_board_absence_strip.html" %}
+        </div>
+        <div class="dash-grid__stack">
+            {% include "core/partials/dash_board_panel_rides.html" %}
+            {% include "core/partials/dash_board_panel_ride_detail.html" %}
+        </div>
+        <div class="dash-grid__stack dash-grid__stack--tasks">
+            {% include "core/partials/dash_board_panel_tasks.html" %}
+        </div>
+    </div>
+</div>
+
+{% if ride_groups %}
+{% include "core/partials/dash_board_modal.html" %}
+{% endif %}
+{% if selected_ride_group %}
+{% include "core/partials/dash_ride_detail_modal.html" %}
+{% include "core/partials/dash_ride_email_modal.html" %}
+<script src="{% static 'core/js/ride_email_dispatch.js' %}?v=6" defer></script>
+{% if ride_reassign_driver_enabled %}
+<script src="{% static 'waste_docs/js/ride_reassign_driver.js' %}?v=4" defer></script>
+{% endif %}
+{% if not selected_ride_group.is_plan_only and selected_ride_group.items|length >= 2 %}
+<link rel="stylesheet" href="{% static 'core/css/ride_route_reorder.css' %}?v=7">
+<script src="{% static 'core/js/ride_route_reorder/reorder_dom.js' %}?v=7"></script>
+<script src="{% static 'core/js/ride_route_reorder/ride_route_reorder.js' %}?v=7" defer></script>
+{% endif %}
+<script>
+(function () {
+    var modal = document.getElementById("dash-ride-detail-modal");
+    var openBtn = document.getElementById("dash-ride-detail-expand");
+    if (!modal || !openBtn) return;
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+    var prevOverflow = "";
+    function openModal() {
+        modal.removeAttribute("hidden");
+        modal.hidden = false;
+        modal.setAttribute("aria-hidden", "false");
+        openBtn.setAttribute("aria-expanded", "true");
+        openBtn.classList.add("is-active");
+        prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        if (window.jedisInitRideRouteReorder) {
+            window.jedisInitRideRouteReorder();
+        }
+        var closeBtn = modal.querySelector(".dash-rides-modal__close");
+        if (closeBtn) closeBtn.focus();
+    }
+    function closeModal() {
+        modal.hidden = true;
+        modal.setAttribute("hidden", "");
+        modal.setAttribute("aria-hidden", "true");
+        openBtn.setAttribute("aria-expanded", "false");
+        openBtn.classList.remove("is-active");
+        document.body.style.overflow = prevOverflow;
+        openBtn.focus();
+    }
+    openBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openModal();
+    });
+    modal.querySelectorAll("[data-dash-ride-detail-modal-close]").forEach(function (el) {
+        el.addEventListener("click", function (e) {
+            e.preventDefault();
+            closeModal();
+        });
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !modal.hidden) closeModal();
+    });
+})();
+</script>
+{% endif %}
+{% if can_create_pruvodka_dashboard %}
+{% include "core/partials/dash_blank_pruvodka_modal.html" %}
+<script>
+(function () {
+    var modal = document.getElementById("dash-blank-pruvodka-modal");
+    var openBtn = document.getElementById("dash-blank-pruvodka-open");
+    if (!modal || !openBtn) return;
+    if (modal.parentElement !== document.body) {
+        document.body.appendChild(modal);
+    }
+    var prevOverflow = "";
+    function openModal() {
+        modal.removeAttribute("hidden");
+        modal.hidden = false;
+        modal.setAttribute("aria-hidden", "false");
+        openBtn.setAttribute("aria-expanded", "true");
+        prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        var countInput = modal.querySelector("#blank-count");
+        if (countInput) countInput.focus();
+    }
+    function closeModal() {
+        modal.hidden = true;
+        modal.setAttribute("hidden", "");
+        modal.setAttribute("aria-hidden", "true");
+        openBtn.setAttribute("aria-expanded", "false");
+        document.body.style.overflow = prevOverflow;
+        openBtn.focus();
+    }
+    openBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        openModal();
+    });
+    modal.querySelectorAll("[data-dash-blank-modal-close]").forEach(function (el) {
+        el.addEventListener("click", function (e) {
+            e.preventDefault();
+            closeModal();
+        });
+    });
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !modal.hidden) closeModal();
+    });
+})();
+</script>
+{% endif %}
+<script>
+(function () {
+    var openBtn = document.getElementById("dash-cr-kind-closure-open");
+    var panel = document.getElementById("dash-cr-kind-closure-panel");
+    if (!openBtn || !panel) return;
+    openBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var open = panel.hasAttribute("hidden");
+        if (open) {
+            panel.removeAttribute("hidden");
+            openBtn.setAttribute("aria-expanded", "true");
+            openBtn.classList.add("is-active");
+        } else {
+            panel.setAttribute("hidden", "");
+            openBtn.setAttribute("aria-expanded", "false");
+            openBtn.classList.remove("is-active");
+        }
+    });
+})();
+</script>
+<script src="{% static 'core/js/dashboard.js' %}?v=9" defer></script>
+{% if role_access.can_see_all_waste_docs %}
+{% include "core/partials/dash_svoz_error_log_modal.html" %}
+<script src="{% static 'waste_docs/js/svoz_submit_error_log_modal.js' %}?v=2" defer></script>
+{% endif %}
+{% endblock %}

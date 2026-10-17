@@ -1,0 +1,110 @@
+.driver-absence-card__hint {
+    margin: 0 0 12px;
+    font-size: 0.9rem;
+    color: var(--color-muted, #5f6f62);
+}
+.driver-absence-card__hint a { font-weight: 600; }
+
+.driver-absence-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px 14px;
+    margin-bottom: 10px;
+}
+.driver-absence-toolbar__search,
+.driver-absence-toolbar__filter {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+.driver-absence-toolbar__search { flex: 1 1 200px; }
+.driver-absence-toolbar__filter { flex: 0 1 150px; }
+.driver-absence-toolbar label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #3d5c44;
+}
+.driver-absence-toolbar__input,
+.driver-absence-toolbar__select {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid #c5d9c8;
+    border-radius: 8px;
+    background: #fff;
+    font-size: 0.9rem;
+    color: #2f4a36;
+}
+.driver-absence-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    margin-left: auto;
+}
+.driver-absence-toolbar__reset { font-size: 0.85rem; padding: 7px 12px; }
+
+.driver-absence-summary {
+    margin: 0 0 10px;
+    font-size: 0.86rem;
+    color: var(--color-muted, #5f6f62);
+}
+.driver-absence-summary__active {
+    font-weight: 600;
+    color: #2f4a36;
+}
+.driver-absence-summary__trunc { color: #8a4a12; }
+
+.driver-absence-list__scroll {
+    max-height: 280px;
+    overflow: auto;
+    border: 1px solid #d4e4d6;
+    border-radius: 10px;
+    background: #fafcfa;
+}
+.driver-absence-table { width: 100%; margin: 0; font-size: 0.88rem; border-collapse: collapse; }
+.driver-absence-table thead th {
+    position: sticky; top: 0; z-index: 1; background: #eef6ef;
+    font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.03em;
+    color: #3d5c44; padding: 8px 10px; border-bottom: 1px solid #d4e4d6; white-space: nowrap;
+}
+.driver-absence-table tbody td { padding: 7px 10px; border-bottom: 1px solid #e8f0e9; vertical-align: middle; }
+.driver-absence-table tbody tr:last-child td { border-bottom: none; }
+.driver-absence-table tbody tr:nth-child(even):not(.is-hidden) { background: rgba(255, 255, 255, 0.65); }
+.driver-absence-row.is-hidden { display: none; }
+.driver-absence-chip {
+    display: inline-block; max-width: 100%; padding: 3px 8px; border-radius: 999px;
+    font-size: 0.8rem; font-weight: 600; line-height: 1.3; white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; background: #e8f0e9; color: #2f4a36; border: 1px solid #c5d9c8;
+}
+.driver-absence-chip--vacation { background: #e3f3e6; border-color: #9bc9a4; color: #1f5c2e; }
+.driver-absence-chip--sick, .driver-absence-chip--doctor { background: #fff0e6; border-color: #e8b88a; color: #8a4a12; }
+.driver-absence-chip--training { background: #e8f0ff; border-color: #a8bce8; color: #2a4578; }
+.driver-absence-chip--garbage { background: #f0f0ee; border-color: #c8c8c4; color: #4a4a48; }
+.driver-absence-chip--obstacle { background: #f5f0e8; border-color: #d4c4a8; color: #6a5430; }
+.driver-absence-chip--leave, .driver-absence-chip--unpaid { background: #f3eef8; border-color: #c9b8dc; color: #5a3d78; }
+.driver-absence-chip--parental { background: #fceef5; border-color: #e0b8cc; color: #7a3058; }
+.driver-absence-chip--event { background: #eef5fc; border-color: #b8d0e8; color: #305878; }
+.driver-absence-chip--other { background: #eef2ee; border-color: #c8d4ca; color: #4a5a4e; }
+.driver-absence-range { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.driver-absence-partial { display: inline-flex; align-items: center; justify-content: center; min-width: 1.4rem; font-weight: 700; color: #6a5430; }
+.driver-absence-note { color: #4a5a4e; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.driver-absence-no-match {
+    margin: 0;
+    padding: 14px 12px;
+    font-size: 0.9rem;
+    color: var(--color-muted, #5f6f62);
+    text-align: center;
+}
+.driver-absence-empty {
+    margin: 0; padding: 16px 14px; font-size: 0.92rem; color: var(--color-muted, #5f6f62);
+    background: #fafcfa; border: 1px dashed #c5d9c8; border-radius: 10px;
+}
+@media (max-width: 720px) {
+    .driver-absence-note { max-width: 120px; }
+    .driver-absence-toolbar__actions { margin-left: 0; width: 100%; }
+}

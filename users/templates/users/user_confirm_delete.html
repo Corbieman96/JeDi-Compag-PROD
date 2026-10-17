@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat uživatele{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat uživatele</h1>
+    <p>
+        Opravdu chcete <strong>trvale odstranit</strong> uživatele
+        <strong>{{ target_user.username }}</strong> z databáze?
+        Záznam zmizí natvrdo (není to jen deaktivace účtu).
+    </p>
+    <p class="muted" style="color: var(--color-muted); font-size: 0.95rem;">
+        Pokud má uživatel vytvořené průvodky, mazání může selhat kvůli chráněné vazbě v databázi.
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn danger">Smazat</button>
+        <a class="btn secondary" href="{% url 'users:list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

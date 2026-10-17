@@ -1,0 +1,108 @@
+<div class="driver-absence-panel" data-driver-absence-panel>
+    <p class="driver-absence-card__hint">
+        Záznamy zadávejte na <a href="{% url 'core:dashboard' %}">dashboardu</a> u vybraného dne (panel Řidiči → ⋮).
+    </p>
+
+    {% if absence_rows %}
+    <div class="driver-absence-toolbar" role="search">
+        <p class="driver-absence-toolbar__search">
+            <label for="driver-absence-q">Hledat</label>
+            <input
+                id="driver-absence-q"
+                type="search"
+                class="driver-absence-toolbar__input"
+                placeholder="Důvod, období, poznámka…"
+                autocomplete="off"
+                data-driver-absence-q
+            />
+        </p>
+        <p class="driver-absence-toolbar__filter">
+            <label for="driver-absence-year">Rok</label>
+            <select id="driver-absence-year" class="driver-absence-toolbar__select" data-driver-absence-year>
+                <option value="">Všechny roky</option>
+                {% for year in absence_years %}
+                <option value="{{ year }}"{% if year == absence_default_year %} selected{% endif %}>{{ year }}</option>
+                {% endfor %}
+            </select>
+        </p>
+        <p class="driver-absence-toolbar__filter">
+            <label for="driver-absence-type">Důvod</label>
+            <select id="driver-absence-type" class="driver-absence-toolbar__select" data-driver-absence-type>
+                <option value="">Všechny důvody</option>
+                {% for val, label in absence_type_choices %}
+                <option value="{{ val }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </p>
+        <div class="driver-absence-toolbar__actions">
+            <button type="button" class="btn secondary driver-absence-toolbar__reset" data-driver-absence-reset hidden>
+                Zrušit filtry
+            </button>
+            <a class="btn secondary" href="{% url 'core:dashboard' %}">Zapsat na dashboardu</a>
+        </div>
+    </div>
+
+    <p class="driver-absence-summary" data-driver-absence-summary aria-live="polite">
+        Zobrazeno <span data-driver-absence-visible-count>{{ absence_loaded_count }}</span>
+        z <span data-driver-absence-total-count>{{ absence_total_count }}</span> záznamů
+        {% if absence_loaded_count < absence_total_count %}
+        <span class="driver-absence-summary__trunc" title="Načteno jen posledních {{ absence_loaded_count }} záznamů">
+            (zobrazeno posledních {{ absence_loaded_count }})
+        </span>
+        {% endif %}
+        {% if absence_active_today_label %}
+        · <span class="driver-absence-summary__active">Aktivní dnes: {{ absence_active_today_label }}</span>
+        {% endif %}
+    </p>
+
+    <div class="driver-absence-list__scroll" role="region" aria-label="Seznam kalendářové nepřítomnosti">
+        <table class="driver-absence-table">
+            <thead>
+                <tr>
+                    <th scope="col">Důvod</th>
+                    <th scope="col">Období</th>
+                    <th scope="col" title="Půldenní nepřítomnost">½</th>
+                    <th scope="col">Poznámka</th>
+                </tr>
+            </thead>
+            <tbody data-driver-absence-tbody>
+                {% for row in absence_rows %}
+                <tr
+                    class="driver-absence-row"
+                    data-year="{{ row.year }}"
+                    data-type="{{ row.absence_type }}"
+                    data-search-text="{{ row.search_text }}"
+                >
+                    <td>
+                        <span class="driver-absence-chip {{ row.chip_class }}" title="{{ row.type_label }}">
+                            {{ row.type_label }}
+                        </span>
+                    </td>
+                    <td class="driver-absence-range">{{ row.range_label }}</td>
+                    <td>
+                        {% if row.is_partial %}
+                        <span class="driver-absence-partial" title="Půldenní nepřítomnost">½</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if row.note %}
+                        <span class="driver-absence-note" title="{{ row.note }}">{{ row.note_preview }}</span>
+                        {% else %}
+                        <span class="driver-absence-note" aria-hidden="true">—</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <p class="driver-absence-no-match" data-driver-absence-no-match hidden>
+            Žádný záznam neodpovídá zadaným filtrům.
+        </p>
+    </div>
+    {% else %}
+    <p class="driver-absence-empty">
+        Žádná kalendářová nepřítomnost. Novou zapište na
+        <a href="{% url 'core:dashboard' %}">dashboardu</a> u vybraného dne.
+    </p>
+    {% endif %}
+</div>

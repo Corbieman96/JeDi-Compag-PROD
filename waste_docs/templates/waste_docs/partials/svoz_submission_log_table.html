@@ -1,0 +1,32 @@
+<table class="name-subject-pairs__table svoz-submission-log-table" style="min-width: 640px; width: 100%; border-collapse: collapse;">
+    <thead>
+        <tr style="background: #eef6ef;">
+            <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Odpad / koncovka</th>
+            <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Kontejner(y)</th>
+            <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Druh vozidla</th>
+            <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Poznámka</th>
+            <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Čas</th>
+            <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Odeslal</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in submission_rows %}
+        <tr>
+            <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                <strong>{{ row.display_label }}</strong>
+                {% if row.is_hazardous %}
+                <br><span class="svoz-submission-hazard-badge">Nebezpečný</span>
+                {% endif %}
+                {% if row.waste_suffix_label and row.waste_suffix_label != row.display_label %}
+                <br><span class="dash-muted" style="font-size:0.88em;">{{ row.waste_suffix_label }}</span>
+                {% endif %}
+            </td>
+            <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">{{ row.container_numbers }}</td>
+            <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">{{ row.vehicle_kind_label }}</td>
+            <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">{{ row.yard_contact_note|default:"—" }}</td>
+            <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">{{ row.submitted_at_display }}</td>
+            <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">{{ row.created_by_label }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

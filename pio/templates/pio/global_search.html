@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}PIO — vyhledávání{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>PIO — vyhledávání napříč subjekty</h1>
+    <p class="dash-muted"><small>Aktivní PIO u párů odpad + koncovka i archivované revize. Filtrování podle data: u archivu datum nahrání, u aktivního přibližně datum úpravy subjektu.</small></p>
+    <form method="get" class="form-grid" style="margin-bottom: 1rem;">
+        <div class="field-row">
+            <label for="id_q">Dotaz</label>
+            <div class="field-input">
+                <input type="search" name="q" id="id_q" value="{{ q }}" placeholder="Název, odpad, koncovka, kód…">
+            </div>
+        </div>
+        <div class="field-row">
+            <label for="id_date_from">Od data</label>
+            <div class="field-input">
+                <input type="date" name="date_from" id="id_date_from" value="{{ date_from }}">
+            </div>
+        </div>
+        <div class="field-row">
+            <label for="id_date_to">Do data</label>
+            <div class="field-input">
+                <input type="date" name="date_to" id="id_date_to" value="{{ date_to }}">
+            </div>
+        </div>
+        <button type="submit" class="btn">Hledat</button>
+        <a class="btn secondary" href="{% url 'catalogs:name_pio_search' %}">Vymazat</a>
+    </form>
+    <p><small>Zobrazeno max. 500 výsledků.</small></p>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Stav</th>
+                <th>Subjekt</th>
+                <th>Odpad</th>
+                <th>Koncovka</th>
+                <th>Poznámka</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.sort_at|date:"d.m.Y H:i" }}</td>
+                <td>{{ item.kind_label }}</td>
+                <td>
+                    <a href="{% url 'catalogs:name_edit' item.pair.subject_profile_id %}">{{ item.pair.subject_profile.company_name }}</a>
+                </td>
+                <td>{{ item.pair.waste_type }}</td>
+                <td>{{ item.pair.suffix }}</td>
+                <td>{{ item.note|default:"—"|truncatechars:40 }}</td>
+                <td>
+                    <a class="btn secondary" href="{% url 'catalogs:name_pair_pio' item.pair.subject_profile_id item.pair.pk %}">Archiv</a>
+                    {% if item.file %}
+                    <a href="{{ item.file.url }}" target="_blank" rel="noopener">Soubor</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">Žádné záznamy.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

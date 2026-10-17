@@ -1,0 +1,193 @@
+{% if ride_reassign_driver_enabled %}
+<style>
+    .dash-ride-detail-modal .dash-rides-modal__panel {
+        position: relative;
+    }
+    .ride-reassign-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.35);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 40;
+        padding: 16px;
+    }
+    .ride-reassign-backdrop.is-open { display: flex; }
+    .ride-reassign-panel {
+        width: min(640px, 100%);
+        max-height: min(80vh, 680px);
+        overflow: auto;
+        background: #fff;
+        border-radius: 12px;
+        border: 1px solid var(--color-border, #c5d4c8);
+        padding: 16px;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.18);
+    }
+    .ride-reassign-panel h3 { margin: 0 0 6px; }
+    .ride-reassign-panel .hint {
+        margin: 0 0 12px;
+        color: var(--color-muted, #5a6b5e);
+        font-size: 0.9rem;
+    }
+    .ride-reassign-select-all {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .ride-reassign-rides-wrap {
+        margin: 0 0 12px;
+        max-height: 240px;
+        overflow: auto;
+        border: 1px solid var(--color-border, #c5d4c8);
+        border-radius: 8px;
+        background: #f7faf8;
+    }
+    .ride-reassign-rides-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.88rem;
+        table-layout: fixed;
+    }
+    .ride-reassign-rides-table th,
+    .ride-reassign-rides-table td {
+        padding: 7px 8px;
+        text-align: left;
+        vertical-align: middle;
+        border-bottom: 1px solid var(--color-border, #c5d4c8);
+    }
+    .ride-reassign-rides-table th {
+        position: sticky;
+        top: 0;
+        background: #e8f0ea;
+        font-weight: 600;
+        z-index: 1;
+    }
+    .ride-reassign-rides-table tr:last-child td { border-bottom: none; }
+    .ride-reassign-rides-table .col-check { width: 36px; text-align: center; }
+    .ride-reassign-rides-table .col-ride { width: 28%; }
+    .ride-reassign-rides-table .col-name { width: 36%; }
+    .ride-reassign-rides-table .col-waste { width: 36%; }
+    .ride-reassign-rides-table .cell-ellipsis {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .ride-reassign-rides-table input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        margin: 0;
+        vertical-align: middle;
+    }
+    .ride-reassign-fields {
+        display: grid;
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .ride-reassign-fields label {
+        display: grid;
+        gap: 4px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    .ride-reassign-fields select {
+        font: inherit;
+        min-height: 2.4rem;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border, #c5d4c8);
+        max-width: 100%;
+    }
+    .ride-reassign-fields .field-hint {
+        font-weight: 400;
+        color: var(--color-muted, #5a6b5e);
+        font-size: 0.82rem;
+    }
+    .ride-reassign-acts {
+        display: flex;
+        gap: 8px;
+        justify-content: flex-end;
+        flex-wrap: wrap;
+    }
+</style>
+
+<div
+    class="ride-reassign-backdrop"
+    id="ride-reassign-driver-modal"
+    hidden
+    aria-hidden="true"
+>
+    <div class="ride-reassign-panel" role="dialog" aria-modal="true" aria-labelledby="ride-reassign-title">
+        <h3 id="ride-reassign-title">Výměna řidiče / RZ</h3>
+        <p class="hint">Vyberte jízdy ze skupiny, nového řidiče (musí mít daný druh vozidla) a případně jinou RZ. Výchozí RZ zůstane stávající.</p>
+        <form method="post" action="{{ ride_reassign_driver.post_url }}" id="ride-reassign-driver-form">
+            {% csrf_token %}
+            <input type="hidden" name="drive_date" value="{{ ride_reassign_driver.drive_date }}">
+            <input type="hidden" name="from_vehicle_rz_id" value="{{ ride_reassign_driver.from_vehicle_rz_id }}">
+            <input type="hidden" name="from_driver_id" value="{{ ride_reassign_driver.from_driver_id }}">
+
+            <label class="ride-reassign-select-all">
+                <input type="checkbox" id="ride-reassign-select-all" checked>
+                Vybrat vše
+            </label>
+            <div class="ride-reassign-rides-wrap" id="ride-reassign-rides">
+                <table class="ride-reassign-rides-table">
+                    <thead>
+                        <tr>
+                            <th class="col-check" scope="col"></th>
+                            <th class="col-ride" scope="col">Jízda</th>
+                            <th class="col-name" scope="col">Subjekt</th>
+                            <th class="col-waste" scope="col">Odpad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ride in ride_reassign_driver.rides %}
+                        <tr>
+                            <td class="col-check">
+                                <input type="checkbox" name="ride_pks" value="{{ ride.pk }}" checked aria-label="Vybrat {{ ride.label }}">
+                            </td>
+                            <td class="col-ride cell-ellipsis" title="{{ ride.label }}"><strong>{{ ride.label }}</strong></td>
+                            <td class="col-name cell-ellipsis" title="{{ ride.name }}">{{ ride.name }}</td>
+                            <td class="col-waste cell-ellipsis" title="{{ ride.waste }}">{{ ride.waste }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="ride-reassign-fields">
+                <label>
+                    Nový řidič
+                    <select name="new_driver_id" id="ride-reassign-driver-select" required>
+                        <option value="">— vyberte řidiče —</option>
+                        {% for d in ride_reassign_driver.drivers %}
+                        <option value="{{ d.id }}" title="{{ d.label }}">{{ d.label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label>
+                    RZ vozidla
+                    <span class="field-hint">Implicitně stávající; po výběru řidiče všechny RZ všech druhů, které smí řídit (ne jen přiřazené SPZ).</span>
+                    <select name="new_vehicle_rz_id" id="ride-reassign-rz-select">
+                        <option value="{{ ride_reassign_driver.current_rz_id }}">
+                            Stávající RZ
+                            {% for rz in ride_reassign_driver.rz_options %}
+                            {% if rz.id == ride_reassign_driver.current_rz_id %} ({{ rz.label }}){% endif %}
+                            {% endfor %}
+                        </option>
+                    </select>
+                </label>
+            </div>
+
+            <div class="ride-reassign-acts">
+                <button type="button" class="btn secondary" id="ride-reassign-cancel">Zrušit</button>
+                <button type="submit" class="btn" id="ride-reassign-submit">Uložit výměnu</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script type="application/json" id="ride-reassign-driver-data">{{ ride_reassign_driver_json }}</script>
+{% endif %}

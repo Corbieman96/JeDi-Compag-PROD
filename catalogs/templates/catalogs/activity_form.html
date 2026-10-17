@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Úprava činnosti{% else %}Nová činnost{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Úprava činnosti{% else %}Nová činnost{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-grid">
+            <div class="field-row">
+                {{ form.name.label_tag }}
+                <div class="field-input">{{ form.name }}{{ form.name.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.default_service_minutes.label_tag }}
+                <div class="field-input">
+                    {{ form.default_service_minutes }}
+                    {% if form.default_service_minutes.help_text %}<small>{{ form.default_service_minutes.help_text }}</small>{% endif %}
+                    {{ form.default_service_minutes.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                {{ form.vehicle_kinds.label_tag }}
+                <div class="field-input">
+                    {{ form.vehicle_kinds }}
+                    <small>Výběr více položek: podržte Ctrl (Cmd).</small>
+                    {{ form.vehicle_kinds.errors }}
+                </div>
+            </div>
+            <h2 class="form-section-title" style="margin-top:12px;">Mobilní průvodka — kolik kontejnerů</h2>
+            <div class="field-row">
+                <span class="field-label-like">{{ form.mobile_container_slots.label_tag }}</span>
+                <div class="field-input">
+                    <div class="stacked-radios" style="display:flex;flex-direction:column;gap:10px;">{{ form.mobile_container_slots }}</div>
+                    {% if form.mobile_container_slots.help_text %}<small>{{ form.mobile_container_slots.help_text }}</small>{% endif %}
+                    {{ form.mobile_container_slots.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                {{ form.follow_up_activities.label_tag }}
+                <div class="field-input">
+                    {{ form.follow_up_activities }}
+                    <small>Po uložení průvodky v této činnosti zůstane záznam označen jako čekající na dokončení v jedné z vybraných navazujících činností (pokud uživatel nezaškrtne výjimku ve formuláři průvodky). Při zakládání druhé části jízdy uživatel vybírá přesně tyto druhy v poli <strong>Činnost</strong> u průvodky (záměrně omezená nabídka).</small>
+                    {{ form.follow_up_activities.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                {{ form.follow_up_terminal_activities.label_tag }}
+                <div class="field-input">
+                    {{ form.follow_up_terminal_activities }}
+                    <small>Které navazující činnosti <strong>uzavřou</strong> čekání (typicky Stažení). Ostatní vybrané návaznosti (např. Výměna) se jen evidují jako mezikrok — Přistavení zůstane otevřené, dokud nepřijde uzavírající činnost. Při jedné návaznosti se uzavírající doplní automaticky.</small>
+                    {{ form.follow_up_terminal_activities.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                {{ form.follow_up_symbol_parent.label_tag }}
+                <div class="field-input">
+                    {{ form.follow_up_symbol_parent }}
+                    <small>Sloupec <strong>Návaznost</strong> u průvodky navázané na předchozí záznam. Prázdné = u „stažení“ výchozí ↩ (návrat), u „výměna“ ⇄, jinak ↑; lze přepsat libovolným znakem (např. ⇄ nebo ↕).</small>
+                    {{ form.follow_up_symbol_parent.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                {{ form.follow_up_symbol_child.label_tag }}
+                <div class="field-input">
+                    {{ form.follow_up_symbol_child }}
+                    <small>U průvodky, na kterou už něco navazuje — symbol před čísly navazujících jízd (např. ↕). Prázdné = šipka dolů.</small>
+                    {{ form.follow_up_symbol_child.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="{{ form.evidence_without_excel.id_for_label }}">{{ form.evidence_without_excel.label }}</label>
+                <div class="field-input field-input--checkbox-narrow">
+                    {{ form.evidence_without_excel }}
+                    <small>U průvodek této činnosti nebude nabídnuto generování Excelu; u tisku jízdy se soubor nevytváří automaticky. Existující soubor z minulosti lze stáhnout.</small>
+                    {{ form.evidence_without_excel.errors }}
+                </div>
+            </div>
+            <div class="field-row">
+                <label for="{{ form.require_nitropodnikovy_subjekt.id_for_label }}">{{ form.require_nitropodnikovy_subjekt.label }}</label>
+                <div class="field-input field-input--checkbox-narrow">
+                    {{ form.require_nitropodnikovy_subjekt }}
+                    {{ form.require_nitropodnikovy_subjekt.errors }}
+                </div>
+            </div>
+        </div>
+
+        <h2 class="form-section-title">Režim polí na průvodce</h2>
+        <p><small>Chybějící řádek = výchozí režim v aplikaci. Řádky lze mazat (obnoví se výchozí).</small></p>
+        <p><small><strong>Adresa plnění = Skryté</strong> — pole se nezobrazí v jízdě a v protokolu STASKA (<code>jizda.xlsx</code>) se nevyplní řádek <strong>Kde</strong> (vhodné pro pracovní stroje). Místo uveďte v <strong>Poznámce</strong>.</small></p>
+        {{ formset.management_form }}
+        {% if formset.non_form_errors %}
+            <div class="form-errors">{{ formset.non_form_errors }}</div>
+        {% endif %}
+        <div style="overflow-x:auto;">
+            <table class="table-minimal" style="width:100%; border-collapse:collapse;">
+                <thead>
+                    <tr>
+                        <th style="text-align:left; padding:6px;">Položka</th>
+                        <th style="text-align:left; padding:6px;">Režim</th>
+                        <th style="text-align:left; padding:6px;">Smazat</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for rf in formset.ordered_forms %}
+                    <tr>
+                        <td style="padding:6px; vertical-align:top;">
+                            {% for h in rf.hidden_fields %}{{ h }}{% endfor %}
+                            {{ rf.field_key }}{{ rf.field_key.errors }}
+                        </td>
+                        <td style="padding:6px; vertical-align:top;">
+                            {{ rf.mode }}{{ rf.mode.errors }}
+                        </td>
+                        <td style="padding:6px; vertical-align:top;">
+                            {% if rf.DELETE %}{{ rf.DELETE }}{% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'catalogs:activity_list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

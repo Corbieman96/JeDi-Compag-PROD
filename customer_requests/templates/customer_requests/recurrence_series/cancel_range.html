@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat sérii #{{ root.pk }} | JeDiS{% endblock %}
+
+{% block content %}
+<section class="card">
+    <p style="margin:0 0 12px;">
+        <a href="{% url 'customer_request_recurrence_series:manage' root.pk %}">← Správa série #{{ root.pk }}</a>
+    </p>
+    <h2 style="margin-top:0;">Smazat sérii (rozsah od–do)</h2>
+    <p class="dash-muted" style="margin:0 0 16px;">
+        Soft-cancel jen <strong>otevřených</strong> termínů bez jízdy v intervalu.
+        Otevřených teď: {{ open_count }}. {{ series_label }}
+    </p>
+    <form method="post" onsubmit="return confirm('Zrušit otevřené termíny v zadaném rozsahu?');">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button class="btn danger" type="submit">Zrušit v rozsahu</button>
+    </form>
+</section>
+{% endblock %}

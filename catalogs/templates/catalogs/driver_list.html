@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Řidiči{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Řidiči</h1>
+    <a class="btn" href="{% url 'catalogs:driver_create' %}">Nový řidič</a>
+    <form method="get" id="driver-filter-form" style="margin-top: 12px;">
+        <div class="form-grid form-grid--wide" style="align-items: end;">
+            <div class="field-row">
+                <label for="driver-druh">Druh vozidla</label>
+                <div class="field-input">
+                    <select name="vehicle_kind" id="driver-druh">
+                        <option value="">— všechny —</option>
+                        {% for vk in vehicle_kind_options %}
+                        <option value="{{ vk.pk }}" title="{{ vk.display_label }}"{% if filter_vehicle_kind_id == vk.pk %} selected{% endif %}>{{ vk.display_label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="field-row" style="align-self: end;">
+                <div class="field-input actions" style="gap: 8px;">
+                    <button type="submit" class="btn">Filtrovat</button>
+                    {% if has_filters %}
+                    <a class="btn secondary" href="{% url 'catalogs:driver_list' %}">Zrušit filtry</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>Příjmení a jméno</th>
+                <th>Osobní číslo</th>
+                <th>Telefon</th>
+                <th>Pracovní pozice</th>
+                <th>ŘP skupiny</th>
+                <th>Přiřazené RZ</th>
+                <th>Druhy vozidel</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{% if item.last_name or item.first_name %}{{ item.last_name }} {{ item.first_name }}{% if item.title %}, {{ item.title }}{% endif %}{% else %}-{% endif %}</td>
+                <td>{{ item.personal_number }}</td>
+                <td>{{ item.phone|default:"-" }}</td>
+                <td>{{ item.job_position|default:"-" }}</td>
+                <td>{{ item.driver_license_groups|default:"-" }}</td>
+                <td>
+                    {% for rz in item.allowed_vehicle_rz.all %}
+                        {{ rz.rz.value }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        -
+                    {% endfor %}
+                </td>
+                <td>
+                    {% for kind in item.allowed_vehicle_kinds.all %}
+                        {{ kind.name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        -
+                    {% endfor %}
+                </td>
+                <td class="actions">
+                    <a class="btn" href="{% url 'catalogs:driver_edit' item.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'catalogs:driver_delete' item.pk %}">Smazat</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8">Zatím bez řidičů.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

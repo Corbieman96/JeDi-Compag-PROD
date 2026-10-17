@@ -1,0 +1,35 @@
+<div
+    class="dash-rides-modal dash-svoz-error-log-modal"
+    id="dash-svoz-error-log-modal"
+    hidden
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dash-svoz-error-log-title"
+    data-ack-url="{% url 'waste_docs:svoz_submit_error_log_acknowledge' %}"
+    data-fetch-url="{% url 'waste_docs:svoz_submit_error_log_modal_partial' %}?date={{ selected_date_iso }}"
+    data-auto-open="{% if request.GET.svoz_error_log == '1' %}1{% endif %}"
+>
+    <div class="dash-rides-modal__backdrop" data-dash-svoz-error-log-close aria-hidden="true"></div>
+    <div class="dash-rides-modal__panel">
+        <header class="dash-rides-modal__header">
+            <div>
+                <h2 id="dash-svoz-error-log-title">Log odeslání sběrných dvorů</h2>
+                <p class="dash-muted" style="margin:4px 0 0;font-size:0.88rem;color:#e8f3ea;">
+                    Chyby i odeslané řádky. Nepřečtené odesílací chyby: {{ yard_submit_error_unread_count }}.
+                </p>
+            </div>
+            <div class="dash-rides-modal__header-actions">
+                <form method="post" action="{% url 'waste_docs:svoz_submit_error_log_acknowledge' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                    <button type="submit" class="btn secondary">Označit vše jako přečtené</button>
+                </form>
+                <button type="button" class="dash-rides-modal__close" data-dash-svoz-error-log-close>Zavřít (Esc)</button>
+            </div>
+        </header>
+        <div class="dash-rides-modal__body" id="dash-svoz-error-log-body" style="padding:16px 18px; overflow:auto;">
+            <p class="dash-muted" style="margin:0;" data-svoz-error-log-placeholder>Načítám log…</p>
+        </div>
+    </div>
+</div>

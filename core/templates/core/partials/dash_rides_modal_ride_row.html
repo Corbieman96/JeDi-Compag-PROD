@@ -1,0 +1,13 @@
+<li class="dash-rides-columns__ride{% if ride.name_id in dash_modal_yard_name_ids %} dash-rides-columns__ride--yard{% endif %}">
+    <div class="dash-rides-columns__ride-row">
+        <span class="dash-rides-columns__ride-driver-compact">
+            <span class="dash-rides-columns__lbl dash-rides-columns__lbl--inline">Řidič</span>{{ ride.driver_snapshot|default:"—" }}
+        </span>
+        <span class="dash-rides-columns__ride-link-wrap">
+            {% if ride.name_id in dash_modal_yard_name_ids %}
+            <span class="dash-rides-columns__badge-yard" title="Subjekt má v číselníku zapnutou „Lokalitu sběrného dvora“">Dvůr</span>
+            {% endif %}
+            <a href="{% url 'waste_docs:detail' ride.pk %}" title="Jízda #{{ ride.pk }}{% if ride.snd_cislo_listu %} · {{ ride.snd_cislo_listu }}{% endif %}">{{ ride.name_snapshot|default:"—" }}</a>
+        </span>
+    </div>
+</li>

@@ -1,0 +1,103 @@
+{% for group in yard_submit_error_groups %}
+<section class="dash-svoz-error-log-yard" style="margin:0 0 18px; padding:12px; border:1px solid var(--color-border); border-radius:8px; background:#fff;">
+    {% if error_log_return == "log" %}
+    <form id="svoz-log-select-form" method="post" action="{% url 'waste_docs:svoz_submit_error_log_delete_selected' group.subject_id %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="log">
+        {% if selected_subject_id %}<input type="hidden" name="subject" value="{{ selected_subject_id }}">{% endif %}
+    {% endif %}
+    <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:8px;">
+        <h3 style="margin:0; font-size:1.02rem;">{{ group.subject_label }}</h3>
+        {% if group.unread_count %}
+        <span style="display:inline-block; padding:2px 8px; border-radius:999px; background:#fef3f2; color:#b42318; font-size:0.82rem; font-weight:600;">{{ group.unread_count }} nové</span>
+        {% endif %}
+        <a class="btn secondary" href="{% url 'waste_docs:svoz_submit_error_log_txt' group.subject_id %}" style="margin-left:auto;">Stáhnout .txt</a>
+        {% if error_log_return == "log" %}
+        <button type="submit" class="btn danger" title="Smaže zaškrtnuté dny a záznamy">Smazat vybrané</button>
+        {% else %}
+        <form method="post" action="{% url 'waste_docs:svoz_submit_error_log_delete_yard' group.subject_id %}" style="margin:0;" onsubmit="return confirm('Smazat celý chybový log tohoto dvora?');">
+            {% csrf_token %}
+            {% if selected_date_iso %}<input type="hidden" name="date" value="{{ selected_date_iso }}">{% endif %}
+            <button type="submit" class="btn danger">Smazat log chyb</button>
+        </form>
+        {% endif %}
+    </div>
+    {% if error_log_return == "log" %}
+    <p class="dash-muted" style="margin:0 0 10px; font-size:0.86rem;">Zaškrtněte den nebo jednotlivé záznamy a smažte jen výběr.</p>
+    {% endif %}
+    {% for day in group.days %}
+    <section style="margin:0 0 12px; padding:10px 12px; border:1px solid var(--color-border); border-radius:8px; background:#f4f8f4;">
+        <h4 style="margin:0 0 8px; font-size:0.95rem; color:#204828; padding-bottom:8px; border-bottom:1px solid rgba(32,72,40,0.18);">
+            {% if error_log_return == "log" %}
+            <label style="display:inline-flex; flex-direction:row; flex-wrap:nowrap; align-items:center; gap:8px; cursor:pointer; font-weight:700; white-space:nowrap;">
+                <input type="checkbox" class="svoz-log-day-check" name="day" value="{{ day.day_iso }}" data-day="{{ day.day_iso }}" title="Vybrat celý den {{ day.day_label }}">
+                <span style="white-space:nowrap;">{{ day.day_label }}</span>
+            </label>
+            {% else %}
+            <span style="white-space:nowrap; font-weight:700;">{{ day.day_label }}</span>
+            {% endif %}
+        </h4>
+        <ul class="svoz-log-list" style="list-style:none; margin:0; padding:0;">
+            {% for row in day.rows %}
+            <li style="display:flex; flex-wrap:wrap; gap:8px; align-items:baseline; padding:6px 0; border-bottom:1px solid rgba(191,208,193,0.45);{% if row.is_unread %} background:#fff8f8;{% endif %}">
+                {% if error_log_return == "log" and row.pk %}
+                <label style="flex:0 0 auto;">
+                    <input
+                        type="checkbox"
+                        class="svoz-log-row-check"
+                        name="{% if row.delete_kind == 'sent' %}sent{% else %}error{% endif %}"
+                        value="{{ row.pk }}"
+                        data-day="{{ day.day_iso }}"
+                        title="Vybrat záznam"
+                    >
+                </label>
+                {% endif %}
+                <span class="dash-muted" style="flex:0 0 3.2rem; font-variant-numeric:tabular-nums;">{{ row.time_display }}</span>
+                <div style="flex:1 1 12rem; min-width:0;">
+                    {% if row.kind == "sent" %}
+                    <span style="display:inline-block; padding:1px 7px; border-radius:999px; background:#e8f5e9; color:#1b5e20; font-size:0.78rem; font-weight:600;">Odesláno</span>
+                    {% elif row.source == "login" %}
+                    <span style="display:inline-block; padding:1px 7px; border-radius:999px; background:#e8f1fb; color:#1a5276; font-size:0.78rem; font-weight:600;">Přihlášení</span>
+                    <strong title="Kdo se přihlásil">{{ row.created_by_label }}</strong>
+                    {% elif row.source == "open" %}
+                    <span style="display:inline-block; padding:1px 7px; border-radius:999px; background:#eef6ee; color:#245f33; font-size:0.78rem; font-weight:600;">Otevření</span>
+                    <strong title="Kdo otevřel matici">{{ row.created_by_label }}</strong>
+                    {% elif row.source == "session" %}
+                    <span style="display:inline-block; padding:1px 7px; border-radius:999px; background:#f4eee6; color:#7a4e16; font-size:0.78rem; font-weight:600;">Relace</span>
+                    <strong title="Kdo byl odhlášen">{{ row.created_by_label }}</strong>
+                    {% elif row.source == "live" %}
+                    <span style="display:inline-block; padding:1px 7px; border-radius:999px; background:#fff8e1; color:#8a6d00; font-size:0.78rem; font-weight:600;">Kontrola při psaní</span>
+                    {% endif %}
+                    {% if row.source != "login" and row.source != "open" and row.source != "session" %}
+                    {% if row.display_label %}<strong>{{ row.display_label }}</strong>{% endif %}
+                    {% if row.container_numbers %} · k. {{ row.container_numbers }}{% endif %}
+                    {% if row.suffix_label %} · koncovka {{ row.suffix_label }}{% endif %}
+                    {% endif %}
+                    {% if row.show_message %}
+                    <span style="{% if row.kind == 'sent' %}color:#1b5e20;{% elif row.source == 'login' %}color:#1a5276;{% elif row.source == 'open' %}color:#245f33;{% elif row.source == 'session' %}color:#7a4e16;{% else %}color:#9b1c1c;{% endif %}">{% if row.display_label or row.container_numbers or row.suffix_label %} · {% endif %}{{ row.message }}</span>
+                    {% endif %}
+                </div>
+                {% if row.source != "login" and row.source != "open" and row.source != "session" %}
+                <span class="dash-muted" style="flex:0 0 auto; font-size:0.82rem; white-space:nowrap;">{{ row.created_by_label }}</span>
+                {% endif %}
+                {% if error_log_return != "log" and row.delete_kind == "error" and row.can_delete %}
+                <form method="post" action="{% url 'waste_docs:svoz_submit_error_log_delete_row' row.pk %}" style="margin:0;">
+                    {% csrf_token %}
+                    {% if selected_date_iso %}<input type="hidden" name="date" value="{{ selected_date_iso }}">{% endif %}
+                    <button type="submit" class="btn secondary" style="padding:4px 10px;font-size:0.86rem;">Smazat</button>
+                </form>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% empty %}
+    <p class="dash-muted" style="margin:0;">Žádné záznamy v logu tohoto dvora.</p>
+    {% endfor %}
+    {% if error_log_return == "log" %}
+    </form>
+    {% endif %}
+</section>
+{% empty %}
+<p class="dash-muted">Žádné záznamy v logu.</p>
+{% endfor %}

@@ -1,0 +1,66 @@
+.cr-day-kind-counts-modal__card {
+    max-width: min(96vw, 720px);
+}
+
+.cr-day-kind-counts-modal__head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.cr-day-kind-counts-modal__title {
+    margin: 0;
+    font-size: 1.15rem;
+}
+
+.cr-day-kind-counts-modal__controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.cr-day-kind-counts-modal__controls label {
+    font-weight: 600;
+}
+
+.cr-day-kind-counts-modal__date {
+    margin: 0 0 10px;
+    font-size: 0.92rem;
+}
+
+.cr-day-kind-counts-modal__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+    text-align: center;
+}
+
+.cr-day-kind-counts-modal__table th,
+.cr-day-kind-counts-modal__table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.cr-day-kind-counts-modal__table th:first-child,
+.cr-day-kind-counts-modal__table td:first-child {
+    text-align: left;
+    font-weight: 600;
+}
+
+.cr-day-kind-counts-modal__loading,
+.cr-day-kind-counts-modal__error {
+    margin: 0 0 10px;
+    font-size: 0.92rem;
+}
+
+.cr-day-kind-counts-modal__error {
+    color: #b42318;
+}
+
+.cr-day-kind-counts-modal__note {
+    margin: 10px 0 0;
+    font-size: 0.88rem;
+}

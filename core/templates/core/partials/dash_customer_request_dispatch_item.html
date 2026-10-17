@@ -1,0 +1,18 @@
+{% load pruvodka_tags %}
+<li class="dash-cr-dispatch-item">
+    <span class="dash-cr-dispatch-item__line">
+        <a class="dash-cr-dispatch-item__id" href="{% url 'waste_docs:create' %}?date={{ panel_date|date:'Y-m-d' }}&amp;customer_request={{ cr.pk }}">#{{ cr.pk }}</a>
+        <span class="dash-cr-dispatch-item__sep" aria-hidden="true">—</span>
+        <span class="dash-cr-dispatch-item__core">
+            {{ cr.name.value }} · {{ cr.activity.name }}{% with vk_label=cr|customer_request_effective_vehicle_kind_label %}{% if vk_label %} · {{ vk_label }}{% endif %}{% endwith %}
+            {% with rec_label=cr|customer_request_recurrence_label %}
+            {% if rec_label %}
+            <span class="dash-cr-dispatch-item__recurrence" title="Opakovaný požadavek">Opakování: {{ rec_label }}</span>
+            {% endif %}
+            {% endwith %}
+        </span>
+        <span class="dash-cr-dispatch-item__meta dash-muted">
+            ({{ cr.created_by.get_full_name|default:cr.created_by.username }}){% if show_detail %} · <a href="{% url 'waste_docs:customer_request_detail' cr.pk %}">detail</a>{% endif %}
+        </span>
+    </span>
+</li>

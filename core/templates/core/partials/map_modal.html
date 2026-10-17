@@ -1,0 +1,25 @@
+<div id="map-modal" class="map-modal" aria-hidden="true" data-default-lat="{{ app_default_map_lat_js }}" data-default-lng="{{ app_default_map_lng_js }}">
+    <div class="map-modal__card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <strong>Výběr polohy na mapě</strong>
+            <button type="button" class="btn secondary" id="map-modal-close">Zavřít</button>
+        </div>
+        <div id="map-modal-root" class="map-modal__map"></div>
+        <div id="map-modal-fallback" style="display:none; margin-top:10px;">
+            <p><small>Mapa není dostupná (offline režim bez mapových dlaždic). Souřadnice zadejte ručně.</small></p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <div>
+                    <label for="map-modal-lat">Šířka (lat)</label>
+                    <input id="map-modal-lat" type="number" step="0.0000001" inputmode="decimal">
+                </div>
+                <div>
+                    <label for="map-modal-lng">Délka (lng)</label>
+                    <input id="map-modal-lng" type="number" step="0.0000001" inputmode="decimal">
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:8px;display:flex;gap:8px;">
+            <button type="button" class="btn" id="map-modal-save">Použít polohu</button>
+        </div>
+    </div>
+</div>

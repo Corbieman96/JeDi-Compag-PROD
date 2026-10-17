@@ -1,0 +1,19 @@
+{% if widget.is_initial %}
+<div class="name-subject-pairs__file-current">
+    <a
+        class="pair-file-link"
+        href="{{ widget.value.url }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Otevřít: {{ widget.value }}"
+        aria-label="Otevřít nahraný soubor"
+    >📄</a>
+    {% if not widget.required %}
+    <span class="pair-file-clear">
+        <input type="checkbox" name="{{ widget.checkbox_name }}" id="{{ widget.checkbox_id }}"{% if widget.attrs.disabled %} disabled{% endif %}{% if widget.attrs.checked %} checked{% endif %}>
+        <label for="{{ widget.checkbox_id }}">{{ widget.clear_checkbox_label }}</label>
+    </span>
+    {% endif %}
+</div>
+{% endif %}
+<input type="{{ widget.type }}" name="{{ widget.name }}"{% include "django/forms/widgets/attrs.html" %}>

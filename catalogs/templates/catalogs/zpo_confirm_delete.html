@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat ZPO{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat ZPO</h1>
+    <p>Opravdu smazat „{{ item.label }}“? Páry subjektů, které na tento záznam odkazují, zůstanou bez ZPO.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn danger">Smazat</button>
+            <a class="btn secondary" href="{% url 'catalogs:zpo_list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

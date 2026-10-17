@@ -1,0 +1,135 @@
+{# r, selected_date_iso, selected_date #}
+<dialog id="day-rem-edit-{{ r.pk }}" class="day-rem-dialog day-rem-edit-dialog" style="max-width: 36rem; width: calc(100vw - 2rem); border: 1px solid var(--color-border, #ccc); border-radius: 8px; padding: 0; background: var(--color-bg, #fff); color: var(--color-text, #111);">
+    <div style="padding: 14px 16px; border-bottom: 1px solid var(--color-border, #eee); display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <strong>Upravit poznámku</strong>
+        <button type="button" class="btn secondary day-rem-edit-close" data-close-dialog="day-rem-edit-{{ r.pk }}" style="padding: 6px 12px;">Zavřít</button>
+    </div>
+    <div style="padding: 16px; max-height: 70vh; overflow-y: auto;">
+        <form method="post" action="{% url 'day_reminders:update' r.pk %}" style="margin-bottom: 16px;">
+            {% csrf_token %}
+            <input type="hidden" name="context_date" value="{{ selected_date_iso }}" />
+            <label style="display: block; margin-bottom: 8px;">
+                Název<br />
+                <input type="text" name="title" value="{{ r.title }}" maxlength="160" required class="settings-notes" style="width: 100%;" />
+            </label>
+            <label style="display: block; margin-bottom: 8px;">
+                Text (volitelný)<br />
+                <textarea name="text" rows="4" class="settings-notes" style="width: 100%;">{{ r.text }}</textarea>
+            </label>
+            <fieldset style="border:0;margin:0 0 10px;padding:0;">
+                <legend style="font-size:0.9rem;margin-bottom:6px;">Druh poznámky</legend>
+                <label style="display:inline-flex;align-items:center;gap:5px;margin-right:14px;font-size:0.9rem;cursor:pointer;">
+                    <input type="radio" name="note_group" value="request" {% if r.note_group == 'request' %}checked{% endif %} /> Požadavek
+                </label>
+                <label style="display:inline-flex;align-items:center;gap:5px;font-size:0.9rem;cursor:pointer;">
+                    <input type="radio" name="note_group" value="other" {% if r.note_group != 'request' %}checked{% endif %} /> Ostatní
+                </label>
+            </fieldset>
+            {% include "day_reminders/_card_color_picker.html" with selected_color=r.card_color %}
+            {% if r.kind == 'one_off' %}
+            <label style="display: block; margin-bottom: 8px;">
+                Datum<br />
+                <input type="date" name="pinned_date" value="{{ r.pinned_date|date:'Y-m-d' }}" required class="settings-notes" />
+            </label>
+            {% elif r.kind == 'weekly' %}
+            <div style="margin-bottom: 8px;">
+                <span class="dash-muted" style="font-size: 0.9rem;">Dny v týdnu</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px 14px; margin-top: 6px;">
+                    {% for val, label in day_reminders_weekday_choices %}
+                    <label style="display: flex; align-items: center; gap: 5px; font-size: 0.9rem; cursor: pointer;">
+                        <input type="checkbox" name="repeat_weekdays" value="{{ val }}" {% if val in r.repeat_weekdays %}checked{% endif %} />
+                        {{ label }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+            <label style="display: inline-block; margin-right: 10px; margin-bottom: 8px;">
+                Platné od<br />
+                <input type="date" name="repeat_active_from" value="{{ r.repeat_active_from|date:'Y-m-d' }}" class="settings-notes" />
+            </label>
+            <label style="display: inline-block; margin-bottom: 8px;">
+                Platné do<br />
+                <input type="date" name="repeat_active_until" value="{{ r.repeat_active_until|date:'Y-m-d' }}" class="settings-notes" />
+            </label>
+            {% elif r.kind == 'monthly' %}
+            <div style="margin-bottom: 8px;">
+                <span class="dash-muted" style="font-size: 0.9rem;">Opakování v měsíci</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 6px; align-items: flex-end;">
+                    <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem;">
+                        Každý
+                        <select name="repeat_monthly_ordinal" class="settings-notes">
+                            <option value="1"{% if r.repeat_monthly.ordinal == 1 %} selected{% endif %}>1.</option>
+                            <option value="2"{% if r.repeat_monthly.ordinal == 2 %} selected{% endif %}>2.</option>
+                            <option value="3"{% if r.repeat_monthly.ordinal == 3 %} selected{% endif %}>3.</option>
+                            <option value="4"{% if r.repeat_monthly.ordinal == 4 %} selected{% endif %}>4.</option>
+                            <option value="-1"{% if r.repeat_monthly.ordinal == -1 %} selected{% endif %}>poslední</option>
+                        </select>
+                    </label>
+                    <label style="display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem;">
+                        Den v týdnu
+                        <select name="repeat_monthly_weekday" class="settings-notes">
+                            {% for val, label in day_reminders_weekday_choices %}
+                            <option value="{{ val }}"{% if r.repeat_monthly.weekday == val %} selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                </div>
+            </div>
+            <label style="display: inline-block; margin-right: 10px; margin-bottom: 8px;">
+                Platné od<br />
+                <input type="date" name="repeat_active_from" value="{{ r.repeat_active_from|date:'Y-m-d' }}" class="settings-notes" />
+            </label>
+            <label style="display: inline-block; margin-bottom: 8px;">
+                Platné do<br />
+                <input type="date" name="repeat_active_until" value="{{ r.repeat_active_until|date:'Y-m-d' }}" class="settings-notes" />
+            </label>
+            {% elif r.kind == 'rolling' %}
+            <label style="display: block; margin-bottom: 8px;">
+                Začátek přenášení<br />
+                <input type="date" name="rolling_start" value="{{ r.rolling_start|date:'Y-m-d' }}" required class="settings-notes" />
+            </label>
+            {% endif %}
+            <button type="submit" class="btn">Uložit změny</button>
+        </form>
+
+        {% if r.kind == 'weekly' or r.kind == 'monthly' %}
+        <div style="padding-top: 12px; border-top: 1px dashed var(--color-border, #ccc); margin-bottom: 16px;">
+            <p class="dash-muted" style="margin: 0 0 8px; font-size: 0.85rem;">Přesunout jen výskyt dne {{ selected_date|date:"j. n. Y" }}</p>
+            <form method="post" action="{% url 'day_reminders:exception' r.pk %}">
+                {% csrf_token %}
+                <input type="hidden" name="context_date" value="{{ selected_date_iso }}" />
+                <input type="hidden" name="original_date" value="{{ selected_date_iso }}" />
+                <label style="display: inline-block; margin-right: 8px;">
+                    Na datum<br />
+                    <input type="date" name="rescheduled_to" required class="settings-notes" />
+                </label>
+                <button type="submit" class="btn secondary">Uložit přesun</button>
+            </form>
+        </div>
+        {% endif %}
+
+        <div style="padding-top: 12px; border-top: 1px solid var(--color-border, #eee); display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+            <form method="post" action="{% url 'day_reminders:complete' r.pk %}" style="display: inline;">
+                {% csrf_token %}
+                <input type="hidden" name="context_date" value="{{ selected_date_iso }}" />
+                {% if r.is_resolved_for_selected_day %}
+                <button type="submit" class="btn secondary">Zrušit vyřešení pro tento den</button>
+                {% else %}
+                <button type="submit" class="btn secondary">Vyřešit pro tento den</button>
+                {% endif %}
+            </form>
+            <form method="post" action="{% url 'day_reminders:snooze' r.pk %}" style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+                {% csrf_token %}
+                <input type="hidden" name="context_date" value="{{ selected_date_iso }}" />
+                <span class="dash-muted" style="font-size: 0.85rem;">Odložit do</span>
+                <input type="date" name="snoozed_until" required class="settings-notes" />
+                <button type="submit" class="btn secondary">OK</button>
+            </form>
+            <form method="post" action="{% url 'day_reminders:delete' r.pk %}" style="display: inline;" onsubmit="return confirm('Trvale smazat tuto poznámku?');">
+                {% csrf_token %}
+                <input type="hidden" name="context_date" value="{{ selected_date_iso }}" />
+                <button type="submit" class="btn secondary">Smazat</button>
+            </form>
+        </div>
+    </div>
+</dialog>

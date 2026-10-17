@@ -1,0 +1,18 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'core/css/dash_cr_dispatch_panel.css' %}">
+{% load pruvodka_tags %}
+{% if not is_edit and can_plan_customer_requests %}
+<div class="dash-cr-dispatch-panel dash-cr-dispatch-panel--inline jedis-cr-dispatch-panel">
+    <h3 class="dash-cr-dispatch-panel__title form-section-title" style="margin-top: 0; font-size: 1rem;">Požadavky — připravené pro dispečera</h3>
+    {% if customer_requests_panel %}
+    <ul class="dash-cr-dispatch-list">
+        {% for cr in customer_requests_panel %}
+        {% include "core/partials/dash_customer_request_dispatch_item.html" with cr=cr panel_date=svoz_panel_date show_detail=False %}
+        {% endfor %}
+    </ul>
+    <p class="dash-cr-dispatch-panel__hint">Kliknutím otevřete novou jízdu s předvyplněným subjektem a činností z požadavku.</p>
+    {% else %}
+    <p class="dash-cr-dispatch-panel__empty">Pro toto datum nejsou požadavky připravené pro dispečera.</p>
+    {% endif %}
+</div>
+{% endif %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Úprava nepřítomnosti{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Úprava nepřítomnosti</h1>
+    <p style="margin-top: 0;">Řidič: <strong>{{ driver }}</strong></p>
+    <form method="post" class="form-grid" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="field-row">
+            <label for="{{ form.absence_type.id_for_label }}">{{ form.absence_type.label }}</label>
+            <div class="field-input">{{ form.absence_type }}{{ form.absence_type.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.date_from.id_for_label }}">{{ form.date_from.label }}</label>
+            <div class="field-input">{{ form.date_from }}{{ form.date_from.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.date_to.id_for_label }}">{{ form.date_to.label }}</label>
+            <div class="field-input">{{ form.date_to }}{{ form.date_to.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label>{{ form.is_partial.label }}</label>
+            <div class="field-input field-input--checkbox-narrow">{{ form.is_partial }}{{ form.is_partial.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>
+            <div class="field-input">{{ form.note }}{{ form.note.errors }}</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit změny</button>
+            <a class="btn secondary" href="{% url 'catalogs:driver_edit' driver.pk %}">Zpět na řidiče</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

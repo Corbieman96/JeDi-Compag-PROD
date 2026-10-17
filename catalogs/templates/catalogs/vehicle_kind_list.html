@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Druhy vozidel{% endblock %}
+
+{% block extra_head %}
+<style>
+    .vehicle-kind-sort-hint {
+        margin: 0 0 12px;
+        font-size: 0.92rem;
+        color: var(--color-muted);
+    }
+    .vehicle-kind-drag {
+        cursor: grab;
+        user-select: none;
+        color: var(--color-muted);
+        font-size: 1.1rem;
+        line-height: 1;
+        padding: 0 6px;
+        touch-action: none;
+    }
+    .vehicle-kind-drag:active { cursor: grabbing; }
+    tr.sortable-ghost { opacity: 0.45; background: #eef6ef !important; }
+    tr.sortable-chosen { background: #f0f7f1 !important; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Číselník druhů vozidel</h1>
+    <p class="vehicle-kind-sort-hint" style="margin-top:0;">
+        Název, zkratka a <strong>nadřazený druh</strong> (strom síly — potomek je silnější vozidlo).
+        Povolené druhy u odpadu u subjektu nastavíte v Úpravě subjektu (Druhy vozidla svoz).
+        Pořadí řádků přetáhněte za <strong>⠿</strong>.
+    </p>
+    <a class="btn" href="{% url 'catalogs:vehicle_kind_create' %}">Nový druh vozidla</a>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th style="width:2.5rem;" aria-hidden="true"></th>
+                <th>Druh vozidla</th>
+                <th>Nadřazený druh</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody id="vehicle-kind-sort-body">
+            {% for item in items %}
+            <tr data-kind-id="{{ item.pk }}">
+                <td>
+                    <span class="vehicle-kind-drag" title="Přesunout" aria-label="Přesunout řádek">⠿</span>
+                </td>
+                <td><strong>{{ item.display_label }}</strong></td>
+                <td>{% if item.parent_kind %}{{ item.parent_kind.display_label }}{% else %}<span class="dash-muted">—</span>{% endif %}</td>
+                <td class="actions">
+                    <a class="btn secondary" href="{% url 'catalogs:container_passport_list' %}?vehicle_kind={{ item.pk }}" title="Pasporty kontejnerů pro tento druh">Pasporty</a>
+                    <a class="btn" href="{% url 'catalogs:vehicle_kind_edit' item.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'catalogs:vehicle_kind_delete' item.pk %}">Smazat</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">Zatím bez druhů vozidel.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+<script>
+(function () {
+    var tbody = document.getElementById("vehicle-kind-sort-body");
+    if (!tbody || typeof Sortable === "undefined") return;
+    var rows = tbody.querySelectorAll("tr[data-kind-id]");
+    if (rows.length < 2) return;
+    var reorderUrl = "{% url 'catalogs:vehicle_kind_reorder' %}";
+    var csrf = "{{ csrf_token }}";
+    Sortable.create(tbody, {
+        handle: ".vehicle-kind-drag",
+        animation: 150,
+        draggable: "tr[data-kind-id]",
+        onEnd: function () {
+            var order = [].map.call(tbody.querySelectorAll("tr[data-kind-id]"), function (tr) {
+                return parseInt(tr.getAttribute("data-kind-id"), 10);
+            });
+            fetch(reorderUrl, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrf
+                },
+                body: JSON.stringify({ order: order })
+            }).then(function (r) { return r.json(); }).then(function (data) {
+                if (!data.ok) console.warn("vehicle_kind_reorder", data);
+            }).catch(function (e) { console.warn(e); });
+        }
+    });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}RZ vozidla{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>RZ vozidla</h1>
+    <div class="actions">
+        <a class="btn" href="{% url 'catalogs:vehicle_rz_create' %}">Nové RZ vozidla</a>
+        <a class="btn secondary" href="{% url 'catalogs:vehicle_kind_list' %}">Číselník druhů vozidel</a>
+    </div>
+    <form method="get" style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+        <label for="vehicle-rz-q">Vyhledat RZ</label>
+        <input
+            id="vehicle-rz-q"
+            type="search"
+            name="q"
+            value="{{ q|default:'' }}"
+            placeholder="RZ nebo poznámka…"
+            autocomplete="off"
+            title="Hledat podle RZ nebo poznámky"
+        >
+        <button type="submit" class="btn secondary">Hledat</button>
+        {% if q %}
+        <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_list' %}">Zrušit</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr>
+                <th>RZ vozidla</th>
+                <th>Poznámka</th>
+                <th>Vlek</th>
+                <th>Ruka</th>
+                <th>Druhy vozidla</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.rz.value }}</td>
+                <td>{{ item.vehicle_type|default:"-" }}</td>
+                <td>{% if item.has_trailer %}Ano{% else %}Ne{% endif %}</td>
+                <td>{% if item.has_crane %}Ano{% else %}Ne{% endif %}</td>
+                <td>
+                    {% for kind in item.vehicle_kinds.all %}
+                        {{ kind.name }} ({{ kind.shortcut }}){% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                        -
+                    {% endfor %}
+                </td>
+                <td class="actions">
+                    <a class="btn" href="{% url 'catalogs:vehicle_rz_edit' item.pk %}">Upravit</a>
+                    <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_repair_list' item.pk %}">Evidence oprav</a>
+                    <a class="btn danger" href="{% url 'catalogs:vehicle_rz_delete' item.pk %}">Smazat</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6">{% if q %}Nic nenalezeno pro „{{ q }}“.{% else %}Zatím bez vozidel.{% endif %}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

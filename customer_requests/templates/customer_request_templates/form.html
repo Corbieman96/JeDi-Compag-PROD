@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{{ page_title }}</h1>
+    <form method="post" class="form-grid">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+        {% for field in form %}
+            <div class="field-row">
+                {{ field.label_tag }}
+                <div class="field-input">
+                    {{ field }}
+                    {{ field.errors }}
+                </div>
+            </div>
+        {% endfor %}
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'customer_request_templates:list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

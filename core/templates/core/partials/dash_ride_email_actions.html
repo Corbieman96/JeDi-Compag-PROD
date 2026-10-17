@@ -1,0 +1,33 @@
+{% if selected_ride_group.vehicle_rz_id and not selected_ride_group.is_plan_only %}
+<span class="dash-ride-email-actions">
+    {% if selected_ride_group.email_dispatch %}
+    <span class="dash-badge dash-badge--email-sent" title="Odesláno e-mailem {{ selected_ride_group.email_dispatch.dispatched_at|date:'d.m.Y H:i' }}{% if selected_ride_group.email_dispatch.dispatched_by %} · odeslal {{ selected_ride_group.email_dispatch.dispatched_by }}{% endif %} → {{ selected_ride_group.email_dispatch.recipient_email }}">Odesláno e-mailem</span>
+    <button
+        type="button"
+        class="dash-panel__icon-btn dash-ride-email-cancel-btn"
+        data-dash-ride-email-cancel
+        data-drive-date="{{ selected_ride_group.drive_date|date:'Y-m-d' }}"
+        data-vehicle-rz-id="{{ selected_ride_group.vehicle_rz_id }}"
+        data-driver-id="{{ selected_ride_group.driver_id|default:0 }}"
+        data-filter-pks="{{ selected_ride_group_email_pks }}"
+        title="Zrušit označení odesláno e-mailem"
+        aria-label="Zrušit označení odesláno e-mailem"
+    >×</button>
+    {% endif %}
+    <button
+        type="button"
+        class="dash-panel__icon-btn dash-ride-email-open-btn{% if selected_ride_group.email_dispatch %} dash-ride-email-open-btn--resend{% endif %}"
+        data-dash-ride-email-open
+        data-drive-date="{{ selected_ride_group.drive_date|date:'Y-m-d' }}"
+        data-vehicle-rz-id="{{ selected_ride_group.vehicle_rz_id }}"
+        data-driver-id="{{ selected_ride_group.driver_id|default:0 }}"
+        data-filter-pks="{{ selected_ride_group_email_pks }}"
+        data-email-summary="RZ {{ selected_ride_group.vehicle_rz }} · {{ selected_ride_group.driver_last_name }} · {{ selected_ride_group.drive_date|date:'d.m.Y' }} · {{ selected_ride_group.items|length }} průvodek · 2 soubory (průvodky+ZPO, protokol)"
+        data-email-subject="Průvodky a protokol — {{ selected_ride_group.vehicle_rz }} — {{ selected_ride_group.drive_date|date:'d.m.Y' }}"
+        title="{% if selected_ride_group.email_dispatch %}Poslat e-mail znovu{% else %}Poslat celou jízdu e-mailem{% endif %}"
+        aria-label="{% if selected_ride_group.email_dispatch %}Poslat e-mail znovu{% else %}Poslat celou jízdu e-mailem{% endif %}"
+    >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 4H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg>
+    </button>
+</span>
+{% endif %}

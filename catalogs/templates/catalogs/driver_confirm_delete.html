@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat řidiče{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat řidiče</h1>
+    <p>Opravdu chcete smazat řidiče <strong>{{ item.personal_number }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn danger">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:driver_list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Smazané jízdy{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px;">
+        <h1 style="margin:0;">Smazané jízdy</h1>
+        <a class="btn secondary" href="{% url 'waste_docs:list' %}">Zpět na seznam jízd</a>
+    </div>
+    <p><small>Bezpečně smazané (archivované) jízdy s důvodem a auditním záznamem.</small></p>
+
+    <form method="get" style="display:flex; flex-wrap:wrap; gap:8px 12px; align-items:center; margin:1rem 0;">
+        <label style="display:inline-flex; align-items:center; gap:6px;">
+            Smazáno od
+            <input type="date" name="date_from" value="{{ date_from_iso }}" style="width:auto;">
+        </label>
+        <label style="display:inline-flex; align-items:center; gap:6px;">
+            do
+            <input type="date" name="date_to" value="{{ date_to_iso }}" style="width:auto;">
+        </label>
+        <input type="search" name="q" value="{{ search_q }}" placeholder="SND, název, důvod, uživatel…" maxlength="200" style="min-width:14rem;">
+        <input type="hidden" name="per_page" value="{{ per_page }}">
+        <button type="submit" class="btn secondary">Filtrovat</button>
+        {% if date_from_iso or date_to_iso or search_q %}
+            <a class="btn secondary" href="{% url 'waste_docs:ride_soft_delete_log_list' %}?per_page={{ per_page }}">Zrušit filtry</a>
+        {% endif %}
+    </form>
+
+    {% if items %}
+    <div style="overflow-x:auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Smazáno</th>
+                    <th>Kdo</th>
+                    <th>Číslo listu</th>
+                    <th>Datum jízdy</th>
+                    <th>Subjekt</th>
+                    <th>RZ</th>
+                    <th>Důvod</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in items %}
+                <tr>
+                    <td>{{ log.deleted_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ log.deleted_by.get_full_name|default:log.deleted_by.username }}</td>
+                    <td><code>{{ log.snd_cislo_listu|default:"—" }}</code></td>
+                    <td>{{ log.drive_date|date:"d.m.Y"|default:"—" }}</td>
+                    <td>{{ log.name_snapshot|default:"—" }}</td>
+                    <td>{{ log.vehicle_rz_snapshot|default:"—" }}</td>
+                    <td>{{ log.reason }}</td>
+                    <td><a href="{% url 'waste_docs:detail' log.pruvodka_id %}">Náhled jízdy</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if page_obj.paginator.num_pages > 1 %}
+    <p style="margin-top:1rem;">
+        Strana {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}&per_page={{ per_page }}{% if date_from_iso %}&date_from={{ date_from_iso }}{% endif %}{% if date_to_iso %}&date_to={{ date_to_iso }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}">Předchozí</a>
+        {% endif %}
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}&per_page={{ per_page }}{% if date_from_iso %}&date_from={{ date_from_iso }}{% endif %}{% if date_to_iso %}&date_to={{ date_to_iso }}{% endif %}{% if search_q %}&q={{ search_q|urlencode }}{% endif %}">Další</a>
+        {% endif %}
+    </p>
+    {% endif %}
+    {% else %}
+    <p>Žádné záznamy smazaných jízd{% if search_q or date_from_iso or date_to_iso %} pro zadaný filtr{% endif %}.</p>
+    {% endif %}
+</div>
+{% endblock %}

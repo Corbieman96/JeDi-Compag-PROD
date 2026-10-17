@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% include "reports/partials/report_styles.html" %}
+
+<div class="card">
+    <h1>Provoz (souhrn)</h1>
+    <p>Křížový přehled klíčových ukazatelů za zvolené období.</p>
+    {% include "reports/partials/date_filter.html" %}
+</div>
+
+<div class="reports-kpi-grid">
+    {% for kpi in summary.kpis %}
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ kpi.value }}</div>
+        <div class="reports-kpi__label">{{ kpi.label }}</div>
+        {% if kpi.hint %}<div class="reports-kpi__hint">{{ kpi.hint }}</div>{% endif %}
+    </div>
+    {% endfor %}
+</div>
+
+<div class="card">
+    <h2>Jízdy podle činnosti (top 10)</h2>
+    {% with rows=summary.rides_by_activity show_share=True label_col="Činnost" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Svoz podle sběrného dvora (top 10)</h2>
+    {% with rows=summary.svoz_by_yard show_share=True label_col="Dvůr" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Nové požadavky v období — podle stavu</h2>
+    {% with rows=summary.customer_requests_by_status show_share=True label_col="Stav" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+{% endblock %}

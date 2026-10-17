@@ -1,0 +1,6 @@
+<option
+    value="{{ rz.pk }}"
+{% if rz.pk in plan_rz_has_ride_ids %} class="svoz-plan-rz-opt--has-ride{% if rz.pk in plan_rz_multi_slot_ids %} svoz-plan-rz-opt--multi-slot{% endif %}"{% elif rz.pk in plan_rz_multi_slot_ids %} class="svoz-plan-rz-opt--multi-slot"{% endif %}
+    title="{% if rz.pk in plan_rz_has_ride_ids %}V tento den už existuje průvodka (jízda) s touto RZ. {% endif %}{% if rz.pk in plan_rz_multi_slot_ids %}RZ je ve více slotech tohoto denního plánu. {% endif %}{% if rz.pk not in plan_rz_has_ride_ids and rz.pk not in plan_rz_multi_slot_ids %}{{ rz.svoz_plan_option_label }}{% else %}Výběr je povolen — jen nápověda dispečerovi.{% endif %}"
+    {% if selected_rz_pk == rz.pk %}selected{% endif %}
+>{% if rz.pk in plan_rz_has_ride_ids %}[průvodka] {% endif %}{% if rz.pk in plan_rz_multi_slot_ids %}[více slotů] {% endif %}{{ rz.svoz_plan_option_label }}</option>

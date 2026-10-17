@@ -1,0 +1,49 @@
+{% if rows %}
+<table style="margin-bottom:14px;">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Subjekt</th>
+            <th>Zadavatel</th>
+            <th>Požadavek</th>
+            <th>Splatnost</th>
+            <th>Záloha</th>
+            <th>Akce</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for item in rows %}
+        <tr>
+            <td><a href="{% url 'waste_docs:customer_request_detail' item.pk %}">#{{ item.pk }}</a></td>
+            <td>{{ item.name.value }}</td>
+            <td>{{ item.created_by.get_full_name|default:item.created_by.username }}</td>
+            <td>{{ item.target_date|date:"j. n. Y" }}</td>
+            <td>{{ item.invoice_due_date|date:"j. n. Y"|default:"-" }}</td>
+            <td>{{ item.advance_invoice_amount|default:"-" }}</td>
+            <td>
+                <form method="post" action="{% url 'waste_docs:customer_request_invoice_review' item.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'waste_docs:customer_request_invoice_queue' %}?q={{ q|urlencode }}">
+                    <input type="hidden" name="note" value="Schváleno z fronty záloh">
+                    <button class="btn" type="submit" name="action" value="approve">Schválit</button>
+                </form>
+                <form method="post" action="{% url 'waste_docs:customer_request_invoice_review' item.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'waste_docs:customer_request_invoice_queue' %}?q={{ q|urlencode }}">
+                    <input type="hidden" name="note" value="Nezaplaceno ve splatnosti">
+                    <button class="btn secondary" type="submit" name="action" value="unpaid_overdue">Nezaplaceno</button>
+                </form>
+                <form method="post" action="{% url 'waste_docs:customer_request_invoice_review' item.pk %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{% url 'waste_docs:customer_request_invoice_queue' %}?q={{ q|urlencode }}">
+                    <input type="hidden" name="note" value="Zamítnuto z fronty záloh">
+                    <button class="btn danger" type="submit" name="action" value="reject">Zamítnout</button>
+                </form>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="dash-muted">Bez položek.</p>
+{% endif %}

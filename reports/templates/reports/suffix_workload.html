@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% include "reports/partials/report_styles.html" %}
+
+<style>
+.reports-group-section {
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border, #d8e6d8);
+}
+.reports-group-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+.reports-group-section__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: baseline;
+    margin-bottom: 8px;
+}
+.reports-group-section__head h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--primary, #2d6a2d);
+}
+.reports-group-section__total {
+    font-size: 0.9rem;
+    color: #555;
+}
+</style>
+
+<div class="card">
+    <h1>Vytížení koncovek</h1>
+    <p>Kolik jízd (bez archivovaných) směřovalo na jednotlivé koncovky — celkově, vytížení vozidel (RZ) a rozpad podle koncovek.</p>
+    {% include "reports/partials/date_filter.html" with export_url_name="reports:suffix_workload_xlsx" %}
+</div>
+
+<div class="reports-kpi-grid">
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.total }}</div>
+        <div class="reports-kpi__label">Celkem jízd v období</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Celkem podle koncovky</h2>
+    {% with rows=summary.by_suffix show_share=True label_col="Koncovka" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Vytížení vozidel (RZ)</h2>
+    <p class="reports-empty" style="font-style: normal; margin-top: 0;">Kolik jízd v období mělo každé vozidlo — podíl je z celku všech jízd.</p>
+    {% with rows=summary.by_vehicle_rz_overview show_share=True label_col="RZ" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Koncovky podle vozidla (RZ)</h2>
+    <p class="reports-empty" style="font-style: normal; margin-top: 0;">U každého vozidla: které koncovky a kolik jízd — podíl je v rámci daného vozidla.</p>
+    {% if summary.by_vehicle %}
+        {% for group in summary.by_vehicle %}
+        <div class="reports-group-section">
+            <div class="reports-group-section__head">
+                <h3>{{ group.title }}</h3>
+                <span class="reports-group-section__total">Celkem {{ group.total_rides }} jízd</span>
+            </div>
+            {% with rows=group.suffix_rows show_share=True label_col="Koncovka" %}
+            {% include "reports/partials/summary_table.html" %}
+            {% endwith %}
+        </div>
+        {% endfor %}
+    {% else %}
+    <p class="reports-empty">Žádná data pro zvolené období.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Koncovky podle druhu odpadu</h2>
+    <p class="reports-empty" style="font-style: normal; margin-top: 0;">U každého druhu odpadu: které koncovky a kolik jízd.</p>
+    {% if summary.by_waste_type %}
+        {% for group in summary.by_waste_type %}
+        <div class="reports-group-section">
+            <div class="reports-group-section__head">
+                <h3>{{ group.title }}</h3>
+                <span class="reports-group-section__total">Celkem {{ group.total_rides }} jízd</span>
+            </div>
+            {% with rows=group.suffix_rows show_share=True label_col="Koncovka" %}
+            {% include "reports/partials/summary_table.html" %}
+            {% endwith %}
+        </div>
+        {% endfor %}
+    {% else %}
+    <p class="reports-empty">Žádná data pro zvolené období.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Páry koncovka / druh odpadu (top 25)</h2>
+    {% with rows=summary.by_suffix_waste_type show_share=True label_col="Koncovka / odpad" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+{% endblock %}

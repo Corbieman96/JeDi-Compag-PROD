@@ -1,0 +1,17 @@
+{% comment %}item, selected_date_iso, can_open_svoz_task_pruvodka{% endcomment %}
+<li style="margin-bottom: 8px;">
+    {% if can_open_svoz_task_pruvodka %}
+    <a href="{% url 'waste_docs:create' %}?date={{ selected_date_iso }}&amp;yard_hazard_request={{ item.pk }}">
+        ({{ item.subject_profile }}){% if item.vehicle_kind %} [{{ item.vehicle_kind }}]{% endif %}
+        {% if item.matrix_display_label %}{{ item.matrix_display_label }}{% else %}{{ item.waste_type.code|default:"?" }} / {{ item.suffix.value|default:"—" }}{% endif %}
+        {% if item.container_numbers %} — {{ item.container_numbers }}{% endif %}
+    </a>
+    {% else %}
+    <span>
+        ({{ item.subject_profile }}){% if item.vehicle_kind %} [{{ item.vehicle_kind }}]{% endif %}
+        {% if item.matrix_display_label %}{{ item.matrix_display_label }}{% else %}{{ item.waste_type.code|default:"?" }} / {{ item.suffix.value|default:"—" }}{% endif %}
+        {% if item.container_numbers %} — {{ item.container_numbers }}{% endif %}
+    </span>
+    {% endif %}
+    <small class="dash-muted"> · odesláno {{ item.submitted_date|date:"j. n. Y" }}</small>
+</li>

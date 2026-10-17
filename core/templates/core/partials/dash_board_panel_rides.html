@@ -1,0 +1,151 @@
+        <section class="dash-panel dash-panel--rides-list" aria-label="Seznam jízd">
+            <h2 class="dash-panel__head dash-panel__head--with-actions">
+                <span>Seznam jízd</span>
+                <span class="dash-panel__head-actions">
+                    {% if can_create_pruvodka_dashboard %}
+                    <a class="dash-panel__icon-btn" href="{% url 'waste_docs:create' %}?date={{ selected_date_iso }}" title="Nová jízda" aria-label="Nová jízda">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                    </a>
+                    {% endif %}
+                    {% if ride_groups %}
+                    <form method="post" action="{% url 'waste_docs:dashboard_bulk_generate' %}" class="dash-panel__icon-form" data-generate-progress-form data-progress-label="Generuji Excel průvodky…">
+                        {% csrf_token %}
+                        <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                        <button type="submit" class="dash-panel__icon-btn" title="Přegenerovat všechny průvodky za vybraný den" aria-label="Přegenerovat všechny průvodky za vybraný den">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a1 1 0 0 1 1 1v7h7a1 1 0 1 1 0 2h-7v7a1 1 0 1 1-2 0v-7H4a1 1 0 1 1 0-2h7V4a1 1 0 0 1 1-1z"/></svg>
+                        </button>
+                    </form>
+                    <a class="dash-panel__icon-btn" href="{{ dashboard_header_print_url }}" title="Otevřít tisk souborů{% if selected_ride_pk %} pro vybranou průvodku{% elif ride_group_explicit %} pro vybranou jízdu{% else %} za vybraný den (všechny jízdy a protokol){% endif %}" aria-label="Otevřít tisk souborů{% if selected_ride_pk %} pro vybranou průvodku{% elif ride_group_explicit %} pro vybranou jízdu{% else %} za vybraný den{% endif %}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V4h12v5H6zm11 0V5H7v4h10zM6 20v-4h12v4H6zm11-1v-2H7v2h10zM4 10h16a2 2 0 0 1 2 2v5h-3v-3H5v3H2v-5a2 2 0 0 1 2-2z"/></svg>
+                    </a>
+                    <a class="dash-panel__icon-btn" href="{% url 'waste_docs:ride_protocol_day_xlsx' %}?date={{ selected_date_iso }}" title="Stáhnout denní protokol jízd (jizda.xlsx)" aria-label="Stáhnout denní protokol jízd (jizda.xlsx)">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zm8 1.5V8h4.5L14 3.5zM8 12h8v1.5H8V12zm0 3h8v1.5H8V15zm0 3h6v1.5H8V18z"/></svg>
+                    </a>
+                    {% if can_purge_dashboard_day_files %}
+                    <form method="post" action="{% url 'waste_docs:dashboard_day_purge' %}" class="dash-panel__icon-form" onsubmit="return confirm('Smazat vygenerované průvodky, ZPO, protokoly a print cache za {{ selected_date|date:'d.m.Y' }}? Soubory lze znovu vygenerovat.');">
+                        {% csrf_token %}
+                        <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                        <button type="submit" class="dash-panel__icon-btn dash-panel__icon-btn--danger" title="Smazat vygenerované soubory za vybraný den" aria-label="Smazat vygenerované soubory za vybraný den">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
+                        </button>
+                    </form>
+                    <form method="post" action="{% url 'waste_docs:dashboard_media_purge_all' %}" class="dash-panel__icon-form" onsubmit="return confirm('Smazat VŠECHNY vygenerované průvodky, ZPO, protokoly a print cache ve všech adresářích? Dotkne se všech dnů. Soubory lze znovu vygenerovat.');">
+                        {% csrf_token %}
+                        <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                        <button type="submit" class="dash-panel__icon-btn dash-panel__icon-btn--danger" title="Smazat všechny vygenerované soubory (všechny dny)" aria-label="Smazat všechny vygenerované soubory ve všech adresářích">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/><path d="M4 10h16" stroke="currentColor" stroke-width="1.5" fill="none"/></svg>
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% endif %}
+                    <button type="button" class="dash-rides-view-toggle dash-panel__icon-btn" id="dash-rides-view-toggle" title="Otevřít celostránkový přehled jízd podle druhů vozidel" aria-label="Otevřít celostránkový přehled jízd podle druhů vozidel" aria-expanded="false" aria-controls="dash-rides-modal">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z"/></svg>
+                    </button>
+                    {% if can_create_pruvodka_dashboard %}
+                    <button type="button" class="dash-panel__icon-btn" id="dash-blank-pruvodka-open" title="Bianko průvodky — nouzový tisk" aria-label="Bianko průvodky — nouzový tisk" aria-controls="dash-blank-pruvodka-modal" aria-expanded="false">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm-1 2l5 5h-5V4zM8 13h8v1.5H8V13zm0 3h8v1.5H8V16z"/></svg>
+                    </button>
+                    {% endif %}
+                    {% if selected_ride_group %}
+                    {% include "core/partials/dash_clear_ride_selection_btn.html" %}
+                    {% endif %}
+                    {% if blank_pruvodka_unused_count and can_archive_blank_pruvodka %}
+                    <form method="post" action="{% url 'waste_docs:blank_pruvodka_archive_bulk' %}" class="dash-panel__icon-form" onsubmit="return confirm('Archivovat všechny nepoužité bianko průvodky za {{ selected_date|date:'d.m.Y' }}?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="drive_date" value="{{ selected_date_iso }}">
+                        <input type="hidden" name="next" value="{% url 'core:dashboard' %}?date={{ selected_date_iso }}">
+                        <button type="submit" class="dash-panel__icon-btn" title="Archivovat nepoužité bianko průvodky za den" aria-label="Archivovat nepoužité bianko průvodky za den">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6v14a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V6"/></svg>
+                        </button>
+                    </form>
+                    {% endif %}
+                </span>
+            </h2>
+            <div class="dash-panel__body">
+                {% if ride_groups %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Kdy</th>
+                            <th scope="col">RZ</th>
+                            <th scope="col">Druh</th>
+                            <th scope="col">Řidič</th>
+                            <th scope="col" class="dash-rides-col-count" title="Počet průvodek" aria-label="Počet průvodek">#</th>
+                            <th scope="col">Stav</th>
+                            <th scope="col">Tisk</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for group in ride_groups %}
+                        <tr{% if ride_group_explicit and selected_ride_group and group.key == selected_ride_group.key %} class="dash-rides-row--selected"{% endif %}>
+                            <td>
+                                {% if ride_group_explicit and selected_ride_group and group.key == selected_ride_group.key %}
+                                <a href="{{ dashboard_clear_ride_selection_url }}" title="Zrušit výběr (zobrazit všechny jízdy za den)">{{ group.drive_date|date:"d.m.Y" }}</a>
+                                {% else %}
+                                <a href="{% url 'core:dashboard' %}?date={{ selected_date_iso }}&ride_group={{ group.key|urlencode }}">{{ group.drive_date|date:"d.m.Y" }}</a>
+                                {% endif %}
+                            </td>
+                            <td{% if group.vehicle_rz_note %} title="{{ group.vehicle_rz_note }}"{% endif %}>{{ group.vehicle_rz }}</td>
+                            <td>
+                                {% if group.vehicle_kind_tags %}
+                                {% for tag in group.vehicle_kind_tags %}
+                                <span class="dash-vehicle-kind-shortcut" title="{{ tag.title }}">{{ tag.shortcut }}</span>
+                                {% endfor %}
+                                {% else %}
+                                <span class="dash-muted">—</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ group.driver_last_name|default:"—" }}</td>
+                            <td class="dash-rides-col-count"{% if group.is_plan_only %} title="Průvodka vznikne po úkolu ze sběrného dvora."{% else %} title="Počet průvodek"{% endif %}>{{ group.items|length }}</td>
+                            <td>{{ group.status }}</td>
+                            <td>
+                                {% if group.is_blank_group %}
+                                <span class="dash-print-links">
+                                    <a
+                                        class="dash-print-link"
+                                        href="{% url 'waste_docs:blank_pruvodka_print' %}?pks={{ group.blank_print_pks }}"
+                                        title="Otevřít tisk bianko průvodek"
+                                        aria-label="Otevřít tisk bianko průvodek"
+                                    >🖨</a>
+                                </span>
+                                {% elif group.vehicle_rz_id and not group.is_plan_only %}
+                                <span class="dash-print-links">
+                                    <a
+                                        class="dash-print-link"
+                                        href="{% url 'waste_docs:ride_print_bundle' %}?date={{ group.drive_date|date:'Y-m-d' }}&vehicle_rz_id={{ group.vehicle_rz_id }}&driver_id={{ group.driver_id|default:0 }}{% if group.print_pks %}&pks={{ group.print_pks }}{% endif %}"
+                                        data-generate-link="1"
+                                        data-generate-label="Připravuji soubory k tisku…"
+                                        title="Otevřít tisk balíčku: průvodky, ZPO a PIO pro tuto skupinu"
+                                        aria-label="Otevřít tisk balíčku: průvodky, ZPO a PIO pro tuto skupinu"
+                                    >🖨</a>
+                                    <a
+                                        class="dash-print-link dash-protocol-pdf-link"
+                                        href="{% url 'waste_docs:ride_protocol_group_pdf' %}?date={{ group.drive_date|date:'Y-m-d' }}&vehicle_rz_id={{ group.vehicle_rz_id }}&driver_id={{ group.driver_id|default:0 }}{% if group.print_pks %}&pks={{ group.print_pks }}{% endif %}"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        data-generate-link="1"
+                                        data-generate-label="Generuji PDF protokol…"
+                                        title="Otevřít protokol jízd (PDF) pro tuto skupinu"
+                                        aria-label="Otevřít protokol jízd (PDF) pro tuto skupinu"
+                                    >📘</a>
+                                </span>
+                                {% else %}
+                                <span class="dash-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="dash-muted">Zatím žádné jízdy.</p>
+                {% if can_create_pruvodka_dashboard %}
+                <p><a class="btn" href="{% url 'waste_docs:create' %}?date={{ selected_date_iso }}">Nová jízda</a></p>
+                {% elif can_create_pruvodka %}
+                <p class="dash-muted"><small>Novou jízdu z dashboardu mohou založit jen Admin nebo Dispečer — použijte odkaz z menu Jízdy / dvora.</small></p>
+                {% else %}
+                <p class="dash-muted"><small>Nemáte oprávnění založit novou jízdu.</small></p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </section>

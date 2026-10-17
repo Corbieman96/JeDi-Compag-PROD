@@ -1,0 +1,65 @@
+        <section class="dash-panel dash-panel--tasks" aria-label="Úkoly a poznámky">
+            <h2 class="dash-panel__head dash-panel__head--with-actions">
+                <span>Poslední úkoly / poznámky</span>
+                <span class="dash-panel__head-actions">
+                    {% if can_manage_dashboard_notes %}
+                    <button type="button" class="dash-panel__icon-btn" id="day-rem-open-new" title="Nová poznámka" aria-label="Nová poznámka">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a1 1 0 0 1 1 1v7h7a1 1 0 1 1 0 2h-7v7a1 1 0 1 1-2 0v-7H4a1 1 0 1 1 0-2h7V4a1 1 0 0 1 1-1z"/></svg>
+                    </button>
+                    <button type="button" class="dash-panel__icon-btn" id="day-rem-open-purge" title="Údržba — promazání dokončených" aria-label="Údržba — promazání dokončených">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/></svg>
+                    </button>
+                    {% endif %}
+                    <button type="button" class="dash-panel__icon-btn" id="day-rem-open-print" title="Tisk poznámek" aria-label="Tisk poznámek">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9V4h12v5H6zm11 0V5H7v4h10zM6 20v-4h12v4H6zm11-1v-2H7v2h10zM4 10h16a2 2 0 0 1 2 2v5h-3v-3H5v3H2v-5a2 2 0 0 1 2-2z"/></svg>
+                    </button>
+                </span>
+            </h2>
+            <div class="dash-panel__body">
+                {% if yard_dispatch_notes_attention %}
+                <div class="dash-yard-svoz-attention-banner dash-svoz-plan-needs-attention" role="status">
+                    Nová poznámka ze sběrného dvora — {{ yard_dispatch_notes_count }}
+                    {% if yard_dispatch_notes_count == 1 %}nevyřešená poznámka{% else %}nevyřešené poznámky{% endif %}
+                    ({{ selected_date|date:"j. n. Y" }}).
+                </div>
+                {% endif %}
+                {% if yard_hazard_open_requests %}
+                <div class="dash-yard-hazard-requests" style="margin-bottom: 14px; border: 1px solid #d4a017; border-radius: 8px; padding: 8px 10px; background: #fff8e6;">
+                    <p class="dash-muted" style="margin: 0 0 8px; font-weight: 600; color: #7a4f00;">Nebezpečný odpad ze dvora — čeká na jízdu</p>
+                    <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.5; list-style: disc;">
+                        {% for item in yard_hazard_open_requests %}
+                        {% include "core/partials/dash_yard_hazard_request_item.html" with item=item selected_date_iso=selected_date_iso can_open_svoz_task_pruvodka=can_open_svoz_task_pruvodka %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% if svoz_open_tasks %}
+                <div class="dash-svoz-tasks" style="margin-bottom: 14px;">
+                    <p class="dash-muted" style="margin: 0 0 8px; font-weight: 600; color: var(--color-text);">Požadavky na svoz — {{ selected_date|date:"j. n. Y" }}</p>
+                    {% if svoz_quick_edit_allowed and svoz_quick_edit_drivers %}
+                    <template id="svoz-quick-edit-driver-options">
+                        {% for d in svoz_quick_edit_drivers %}
+                        <option value="{{ d.pk }}">{{ d.last_name }} {{ d.first_name }}{% if d.personal_number %} ({{ d.personal_number }}){% endif %}</option>
+                        {% endfor %}
+                    </template>
+                    {% endif %}
+                    <ul style="margin: 0; padding-left: 1.2rem; line-height: 1.5; list-style: disc;">
+                        {% for t in svoz_open_tasks %}
+                        {% include "core/partials/dash_svoz_task_item.html" with t=t selected_date_iso=selected_date_iso can_open_svoz_task_pruvodka=can_open_svoz_task_pruvodka svoz_quick_edit_allowed=svoz_quick_edit_allowed svoz_quick_edit_drivers=svoz_quick_edit_drivers %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% if customer_requests_visible_for_dispatch %}
+                <div class="dash-cr-dispatch-panel">
+                    <p class="dash-cr-dispatch-panel__title dash-muted">Požadavky — připravené pro dispečera</p>
+                    <ul class="dash-cr-dispatch-list">
+                        {% for cr in customer_requests_visible_for_dispatch %}
+                        {% include "core/partials/dash_customer_request_dispatch_item.html" with cr=cr panel_date=selected_date show_detail=True %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% include "day_reminders/panel.html" %}
+            </div>
+        </section>

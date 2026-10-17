@@ -1,0 +1,55 @@
+{% if selected_ride_group.is_plan_only %}
+<p class="dash-muted" style="margin-bottom:12px;">
+    Skupina je jen v <strong>plánu svozů</strong> — průvodky se založí po úkolu ze sběrného dvora.
+    (<a href="{% url 'waste_docs:svoz_dispatch_plan' %}?date={{ selected_date_iso }}">otevřít plán</a>)
+</p>
+{% else %}
+<table class="dash-ride-detail-table">
+    <thead>
+        <tr>
+            <th scope="col">Jízda</th>
+            <th scope="col">Subjekt</th>
+            <th scope="col">Odpad</th>
+            <th scope="col">Koncovka</th>
+            <th scope="col">Řidič</th>
+            <th scope="col">Tisk</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ride in selected_ride_group.items %}
+        <tr data-ride-pk="{{ ride.pk }}"{% if selected_ride_pk == ride.pk %} class="dash-ride-detail-row--selected"{% endif %}>
+            <td>
+                <a href="{% url 'waste_docs:edit' ride.pk %}" title="Upravit jízdu #{{ ride.pk }}">
+                    #{{ ride.pk }}{% if ride.snd_cislo_listu %} ({{ ride.snd_cislo_listu }}){% endif %}
+                </a>
+                {% if ride.is_blank_pruvodka %}<span class="dash-badge dash-badge--blank" title="Bianko průvodka">Bianko</span>{% endif %}
+                <a class="dash-muted" style="font-weight:400; margin-left:6px; font-size:0.82rem;" href="{% url 'waste_docs:detail' ride.pk %}">Detail</a>
+            </td>
+            <td>{{ ride.name_snapshot|default:"—" }}</td>
+            <td>{{ ride.waste_type_snapshot|default:"—" }}</td>
+            <td>{{ ride.suffix_snapshot|default:"—" }}</td>
+            <td>{{ ride.driver_snapshot|default:"—" }}</td>
+            <td>
+                {% if ride.is_blank_pruvodka %}
+                <a
+                    class="dash-print-link"
+                    href="{% url 'waste_docs:blank_pruvodka_print' %}?pks={{ ride.pk }}"
+                    title="Otevřít tisk bianko průvodky #{{ ride.pk }}"
+                    aria-label="Otevřít tisk bianko průvodky #{{ ride.pk }}"
+                >🖨</a>
+                {% elif selected_ride_group.vehicle_rz_id and not selected_ride_group.is_plan_only %}
+                <a
+                    class="dash-print-link"
+                    href="{% url 'waste_docs:ride_print_bundle' %}?date={{ selected_ride_group.drive_date|date:'Y-m-d' }}&vehicle_rz_id={{ selected_ride_group.vehicle_rz_id }}&pks={{ ride.pk }}"
+                    title="Otevřít tisk jen pro průvodku #{{ ride.pk }}"
+                    aria-label="Otevřít tisk jen pro průvodku #{{ ride.pk }}"
+                >🖨</a>
+                {% else %}
+                <span class="dash-muted">—</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endif %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% include "reports/partials/report_styles.html" %}
+
+<div class="card">
+    <h1>Svozové úkoly</h1>
+    {% include "reports/partials/date_filter.html" %}
+</div>
+
+<div class="reports-kpi-grid">
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.total }}</div>
+        <div class="reports-kpi__label">Celkem úkolů</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.open_count }}</div>
+        <div class="reports-kpi__label">Otevřené</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.done_count }}</div>
+        <div class="reports-kpi__label">Vyřízené</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.completion_with_pruvodka_pct }} %</div>
+        <div class="reports-kpi__label">Vyřízené s průvodkou</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{% if summary.avg_days_to_resolve is not None %}{{ summary.avg_days_to_resolve }}{% else %}—{% endif %}</div>
+        <div class="reports-kpi__label">Prům. dní do vyřízení</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.unresolved_without_pruvodka }}</div>
+        <div class="reports-kpi__label">Fronta bez průvodky (≤ dnes)</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Podle činnosti</h2>
+    {% with rows=summary.by_activity show_share=True label_col="Činnost" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Podle sběrného dvora</h2>
+    {% with rows=summary.by_yard show_share=True label_col="Dvůr" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Podle druhu vozidla</h2>
+    {% with rows=summary.by_vehicle_kind show_share=True label_col="Druh vozidla" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+{% endblock %}

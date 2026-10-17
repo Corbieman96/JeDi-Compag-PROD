@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Úprava ZPO{% else %}Nové ZPO{% endif %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'catalogs/css/zpo_form.css' %}">
+{% endblock %}
+
+{% block content %}
+{{ waste_type_combo_meta|json_script:"zpo-form-waste-type-meta" }}
+<div class="card">
+    <h1>{% if is_edit %}Úprava ZPO{% else %}Nové ZPO{% endif %}</h1>
+    <form method="post" enctype="multipart/form-data" class="zpo-document-form">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-grid">
+            <div class="field-row">
+                {{ form.label.label_tag }}
+                <div class="field-input">{{ form.label }}{{ form.label.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.waste_type.label_tag }}
+                <div class="field-input">{{ form.waste_type }}{{ form.waste_type.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.suffix.label_tag }}
+                <div class="field-input">{{ form.suffix }}{{ form.suffix.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.file.label_tag }}
+                <div class="field-input">
+                    {{ form.file }}{{ form.file.errors }}
+                    {% if is_edit and item.file %}
+                        <p><small>Aktuální soubor: <a href="{{ item.file.url }}" target="_blank" rel="noopener noreferrer">otevřít</a> — ponechte „Soubor“ prázdné, pokud ho neměníte.</small></p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'catalogs:zpo_list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+<script src="{% static 'catalogs/js/waste_type_combo.js' %}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var form = document.querySelector(".zpo-document-form");
+    if (!form || typeof window.jedisInitWasteTypeCombosForRoot !== "function") return;
+    window.jedisInitWasteTypeCombosForRoot("zpo-form-waste-type-meta", form);
+    form.addEventListener(
+        "submit",
+        function () {
+            form.querySelectorAll(".name-subject-waste-combo .waste-combo-q").forEach(function (el) {
+                el.blur();
+            });
+        },
+        true
+    );
+});
+</script>
+{% endblock %}

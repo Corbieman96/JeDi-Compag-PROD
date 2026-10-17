@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% include "reports/partials/report_styles.html" %}
+
+<div class="card">
+    <h1>Provoz tisku</h1>
+    {% include "reports/partials/date_filter.html" %}
+</div>
+
+<div class="reports-kpi-grid">
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.total_marks }}</div>
+        <div class="reports-kpi__label">Záznamů tisku</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Podle uživatele</h2>
+    {% with rows=summary.by_user show_share=True label_col="Uživatel" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Podle data jízdy</h2>
+    {% with rows=summary.by_drive_date show_share=True label_col="Datum jízdy" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+{% endblock %}

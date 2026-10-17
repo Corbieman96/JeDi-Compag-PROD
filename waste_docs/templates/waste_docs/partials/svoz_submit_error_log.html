@@ -1,0 +1,15 @@
+<ul class="svoz-log-list svoz-error-log-list">
+    {% for row in submit_error_log_rows %}
+    <li class="svoz-log-row svoz-error-log-row" title="{{ row.message }}">
+        <span class="svoz-log-row__time">{{ row.time_display }}</span>
+        <span class="svoz-log-row__main">
+            {% if row.display_label %}<span class="svoz-log-row__label">{{ row.display_label }}</span>{% endif %}
+            {% if row.container_numbers %}<span class="svoz-log-row__containers">· k. {{ row.container_numbers }}</span>{% endif %}
+            <span class="svoz-error-log-row__msg">{{ row.message }}</span>
+        </span>
+        <span class="svoz-log-row__meta">{{ row.created_by_label }}</span>
+    </li>
+    {% empty %}
+    <li class="svoz-log-row dash-muted">Žádné chyby v logu tohoto dvora.</li>
+    {% endfor %}
+</ul>

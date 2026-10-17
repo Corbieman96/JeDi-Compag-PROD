@@ -1,0 +1,32 @@
+        {% if role_access.can_see_all_waste_docs and dispatch_plan_needs_attention or svoz_dispatch_warnings or customer_request_counts.invoice_pending or customer_request_counts.invoice_overdue or customer_request_counts.dispatcher_pending or customer_request_counts.submitter_back or yard_submit_error_has_any %}
+        <div class="dash-masthead-alerts" role="region" aria-label="Upozornění">
+            {% if role_access.can_see_all_waste_docs and dispatch_plan_needs_attention %}
+            <a class="dash-masthead-alert dash-masthead-alert--danger dash-svoz-plan-needs-attention" href="{% url 'waste_docs:svoz_dispatch_plan' %}?date={{ selected_date_iso }}" title="Plán svozů pro tento den není kompletně vyplněný nebo potvrzený.">Plán svozů — zkontrolovat</a>
+            {% endif %}
+            {% if role_access.can_see_all_waste_docs and yard_submit_error_has_any %}
+            <button
+                type="button"
+                class="dash-masthead-alert{% if yard_submit_error_unread_count %} dash-masthead-alert--danger dash-svoz-error-log-attention{% else %} dash-masthead-alert--warning{% endif %}"
+                id="dash-svoz-error-log-open"
+                title="Chyby odeslání matice sběrných dvorů — otevřít log"
+                aria-expanded="false"
+                aria-controls="dash-svoz-error-log-modal"
+            >{% if yard_submit_error_unread_count %}Chyby SD ({{ yard_submit_error_unread_count }}){% else %}Log chyb SD{% endif %}</button>
+            {% endif %}
+            {% if svoz_dispatch_warnings %}
+            <span class="dash-masthead-alert dash-masthead-alert--warning" title="{% for w in svoz_dispatch_warnings %}{{ w }}{% if not forloop.last %} · {% endif %}{% endfor %}">Svoz: díry / upozornění ({{ svoz_dispatch_warnings|length }})</span>
+            {% endif %}
+            {% if customer_request_counts.dispatcher_pending %}
+            <a class="dash-masthead-alert dash-masthead-alert--warning dash-dispatcher-pending-attention" href="{% url 'waste_docs:customer_request_list' %}?status=dispatcher_review" title="Požadavky čekající na schválení dispečerem">Dispečer: {{ customer_request_counts.dispatcher_pending }}</a>
+            {% endif %}
+            {% if customer_request_counts.invoice_pending %}
+            <a class="dash-masthead-alert dash-masthead-alert--warning" href="{% if role_access.show_invoice_queue_nav %}{% url 'waste_docs:customer_request_invoice_queue' %}{% else %}{% url 'waste_docs:customer_request_list' %}?status=submitted{% endif %}" title="Čeká na schválení zálohy">Zálohy: {{ customer_request_counts.invoice_pending }}</a>
+            {% endif %}
+            {% if customer_request_counts.invoice_overdue %}
+            <a class="dash-masthead-alert dash-masthead-alert--danger" href="{% url 'waste_docs:customer_request_list' %}?status=invoice_overdue" title="Záloha po splatnosti">Po splatnosti: {{ customer_request_counts.invoice_overdue }}</a>
+            {% endif %}
+            {% if customer_request_counts.submitter_back %}
+            <a class="dash-masthead-alert dash-masthead-alert--warning" href="{% url 'waste_docs:customer_request_list' %}" title="Vaše požadavky k doplnění nebo přeplánování">K doplnění: {{ customer_request_counts.submitter_back }}</a>
+            {% endif %}
+        </div>
+        {% endif %}

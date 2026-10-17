@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}ZPO náhled jízdy{% endblock %}
+
+{% block content %}
+<style>
+    .zpo-pairing-page { position: relative; display: grid; gap: 10px; }
+    .zpo-view {
+        position: relative;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        background: #fff;
+        min-height: 72vh;
+        overflow: hidden;
+    }
+    .zpo-view iframe,
+    .zpo-view img,
+    .zpo-view object {
+        width: 100%;
+        height: 72vh;
+        border: 0;
+        display: block;
+        object-fit: contain;
+        background: #fff;
+    }
+    .zpo-ride-detail {
+        position: absolute;
+        right: 12px;
+        bottom: 12px;
+        z-index: 25;
+        max-width: min(420px, 44vw);
+        max-height: 52vh;
+        overflow: auto;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid #2d7c42;
+        border-radius: 10px;
+        box-shadow: 0 8px 22px rgba(32, 72, 40, 0.18);
+        padding: 10px 12px;
+        font-size: 0.86rem;
+    }
+    .zpo-ride-detail h2 {
+        margin: 0 0 8px;
+        font-size: 0.95rem;
+        color: #1e5a2f;
+    }
+    .zpo-ride-detail table { width: 100%; border-collapse: collapse; }
+    .zpo-ride-detail th,
+    .zpo-ride-detail td {
+        text-align: left;
+        padding: 4px 6px;
+        border-bottom: 1px solid #e4ebe4;
+        vertical-align: top;
+    }
+    .zpo-ride-detail th {
+        color: #264e2d;
+        font-weight: 600;
+        width: 44%;
+        white-space: nowrap;
+    }
+    .zpo-badge {
+        position: absolute;
+        left: 12px;
+        bottom: 10px;
+        z-index: 20;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid #2d7c42;
+        color: #1e5a2f;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 0.92rem;
+        padding: 6px 10px;
+        line-height: 1.2;
+    }
+    @media print {
+        .topbar, .card:first-of-type .actions, .card:first-of-type p { display: none !important; }
+        .zpo-view { border: 0; min-height: auto; }
+        .zpo-view iframe, .zpo-view img, .zpo-view object { height: auto; min-height: 100vh; }
+        .zpo-ride-detail {
+            position: static;
+            max-width: 100%;
+            max-height: none;
+            margin-top: 12px;
+            page-break-inside: avoid;
+        }
+    }
+</style>
+
+<div class="card">
+    <h1>ZPO náhled</h1>
+    <p>Číslo listu/jízdy: <strong>{{ item.snd_cislo_listu|default:"-" }}</strong></p>
+    <div class="actions">
+        {% if item.generated_file %}
+            <a class="btn" href="{% url 'waste_docs:print_file_as_pdf' %}?rel={{ item.generated_file.name|urlencode }}" target="_blank" rel="noopener">Otevřít / vytisknout průvodku</a>
+            <a class="btn secondary" href="{% url 'waste_docs:download' item.pk %}">Stáhnout Excel</a>
+        {% endif %}
+        {% if effective_pio_url %}
+            <a class="btn secondary" href="{{ effective_pio_url }}" target="_blank">Otevřít PIO</a>
+        {% endif %}
+        <a class="btn secondary" href="{% url 'waste_docs:detail' item.pk %}">Zpět na detail</a>
+    </div>
+</div>
+
+<div class="zpo-pairing-page">
+    <div class="zpo-view">
+        {% if zpo_kind == "pdf" %}
+            <iframe src="{{ zpo_url }}" title="ZPO PDF"></iframe>
+        {% elif zpo_kind == "image" %}
+            <img src="{{ zpo_url }}" alt="ZPO dokument">
+        {% else %}
+            <object data="{{ zpo_url }}" type="application/octet-stream"></object>
+        {% endif %}
+        <div class="zpo-badge">{{ item.snd_cislo_listu|default:"-" }}</div>
+        <aside class="zpo-ride-detail" aria-label="Detail jízdy pro párování s ZPO">
+            <h2>Detail jízdy</h2>
+            <table>
+                <tbody>
+                    {% for row in ride_detail_lines %}
+                    <tr>
+                        <th>{{ row.label }}</th>
+                        <td>{{ row.value }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </aside>
+    </div>
+</div>
+{% endblock %}

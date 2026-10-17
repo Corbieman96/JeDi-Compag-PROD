@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Knihovna ZPO{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'catalogs/css/zpo_list.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Knihovna ZPO</h1>
+    <p>Centralizované soubory ZPO pro výběr u párů odpad–koncovka u subjektů.</p>
+    <form method="get" class="zpo-list-toolbar" action="">
+        <p class="zpo-list-toolbar__search">
+            <label for="zpo-list-q">Hledat</label>
+            <input
+                id="zpo-list-q"
+                type="search"
+                name="q"
+                value="{{ q }}"
+                placeholder="Popisek nebo kód odpadu (190904 / 19 09 04)"
+                autocomplete="off"
+            />
+        </p>
+        <div class="zpo-list-toolbar__actions">
+            <button type="submit" class="btn secondary">Filtrovat</button>
+            <a class="btn" href="{% url 'catalogs:zpo_create' %}">Nové ZPO</a>
+            <a class="btn secondary" href="{% url 'catalogs:index' %}">Zpět na číselníky</a>
+        </div>
+    </form>
+</div>
+<div class="card zpo-list__card">
+    <div class="zpo-list__grid" role="list" aria-label="Seznam ZPO">
+        {% for item in items %}
+        <article class="zpo-list__item" role="listitem">
+            <h2 class="zpo-list__item-title">{{ item.label }}</h2>
+            <dl class="zpo-list__meta">
+                <div>
+                    <dt>Druh odpadu</dt>
+                    <dd>{% if item.waste_type %}{{ item.waste_type }}{% else %}—{% endif %}</dd>
+                </div>
+                <div>
+                    <dt>Koncovka</dt>
+                    <dd>{% if item.suffix %}{{ item.suffix.value }}{% else %}—{% endif %}</dd>
+                </div>
+            </dl>
+            <div class="zpo-list__item-footer">
+                <p class="zpo-list__file">
+                    {% if item.file %}
+                        <a href="{{ item.file.url }}" target="_blank" rel="noopener noreferrer">Otevřít soubor</a>
+                    {% else %}<span class="zpo-list__muted">Bez souboru</span>{% endif %}
+                </p>
+                <div class="zpo-list__item-actions">
+                    <a class="btn" href="{% url 'catalogs:zpo_edit' item.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'catalogs:zpo_delete' item.pk %}">Smazat</a>
+                </div>
+            </div>
+        </article>
+        {% empty %}
+        <p class="zpo-list__empty">Zatím žádné ZPO. <a href="{% url 'catalogs:zpo_create' %}">Vytvořit první záznam</a>.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

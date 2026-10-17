@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Úprava: {{ label }}{% else %}Nová položka{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Úprava: {{ label }}{% else %}Nová položka: {{ label }}{% endif %}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn">Uložit</button>
+        <a class="btn secondary" href="{% url 'catalogs:list' slug %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

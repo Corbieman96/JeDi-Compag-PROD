@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Šablony požadavků{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Šablony požadavků</h1>
+    <p><small>Šablony pro rychlé založení opakovaných zákaznických požadavků.</small></p>
+    <p class="form-actions" style="margin-bottom:12px;">
+        <a class="btn" href="{% url 'customer_request_templates:create' %}">Nová šablona</a>
+    </p>
+    <table>
+        <thead>
+            <tr>
+                <th>Název</th>
+                <th>Subjekt</th>
+                <th>Odpad</th>
+                <th>Koncovka</th>
+                <th>Adresa plnění</th>
+                <th>Vlastník</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.title }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.waste_type }}</td>
+                <td>{{ item.suffix|default:"-" }}</td>
+                <td>{{ item.address }}</td>
+                <td>{{ item.created_by.get_username }}</td>
+                <td class="actions">
+                    <a class="btn secondary" href="{% url 'customer_request_templates:edit' item.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'customer_request_templates:delete' item.pk %}">Smazat</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">Zatím nejsou uložené žádné šablony.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

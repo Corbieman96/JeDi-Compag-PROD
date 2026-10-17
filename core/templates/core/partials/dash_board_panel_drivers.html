@@ -1,0 +1,124 @@
+        <section class="dash-panel dash-panel--drivers" aria-label="Řidiči">
+            <h2 class="dash-panel__head">Řidiči</h2>
+            <div class="dash-panel__body">
+                {% if drivers %}
+                <table>
+                    <tbody>
+                        {% for d in drivers %}
+                        <tr>
+                            <td>
+                                <div class="dash-driver-cell">
+                                    <div class="dash-driver-cell__main">
+                                        <span class="dash-driver-cell__line">
+                                            {% if d.personal_number %}
+                                            <small class="dash-muted">{{ d.personal_number }}</small>
+                                            {% endif %}
+                                            {% if request.user.is_superuser and d.pk %}
+                                            <a href="{% url 'catalogs:driver_edit' d.pk %}">{{ d.first_name }} {{ d.last_name }}</a>
+                                            {% else %}
+                                            <span>{{ d.first_name }} {{ d.last_name }}</span>
+                                            {% endif %}
+                                            {% if d.phone %}
+                                            <small class="dash-muted">{{ d.phone }}</small>
+                                            {% endif %}
+                                            {% if d.partial_absence_label %}
+                                            <span class="dash-driver-partial-absence-icon" title="{{ d.partial_absence_label }}" aria-label="{{ d.partial_absence_label }}">{{ d.partial_absence_label }}</span>
+                                            {% endif %}
+                                        </span>
+                                        {% if d.portal_linked or role_access.can_manage_driver_absences and d.pk and d.pk not in driver_ids_with_ride %}
+                                        <span class="dash-driver-cell__indicators">
+                                            {% if d.portal_linked %}
+                                            <span class="dash-driver-portal-icon dash-driver-portal-icon--on" title="Portál řidiče — účet je propojen" aria-label="Portál řidiče, účet propojen">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                                            </span>
+                                            {% endif %}
+                                            {% if role_access.can_manage_driver_absences and d.pk and d.pk not in driver_ids_with_ride %}
+                                                {% if d.pk in driver_ids_with_planned_svoz %}
+                                                <span class="dash-driver-planned-svoz-icon" title="V plánu svozů — čeká na průvodky z úkolů sběrných dvorů" aria-label="V plánu svozů, čeká na průvodky">P</span>
+                                                {% else %}
+                                                <span class="dash-driver-no-ride-icon" title="Řidič nemá přiřazenou jízdu" aria-label="Řidič nemá přiřazenou jízdu">!</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if role_access.can_manage_driver_absences and d.pk %}
+                                    <div class="dash-driver-ctx-wrap">
+                                        <button
+                                            type="button"
+                                            class="dash-driver-ctx-trigger btn secondary"
+                                            aria-expanded="false"
+                                            aria-haspopup="true"
+                                            aria-controls="dash-absence-menu-{{ d.pk }}"
+                                            id="dash-absence-trigger-{{ d.pk }}"
+                                            title="Zapsat nepřítomnost"
+                                            aria-label="Zapsat nepřítomnost — kontextové menu"
+                                        >⋮</button>
+                                        <div
+                                            class="dash-driver-ctx-menu"
+                                            id="dash-absence-menu-{{ d.pk }}"
+                                            role="dialog"
+                                            aria-labelledby="dash-absence-trigger-{{ d.pk }}"
+                                            hidden
+                                        >
+                                            {% if d.panel_other_absence and d.panel_other_absence.pk %}
+                                            <form method="post" action="{% url 'catalogs:driver_absence_quick_update' d.pk d.panel_other_absence.pk %}" class="dash-absence-mini-form">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="next_date" value="{{ selected_date_iso }}">
+                                                <strong style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; color: var(--color-muted);">Upravit Jiné</strong>
+                                                <label>Typ
+                                                    <select name="absence_type" required>
+                                                        {% for val, label in absence_type_choices %}
+                                                        <option value="{{ val }}"{% if d.panel_other_absence.absence_type == val %} selected{% endif %}>{{ label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </label>
+                                                <label>Od <input type="date" name="date_from" value="{{ d.panel_other_absence.date_from|date:'Y-m-d' }}" required></label>
+                                                <label>Do <input type="date" name="date_to" value="{{ d.panel_other_absence.date_to|date:'Y-m-d' }}" required></label>
+                                                <label>Poznámka <textarea name="note" rows="2" placeholder="Volitelně">{{ d.panel_other_absence.note|default_if_none:'' }}</textarea></label>
+                                                <button type="submit" class="btn secondary">Uložit</button>
+                                            </form>
+                                            <div style="padding: 0 12px 12px;">
+                                                <form method="post" action="{% url 'catalogs:driver_absence_quick_delete' d.pk d.panel_other_absence.pk %}" onsubmit="return confirm('Opravdu zrušit nepřítomnost Jiné?');">
+                                                    {% csrf_token %}
+                                                    <input type="hidden" name="next_date" value="{{ selected_date_iso }}">
+                                                    <button type="submit" class="btn danger">Zrušit Jiné</button>
+                                                </form>
+                                            </div>
+                                            {% else %}
+                                            <form method="post" action="{% url 'catalogs:driver_absence_quick_add' %}" class="dash-absence-mini-form">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="driver" value="{{ d.pk }}">
+                                                <input type="hidden" name="next_date" value="{{ selected_date_iso }}">
+                                                <strong style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.04em; color: var(--color-muted);">Nepřítomnost</strong>
+                                                <label>Typ
+                                                    <select name="absence_type" required>
+                                                        {% for val, label in absence_type_choices %}
+                                                        <option value="{{ val }}">{{ label }}</option>
+                                                        {% endfor %}
+                                                    </select>
+                                                </label>
+                                                <label>Od <input type="date" name="date_from" value="{{ selected_date_iso }}" required></label>
+                                                <label>Do <input type="date" name="date_to" value="{{ selected_date_iso }}" required></label>
+                                                <label><input type="checkbox" name="is_partial"> Půldenní (jen dovolená / nemoc)</label>
+                                                <label>Poznámka <textarea name="note" rows="2" placeholder="Volitelně"></textarea></label>
+                                                <button type="submit" class="btn secondary">Uložit</button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p class="dash-muted">Žádní řidiči v číselníku.</p>
+                {% if request.user.is_superuser %}
+                <p><a class="btn secondary" href="{% url 'catalogs:driver_list' %}">Číselník řidičů</a></p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </section>

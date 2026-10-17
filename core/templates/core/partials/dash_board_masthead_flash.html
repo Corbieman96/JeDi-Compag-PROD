@@ -1,0 +1,10 @@
+        {% if messages or dashboard_debug_messages %}
+        <div class="dash-board__masthead-flash" role="status" aria-label="Hlášení systému">
+            {% for message in messages %}
+            <p class="dash-masthead-message{% if message.level_tag %} dash-masthead-message--{{ message.level_tag }}{% endif %}">{{ message }}</p>
+            {% endfor %}
+            {% for dbg in dashboard_debug_messages %}
+            <p class="dash-masthead-message dash-masthead-message--error">{{ dbg }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}

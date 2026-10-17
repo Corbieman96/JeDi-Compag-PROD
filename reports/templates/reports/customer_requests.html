@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% include "reports/partials/report_styles.html" %}
+
+<div class="card">
+    <h1>Požadavky zákazníků</h1>
+    {% include "reports/partials/date_filter.html" %}
+</div>
+
+<div class="reports-kpi-grid">
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.created_in_period }}</div>
+        <div class="reports-kpi__label">Nové v období</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.conversion_to_ride_pct }} %</div>
+        <div class="reports-kpi__label">Konverze na jízdu</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.planned_in_period }}</div>
+        <div class="reports-kpi__label">Naplánované</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.done_in_period }}</div>
+        <div class="reports-kpi__label">Dokončené</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.with_follow_up_count }}</div>
+        <div class="reports-kpi__label">S návazností</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{% if summary.avg_days_to_plan is not None %}{{ summary.avg_days_to_plan }}{% else %}—{% endif %}</div>
+        <div class="reports-kpi__label">Prům. dní do plánu</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.invoice_queue_count }}</div>
+        <div class="reports-kpi__label">Fronta záloh (aktuálně)</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Podle činnosti</h2>
+    {% with rows=summary.by_activity show_share=True label_col="Činnost" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Podle druhu vozidla</h2>
+    {% with rows=summary.by_vehicle_kind show_share=True label_col="Druh vozidla" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Nové požadavky v období — podle stavu</h2>
+    {% with rows=summary.by_status show_share=True label_col="Stav" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Všechny požadavky — podle stavu (celkem)</h2>
+    {% with rows=summary.by_status_all show_share=True label_col="Stav" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+{% endblock %}

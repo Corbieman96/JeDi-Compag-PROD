@@ -1,0 +1,17 @@
+{% if not selected_ride_group.is_plan_only and selected_ride_group.items|length >= 2 %}
+<button
+    type="button"
+    class="btn secondary dash-ride-reorder-toggle ride-route-reorder__header-btn"
+    title="Přetáhnutím seřadit zastávky v trase (SND na průvodkách zůstanou)"
+>Uspořádat zastávky</button>
+<button
+    type="button"
+    class="btn secondary dash-ride-reorder-optimize-btn ride-route-reorder__header-btn"
+    title="Navrhnout optimální pořadí zastávek podle pravidel JeDiS"
+>Navrhnout pořadí</button>
+<button
+    type="button"
+    class="btn secondary dash-ride-reorder-ai-btn ride-route-reorder__header-btn"
+    title="Zkopírovat prompt pro ChatGPT/Claude — AI navrhne pořadí pk, které pak ručně uložíte"
+>Prompt pro AI</button>
+{% endif %}

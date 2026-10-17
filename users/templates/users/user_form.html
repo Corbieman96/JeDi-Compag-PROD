@@ -1,0 +1,338 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block extra_head %}
+<style>
+    .user-form-page { max-width: 880px; margin: 0 auto; }
+    .user-form-page .card--header {
+        background: linear-gradient(135deg, #eef6ef 0%, #f8fbf8 48%, #ffffff 100%);
+        border: 1px solid var(--color-border);
+    }
+    .user-form-page .card--header h1 {
+        margin: 0 0 6px;
+        font-size: 1.45rem;
+    }
+    .user-form-page .card--header p {
+        margin: 0;
+        color: var(--color-muted);
+        font-size: 0.95rem;
+    }
+    .user-access-preview { margin-bottom: 18px; }
+    .user-access-preview__title { font-size: 1.1rem; margin: 0 0 10px; color: #264e2d; }
+    .user-access-preview__lead { margin: 0 0 14px; font-size: 0.95rem; color: var(--color-text); }
+    .user-access-preview__name { color: var(--color-primary-dark); }
+    .user-access-preview__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 10px;
+    }
+    .user-access-preview__list li {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 10px 14px;
+        background: #f4f9f5;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+    }
+    .user-access-preview__label { font-weight: 600; color: #264e2d; }
+    .user-access-preview__badge {
+        font-size: 0.78rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        padding: 4px 10px;
+        border-radius: 999px;
+    }
+    .user-access-preview__badge--yes {
+        background: rgba(45, 124, 66, 0.18);
+        color: var(--color-primary-dark);
+    }
+    .user-access-preview__badge--no {
+        background: rgba(100, 110, 105, 0.15);
+        color: #5a635e;
+    }
+    .user-access-preview__hint {
+        margin: 14px 0 0;
+        font-size: 0.88rem;
+        color: var(--color-muted);
+        line-height: 1.45;
+    }
+    .user-form-section {
+        font-size: 0.95rem;
+        margin: 24px 0 12px;
+        color: var(--color-muted);
+        font-weight: 600;
+        border-bottom: 1px solid var(--color-border);
+        padding-bottom: 8px;
+        grid-column: 1 / -1;
+    }
+    .user-form-section:first-of-type { margin-top: 6px; }
+    .user-form-section__note {
+        font-weight: 400;
+        color: var(--color-muted);
+        font-size: 0.88rem;
+        display: block;
+        margin-top: 4px;
+    }
+    .user-form-catalog-grid {
+        display: grid;
+        gap: 10px;
+        grid-column: 1 / -1;
+    }
+    @media (min-width: 640px) {
+        .user-form-catalog-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    .user-form-catalog-grid .field-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+        margin: 0;
+        padding: 12px 14px;
+        background: #fafcfb;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+    }
+    .user-form-catalog-grid .field-row > label {
+        padding-top: 0;
+        font-size: 0.88rem;
+        color: #3d5344;
+    }
+    .user-form-catalog-grid .field-row .field-input select {
+        max-width: 100%;
+    }
+    .sberny-dvur-subject-combo {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        width: 100%;
+        max-width: 100%;
+    }
+    .sberny-dvur-subject-combo__q {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+    }
+    .sberny-dvur-subject-combo__select {
+        display: none !important;
+    }
+    .user-form-fold {
+        grid-column: 1 / -1;
+        border: 1px solid var(--color-border);
+        border-radius: 10px;
+        margin-top: 8px;
+        background: #fafcfb;
+    }
+    .user-form-fold > summary {
+        cursor: pointer;
+        padding: 12px 14px;
+        font-weight: 600;
+        color: #264e2d;
+        list-style: none;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+    .user-form-fold > summary::-webkit-details-marker { display: none; }
+    .user-form-fold > summary::after {
+        content: "▼";
+        font-size: 0.65rem;
+        color: var(--color-muted);
+        transition: transform 0.15s ease;
+    }
+    .user-form-fold[open] > summary::after {
+        transform: rotate(-180deg);
+    }
+    .user-form-fold[open] > summary {
+        border-bottom: 1px solid var(--color-border);
+    }
+    .user-form-fold__body {
+        padding: 14px 14px 6px;
+    }
+    .user-form-fold__hint {
+        margin: 0 0 12px;
+        font-size: 0.88rem;
+        color: var(--color-muted);
+        line-height: 1.45;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-form-page">
+    {% include "users/partials/access_preview.html" %}
+
+    <div class="card card--header">
+        <h1>{{ page_title }}</h1>
+        {% if is_edit %}
+        <p>Upravte přihlašovací údaje, roli a oprávnění. Změny se projeví po uložení.</p>
+        {% else %}
+        <p>Založte účet, zvolte roli a nastavte viditelnost funkcí v aplikaci.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <form method="post" class="form-grid form-grid--wide user-form-body">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+            <h3 class="user-form-section">
+                Účet a role
+                <span class="user-form-section__note">Role určuje základ oprávnění. Globální viditelnost menu podle rolí upravíte v <strong>Nastavení</strong>.</span>
+            </h3>
+
+            {% for field in form %}
+                {% if field.name == "username" or field.name == "email" or field.name == "role" or field.name == "new_password1" or field.name == "new_password2" %}
+                <div class="field-row">
+                    {{ field.label_tag }}
+                    <div class="field-input">
+                        {{ field }}
+                        {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                        {{ field.errors }}
+                    </div>
+                </div>
+                {% endif %}
+            {% endfor %}
+
+            {% if not is_edit %}
+                {% for field in form %}
+                    {% if field.name == "password1" or field.name == "password2" %}
+                    <div class="field-row">
+                        {{ field.label_tag }}
+                        <div class="field-input">
+                            {{ field }}
+                            {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                            {{ field.errors }}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            <details class="user-form-fold" open>
+                <summary>Jízdy, dashboard a sběrný dvůr</summary>
+                <div class="user-form-fold__body">
+                    <h3 class="user-form-section" style="margin-top:0;">Jízdy</h3>
+                    {% for field in form %}
+                        {% if field.name == "can_edit_existing_pruvodka" or field.name == "can_create_pruvodka" or field.name == "can_delete_all_pruvodky" %}
+                        <div class="field-row">
+                            {{ field.label_tag }}
+                            <div class="field-input field-input--checkbox-narrow">
+                                {{ field }}
+                                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                                {{ field.errors }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    <h3 class="user-form-section">Dashboard</h3>
+                    {% for field in form %}
+                        {% if field.name == "can_manage_dashboard_notes" %}
+                        <div class="field-row">
+                            {{ field.label_tag }}
+                            <div class="field-input field-input--checkbox-narrow">
+                                {{ field }}
+                                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                                {{ field.errors }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% for field in form %}
+                        {% if field.name == "sberny_dvur_subject" %}
+                        <div class="field-row sberny-dvur-subject-row" data-search-url="{% url 'users:sberny_dvur_subject_search' %}">
+                            {{ field.label_tag }}
+                            <div class="field-input">
+                                {{ field }}
+                                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                                {{ field.errors }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% if form.show_subject_toggle_section %}
+                    <h3 class="user-form-section">Subjekt F/P osoby — povolit změny polí</h3>
+                    {% for field in form %}
+                        {% if field.name == "can_toggle_subject_is_municipality" or field.name == "can_toggle_subject_collection_yard" or field.name == "can_toggle_subject_yard_allow_pruvodka" or field.name == "can_toggle_subject_yard_allow_matrix" or field.name == "can_toggle_subject_dispatch_group" or field.name == "can_toggle_subject_nitropodnikovy" or field.name == "can_toggle_subject_system_generates_zpo" %}
+                        <div class="field-row">
+                            {{ field.label_tag }}
+                            <div class="field-input field-input--checkbox-narrow">
+                                {{ field }}
+                                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                                {{ field.errors }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% endif %}
+                    <h3 class="user-form-section">Číselník jmen (F/P)</h3>
+                    {% for field in form %}
+                        {% if field.name == "export_pio_profile" %}
+                        <div class="field-row">
+                            {{ field.label_tag }}
+                            <div class="field-input">
+                                {{ field }}
+                                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                                {{ field.errors }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </details>
+
+            <details class="user-form-fold" {% if is_edit %}open{% endif %}>
+                <summary>Menu a řádky číselníků — výjimky oproti výchozí roli</summary>
+                <div class="user-form-fold__body">
+                    <p class="user-form-fold__hint">Necháte-li u položky <strong>Dědit z role</strong>, platí tabulka v <strong>Nastavení</strong>. <strong>Vždy zobrazit</strong> / <strong>Skrýt</strong> přepíše globální výchozí jen pro tohoto uživatele. U řádků číselníků platí totéž — jen pokud má v menu odkaz na číselníky.</p>
+                    <h3 class="user-form-section" style="margin-top:0;">Horní lišta (menu)</h3>
+                    {% for field in form %}
+                        {% if field.name == "nav_dashboard" or field.name == "nav_pruvodky" or field.name == "nav_customer_requests" or field.name == "nav_invoice_queue" or field.name == "nav_catalogs" or field.name == "nav_settings" or field.name == "nav_address_data" or field.name == "nav_reports" %}
+                        <div class="field-row">
+                            {{ field.label_tag }}
+                            <div class="field-input">
+                                {{ field }}
+                                {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+                                {{ field.errors }}
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    <h3 class="user-form-section">
+                        Číselníky — řádky v přehledu
+                    </h3>
+                    <div class="user-form-catalog-grid">
+                        {% for field in form %}
+                            {% if field.name|slice:"0:7" == "catnav_" %}
+                            <div class="field-row">
+                                {{ field.label_tag }}
+                                <div class="field-input">
+                                    {{ field }}
+                                    {{ field.errors }}
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </details>
+
+            <div class="form-actions" style="margin-top: 20px;">
+                <button type="submit" class="btn">Uložit</button>
+                <a class="btn secondary" href="{% url 'users:list' %}">Zpět na seznam</a>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="{% static 'users/js/sberny_dvur_subject_combo.js' %}"></script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% comment %}t, selected_date_iso, can_open_svoz_task_pruvodka, svoz_quick_edit_allowed, svoz_quick_edit_drivers{% endcomment %}
+<li style="margin-bottom: 10px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start;">
+        <span style="flex: 1 1 16rem; min-width: 0; line-height: 1.5;">
+            {% if t.assigned_driver %}
+            <span class="dash-muted" style="font-size: 0.88em; display: block; margin-bottom: 2px;">Řidič: <strong>{{ t.assigned_driver.last_name }} {{ t.assigned_driver.first_name }}{% if t.assigned_driver.personal_number %} ({{ t.assigned_driver.personal_number }}){% endif %}</strong></span>
+            {% else %}
+            <span class="dash-muted" style="font-size: 0.88em; display: block; margin-bottom: 2px;">Řidič: <em>nepřiřazeno</em></span>
+            {% endif %}
+            {% if t.assigned_vehicle_rz %}
+            <span class="dash-muted" style="font-size: 0.88em; display: block; margin-bottom: 2px;">Vozidlo (RZ): <strong>{{ t.assigned_vehicle_rz.value }}</strong></span>
+            {% endif %}
+            {% if t.auto_pruvodka_last_error %}
+            <span style="font-size: 0.88em; display: block; margin-bottom: 4px; color: #8a2f2f; background: #fdf2f2; border: 1px solid #e8c4c4; border-radius: 6px; padding: 4px 8px;">
+                Auto-jízda selhala: {{ t.auto_pruvodka_last_error }}
+            </span>
+            {% endif %}
+            {% if can_open_svoz_task_pruvodka %}
+            <a href="{% url 'waste_docs:create' %}?date={{ selected_date_iso }}&amp;svoz_task={{ t.pk }}">({{ t.subject_profile }}){% if t.vehicle_kind %} [{{ t.vehicle_kind }}]{% endif %} {% if t.matrix_display_label %}{{ t.matrix_display_label }}{% else %}{{ t.waste_type.code|default:"?" }} / {{ t.suffix.value|default:"—" }}{% endif %}{% if t.container_numbers %} — {{ t.container_numbers }}{% endif %}</a>
+            {% else %}
+            <span>({{ t.subject_profile }}){% if t.vehicle_kind %} [{{ t.vehicle_kind }}]{% endif %} {% if t.matrix_display_label %}{{ t.matrix_display_label }}{% else %}{{ t.waste_type.code|default:"?" }} / {{ t.suffix.value|default:"—" }}{% endif %}{% if t.container_numbers %} — {{ t.container_numbers }}{% endif %}</span>
+            {% endif %}
+        </span>
+        {% if svoz_quick_edit_allowed %}
+        <details class="dash-svoz-task-edit" style="font-size: 0.9rem;">
+            <summary class="btn secondary" style="cursor: pointer; list-style: none;">Upravit</summary>
+            <form method="post" action="{% url 'waste_docs:svoz_task_quick_edit' t.pk %}" class="dash-svoz-task-edit__form" style="margin-top: 8px; padding: 10px 12px; border: 1px solid var(--color-border); border-radius: 10px; background: #f8fbf9; max-width: 26rem;">
+                {% csrf_token %}
+                <div class="field-row" style="margin-bottom: 8px;">
+                    <label for="id_svoz_qe_date_{{ t.pk }}" style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 4px;">Datum požadavku</label>
+                    <input id="id_svoz_qe_date_{{ t.pk }}" name="target_date" type="date" value="{{ t.target_date|date:'Y-m-d' }}" required style="width: 100%; max-width: 12rem; box-sizing: border-box; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--color-border);">
+                </div>
+                <div class="field-row" style="margin-bottom: 8px;">
+                    <label for="id_svoz_qe_driver_{{ t.pk }}" style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 4px;">Přiřazený řidič</label>
+                    <select id="id_svoz_qe_driver_{{ t.pk }}" name="assigned_driver" data-svoz-driver-select data-selected-driver="{{ t.assigned_driver_id|default:'' }}" style="width: 100%; max-width: 22rem; box-sizing: border-box; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--color-border); font: inherit;">
+                        <option value="">— nepřiřazeno —</option>
+                    </select>
+                </div>
+                <div class="field-row" style="margin-bottom: 8px;">
+                    <label for="id_svoz_qe_containers_{{ t.pk }}" style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 4px;">Čísla kontejnerů</label>
+                    <input id="id_svoz_qe_containers_{{ t.pk }}" name="container_numbers" type="text" value="{{ t.container_numbers }}" maxlength="500" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--color-border);">
+                </div>
+                <div class="field-row" style="margin-bottom: 8px;">
+                    <label for="id_svoz_qe_label_{{ t.pk }}" style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 4px;">Název řádku (zobrazení)</label>
+                    <input id="id_svoz_qe_label_{{ t.pk }}" name="matrix_display_label" type="text" value="{{ t.matrix_display_label }}" maxlength="200" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--color-border);">
+                </div>
+                <div class="field-row" style="margin-bottom: 10px;">
+                    <label for="id_svoz_qe_note_{{ t.pk }}" style="display: block; font-weight: 600; font-size: 0.82rem; margin-bottom: 4px;">Poznámka ze dvora</label>
+                    <textarea id="id_svoz_qe_note_{{ t.pk }}" name="yard_contact_note" rows="2" maxlength="200" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--color-border); resize: vertical;">{{ t.yard_contact_note }}</textarea>
+                </div>
+                <button type="submit" class="btn">Uložit změny</button>
+            </form>
+        </details>
+        {% endif %}
+    </div>
+</li>

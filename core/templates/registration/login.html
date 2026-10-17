@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+
+{% block title %}Přihlášení{% endblock %}
+
+{% block body_class %}page-login{% endblock %}
+
+{% block extra_head %}
+<style>
+    body.page-login {
+        background: linear-gradient(165deg, #e8eee4 0%, #f2f4ed 42%, #e5ebe1 100%);
+        min-height: 100vh;
+    }
+    body.page-login main {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        display: block;
+    }
+    .login-shell {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 28px 18px 40px;
+        box-sizing: border-box;
+    }
+    .login-panel {
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 0;
+        border-radius: 16px;
+        background: #fff;
+        border: 1px solid rgba(45, 124, 66, 0.14);
+        box-shadow:
+            0 4px 6px rgba(32, 72, 40, 0.04),
+            0 18px 42px rgba(32, 72, 40, 0.1);
+        box-sizing: border-box;
+        overflow: hidden;
+    }
+    .login-panel__head {
+        text-align: center;
+        padding: 32px 28px 24px;
+        background: linear-gradient(180deg, #f6faf6 0%, #fff 100%);
+        border-bottom: 1px solid #e4ebe4;
+    }
+    .login-brand {
+        display: flex;
+        justify-content: center;
+        margin: 0 0 16px;
+    }
+    .login-brand__img {
+        display: block;
+        max-width: min(100%, 420px);
+        width: auto;
+        height: auto;
+        max-height: 120px;
+        object-fit: contain;
+    }
+    .login-app-id {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #204828;
+        letter-spacing: 0.02em;
+        line-height: 1.35;
+    }
+    .login-app-id__ver {
+        font-weight: 600;
+        font-size: 0.86em;
+        color: var(--color-muted, #5f6f64);
+    }
+    .login-panel__body {
+        padding: 26px 28px 32px;
+    }
+    .login-panel__body h1 {
+        margin: 0 0 22px;
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #1e5c2e;
+        text-align: center;
+        letter-spacing: 0.01em;
+    }
+    .login-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .login-form__group {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+    .login-form__group label {
+        margin: 0;
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: #3d5a45;
+        line-height: 1.25;
+    }
+    .login-form__field {
+        min-width: 0;
+    }
+    .login-form__field input {
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+        padding: 12px 14px;
+        border: 1px solid #c5d4c7;
+        border-radius: 10px;
+        background: #fafcfa;
+        font: inherit;
+        font-size: 1rem;
+        transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .login-form__field input:hover {
+        border-color: #a8c0ad;
+        background: #fff;
+    }
+    .login-form__field input:focus {
+        outline: none;
+        border-color: var(--color-primary, #2d7c42);
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(45, 124, 66, 0.18);
+    }
+    .login-form__actions {
+        margin-top: 6px;
+        padding-top: 4px;
+    }
+    .login-form__actions .btn {
+        width: 100%;
+        max-width: none;
+        box-sizing: border-box;
+        padding: 13px 16px;
+        border-radius: 11px;
+        font-size: 1rem;
+        font-weight: 700;
+    }
+    .login-panel .form-errors {
+        margin: 0 0 18px;
+    }
+    .login-panel ul.errorlist {
+        margin: 6px 0 0;
+        padding-left: 18px;
+        font-size: 0.88rem;
+    }
+    @media (max-width: 420px) {
+        .login-panel__head {
+            padding: 26px 20px 20px;
+        }
+        .login-panel__body {
+            padding: 22px 20px 28px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="login-shell">
+    <div class="login-panel">
+        <div class="login-panel__head">
+            <div class="login-brand">
+                <img class="login-brand__img" src="{{ MEDIA_URL }}img/title.png" alt="JeDiS" loading="eager" decoding="async">
+            </div>
+            <p class="login-app-id" role="status">JeDiS{% if jedis_version %} <span class="login-app-id__ver" title="Verze aplikace">· {{ jedis_version }}</span>{% endif %}</p>
+        </div>
+        <div class="login-panel__body">
+            <h1>Přihlášení</h1>
+            {% if session_expired_notice %}
+                <div class="form-errors" role="alert" style="margin:0 0 18px;">
+                    <p style="margin:0;">{{ session_expired_notice }}</p>
+                </div>
+            {% endif %}
+            {% if form.non_field_errors %}
+                <div class="form-errors">{{ form.non_field_errors }}</div>
+            {% endif %}
+            <form class="login-form" method="post" action="{% url 'login' %}">
+                {% csrf_token %}
+                <div class="login-form__group">
+                    <label for="{{ form.username.id_for_label }}">Uživatelské jméno</label>
+                    <div class="login-form__field">
+                        {{ form.username }}
+                        {{ form.username.errors }}
+                    </div>
+                </div>
+                <div class="login-form__group">
+                    <label for="{{ form.password.id_for_label }}">Heslo</label>
+                    <div class="login-form__field">
+                        {{ form.password }}
+                        {{ form.password.errors }}
+                    </div>
+                </div>
+                {% if next %}
+                    <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
+                {% if request.GET.reason == "idle" or request.POST.reason == "idle" %}
+                    <input type="hidden" name="reason" value="idle">
+                {% endif %}
+                <div class="login-form__actions">
+                    <button type="submit" class="btn">Přihlásit se</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat nepřítomnost{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat nepřítomnost</h1>
+    <p>
+        Opravdu chcete smazat nepřítomnost řidiče <strong>{{ driver }}</strong>
+        ({{ absence.get_absence_type_display }}, {{ absence.date_from|date:"d.m.Y" }}–{{ absence.date_to|date:"d.m.Y" }})?
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn danger">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:driver_edit' driver.pk %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

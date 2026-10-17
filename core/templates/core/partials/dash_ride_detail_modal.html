@@ -1,0 +1,35 @@
+<div
+    class="dash-rides-modal dash-ride-detail-modal"
+    id="dash-ride-detail-modal"
+    hidden
+    aria-hidden="true"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="dash-ride-detail-modal-title"
+>
+    <div class="dash-rides-modal__backdrop" data-dash-ride-detail-modal-close aria-hidden="true"></div>
+    <div class="dash-rides-modal__panel">
+        <header class="dash-rides-modal__header">
+            <div>
+                <h2 id="dash-ride-detail-modal-title">
+                    Detail jízdy — {{ selected_ride_group.drive_date|date:"l j. n. Y" }} — {{ selected_ride_group.vehicle_rz }} — {{ selected_ride_group.driver_last_name|default:"—" }}
+                    <span class="dash-ride-detail-modal__meta">· záznamů: {{ selected_ride_group.items|length }}</span>
+                </h2>
+            </div>
+            <div class="dash-rides-modal__header-actions">
+                {% include "core/partials/ride_route_reorder/_header_actions.html" %}
+                {% include "waste_docs/partials/ride_reassign_driver_header_btn.html" %}
+                {% include "core/partials/dash_ride_email_actions.html" %}
+                <button type="button" class="dash-rides-modal__close" data-dash-ride-detail-modal-close>Zavřít (Esc)</button>
+            </div>
+        </header>
+        <div class="dash-rides-modal__body dash-ride-detail-modal__body">
+            {% if not selected_ride_group.is_plan_only and selected_ride_group.items|length >= 2 %}
+            {% include "core/partials/ride_route_reorder/_module.html" %}
+            {% else %}
+            {% include "core/partials/dash_ride_detail_table.html" %}
+            {% endif %}
+        </div>
+        {% include "waste_docs/partials/ride_reassign_driver_panel.html" %}
+    </div>
+</div>

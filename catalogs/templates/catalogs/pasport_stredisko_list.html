@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Střediska pasportů{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Střediska pasportů</h1>
+    <p><small>Kódy např. B110, B120 — použijí se u pasportu kontejneru a při importu z VOK.</small></p>
+    <p><a class="btn" href="{% url 'catalogs:pasport_stredisko_create' %}">Nové středisko</a>
+       <a class="btn secondary" href="{% url 'catalogs:container_passport_list' %}">Zpět na pasporty</a></p>
+</div>
+<div class="card">
+    <table>
+        <thead>
+            <tr><th>Kód</th><th>Název</th><th>Pořadí</th><th>Aktivní</th><th>Akce</th></tr>
+        </thead>
+        <tbody>
+            {% for row in items %}
+            <tr>
+                <td><strong>{{ row.code }}</strong></td>
+                <td>{{ row.name|default:"—" }}</td>
+                <td>{{ row.sort_order }}</td>
+                <td>{% if row.is_active %}ano{% else %}ne{% endif %}</td>
+                <td class="actions">
+                    <a class="btn secondary" href="{% url 'catalogs:pasport_stredisko_edit' row.pk %}">Upravit</a>
+                    <a class="btn secondary" href="{% url 'catalogs:pasport_stredisko_delete' row.pk %}">Smazat</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">Zatím žádná střediska.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

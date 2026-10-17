@@ -1,0 +1,34 @@
+{% if selected_ride_group.is_plan_only %}
+<p class="dash-muted" style="margin-bottom:12px;">
+    Skupina je jen v <strong>plánu svozů</strong> — průvodky se založí po úkolu ze sběrného dvora.
+    (<a href="{% url 'waste_docs:svoz_dispatch_plan' %}?date={{ selected_date_iso }}">otevřít plán</a>)
+</p>
+{% else %}
+{% if selected_ride_group.has_mixed_snd_groups %}
+<p class="dash-ride-reorder-notice" role="status">
+    Ve skupině jsou <strong>smíchaná kmenová čísla SND</strong> — pořadí trasy lze měnit; čísla na průvodkách zůstanou beze změny.
+</p>
+{% endif %}
+<div
+    class="dash-ride-reorder-root{% if selected_ride_group.items|length < 2 %} dash-ride-reorder-root--disabled{% endif %}"
+    data-reorder-url="{% url 'core:ride_group_reorder' %}"
+    data-prompt-url="{% url 'core:ride_group_ai_prompt' %}"
+    data-optimize-url="{% url 'core:ride_group_optimize' %}"
+    data-optimize-apply-url="{% url 'core:ride_group_optimize_apply' %}"
+    data-drive-date="{{ selected_ride_group.drive_date|date:'Y-m-d' }}"
+    data-vehicle-rz-id="{{ selected_ride_group.vehicle_rz_id|default:0 }}"
+    data-driver-id="{{ selected_ride_group.driver_id|default:0 }}"
+    data-ride-group="{{ selected_ride_group.key }}"
+    data-has-manual-order="{% if selected_ride_group.has_manual_route_order %}1{% else %}0{% endif %}"
+>
+    <div class="dash-ride-reorder-toolbar" hidden>
+        <button type="button" class="btn dash-ride-reorder-save">Uložit pořadí</button>
+        <button type="button" class="btn secondary dash-ride-reorder-cancel">Zrušit</button>
+        <button type="button" class="btn secondary dash-ride-reorder-reset" title="Odstranit ruční pořadí a vrátit výchozí řazení">Výchozí pořadí</button>
+        <span class="dash-ride-reorder-status dash-muted" aria-live="polite"></span>
+        <span class="dash-ride-reorder-version" data-reorder-js-version="7" hidden></span>
+    </div>
+    <p class="dash-ride-reorder-feedback" role="status" hidden></p>
+    {% include "core/partials/ride_route_reorder/_table.html" %}
+</div>
+{% endif %}

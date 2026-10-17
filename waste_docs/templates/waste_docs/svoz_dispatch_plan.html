@@ -1,0 +1,1373 @@
+{% extends "base.html" %}
+
+{% block title %}Plán svozů | JeDiS{% endblock %}
+
+{% block extra_head %}
+<style>
+    .svoz-dispatch-plan-card {
+        max-width: none;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .svoz-dispatch-plan-card .form-grid {
+        max-width: none;
+        width: 100%;
+    }
+    .svoz-plan-table-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 32px;
+        width: 100%;
+    }
+    .svoz-plan-yard-card {
+        border: 2px solid #b5d0bc;
+        border-radius: var(--radius, 12px);
+        border-left: 6px solid #2d6a3a;
+        background: var(--color-surface);
+        box-shadow: 0 4px 14px rgba(32, 72, 40, 0.1);
+        overflow: hidden;
+    }
+    .svoz-plan-yard-card:nth-child(even) {
+        background: #f8fcf8;
+    }
+    .svoz-plan-yard-card:nth-child(even) .svoz-plan-yard-card__head {
+        background: linear-gradient(180deg, #ecf4ed 0%, #e2eee4 100%);
+    }
+    .svoz-plan-yard-card__head {
+        padding: 12px 16px 10px;
+        background: linear-gradient(180deg, #f4faf4 0%, #eef6ef 100%);
+        border-bottom: 1px solid var(--color-border);
+    }
+    .svoz-plan-yard-card__title {
+        margin: 0;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #204828;
+        line-height: 1.3;
+    }
+    .svoz-plan-yard-card__meta {
+        margin-top: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 14px;
+        font-size: 0.88rem;
+        color: var(--color-muted);
+    }
+    .svoz-plan-yard-card__badge {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        background: #e8f0e9;
+        color: #2d5c38;
+        border: 1px solid #c5d9c8;
+    }
+    .svoz-plan-yard-card__badge--full {
+        background: #fff8e6;
+        color: #6a5220;
+        border-color: #e8d4a8;
+    }
+    .svoz-plan-yard-ratio-threshold {
+        margin-top: 10px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 8px 12px;
+        font-size: 0.88rem;
+    }
+    .svoz-plan-yard-ratio-threshold label {
+        font-weight: 600;
+        color: #264e2d;
+        margin: 0;
+    }
+    .svoz-plan-yard-ratio-threshold input[type="number"] {
+        width: 4.5rem;
+        padding: 6px 8px;
+        border: 1px solid var(--color-border);
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+    .svoz-plan-yard-ratio-threshold small {
+        color: var(--color-muted);
+        font-size: 0.82rem;
+    }
+    .svoz-plan-yard-card .svoz-plan-table-wrap-inner {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0 12px 12px;
+    }
+    /* Kompaktní tabulka: šířka podle obsahu, ne roztažená na celou kartu (odstraní „díru“ uprostřed). */
+    .svoz-dispatch-plan-card table.svoz-plan-yard-table {
+        width: max-content;
+        max-width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+        margin: 0;
+        table-layout: auto;
+    }
+    .svoz-plan-yard-table thead th {
+        background: #f6faf6;
+        font-weight: 600;
+        color: #264e2d;
+        padding: 8px 6px;
+        border-bottom: 1px solid var(--color-border);
+        text-align: center;
+    }
+    .svoz-plan-yard-table thead th.svoz-plan-th-kind {
+        text-align: left;
+        vertical-align: bottom;
+        white-space: nowrap;
+    }
+    .svoz-plan-yard-table thead th.svoz-plan-th-group {
+        font-size: 0.82rem;
+        letter-spacing: 0.02em;
+    }
+    .svoz-plan-yard-table thead th.svoz-plan-th-slot {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #486356;
+        white-space: nowrap;
+    }
+    .svoz-plan-yard-table tbody td {
+        padding: 8px 6px;
+        border-bottom: 1px solid var(--color-border);
+        vertical-align: middle;
+    }
+    .svoz-plan-yard-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+    .svoz-plan-kind-cell {
+        font-size: 0.9rem;
+        line-height: 1.35;
+        white-space: nowrap;
+        padding-right: 12px !important;
+    }
+    .svoz-plan-kind-cell .svoz-plan-kind-short {
+        font-weight: 700;
+        color: #204828;
+    }
+    .svoz-plan-slot-cell {
+        width: 12.5rem;
+        min-width: 11rem;
+        max-width: 13rem;
+        padding: 6px 6px !important;
+        box-sizing: border-box;
+        vertical-align: top;
+    }
+    .svoz-plan-slot-cell.svoz-plan-slot-cell--invalid {
+        background: #fff5f5;
+        outline: 2px solid #c62828;
+        outline-offset: -2px;
+        border-radius: 8px;
+    }
+    .svoz-plan-slot-cell.svoz-plan-slot-cell--planned {
+        background: linear-gradient(180deg, #ecfdf3 0%, #e6f9ec 100%);
+        outline: 2px solid #4ade80;
+        outline-offset: -2px;
+        border-radius: 8px;
+    }
+    .svoz-plan-slot-cell.svoz-plan-slot-cell--planned .svoz-plan-driver-select,
+    .svoz-plan-slot-cell.svoz-plan-slot-cell--planned .svoz-plan-rz-select,
+    .svoz-plan-slot-cell.svoz-plan-slot-cell--planned .svoz-plan-rz-note {
+        border-color: #86c99a;
+    }
+    .svoz-plan-planned-label {
+        display: none;
+        margin: 0;
+        padding: 4px 0 0;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: #166534;
+        text-transform: uppercase;
+    }
+    .svoz-plan-slot-cell.svoz-plan-slot-cell--planned .svoz-plan-planned-label {
+        display: block;
+    }
+    .svoz-plan-slot-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .svoz-plan-slot-matrix-hint {
+        font-size: 0.72rem;
+        line-height: 1.35;
+        padding: 4px 6px;
+        border-radius: 6px;
+        background: #f5f9f6;
+        border: 1px solid #d4e4d8;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        max-width: 11rem;
+    }
+    .svoz-plan-slot-matrix-hint__label {
+        font-weight: 600;
+        color: #3d5c45;
+    }
+    .svoz-plan-slot-matrix-hint__task {
+        color: var(--color-muted);
+    }
+    .svoz-plan-exception-title {
+        margin: 20px 0 6px;
+        font-size: 0.95rem;
+        color: #3d5c45;
+    }
+    .svoz-plan-exception-vk-group td {
+        background: #eef6ef;
+        font-size: 0.88rem;
+        padding: 8px 10px;
+        border-top: 1px solid var(--color-border);
+    }
+    .svoz-plan-slot-stack--inline {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        max-width: 36rem;
+    }
+    .svoz-plan-slot-stack--inline .svoz-plan-driver-select,
+    .svoz-plan-slot-stack--inline .svoz-plan-rz-select {
+        flex: 1 1 10rem;
+    }
+    .svoz-plan-slot-stack--inline .svoz-plan-rz-note {
+        flex: 1 1 8rem;
+        min-width: 6rem;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border);
+        font: inherit;
+    }
+    .svoz-plan-exception-label-cell {
+        vertical-align: top;
+        min-width: 10rem;
+    }
+    .svoz-plan-driver-select,
+    .svoz-plan-rz-select {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        margin: 0;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border);
+        font: inherit;
+        line-height: 1.3;
+        box-sizing: border-box;
+    }
+    .svoz-plan-driver-select { font-size: 0.88rem; }
+    .svoz-plan-rz-select { font-size: 0.8rem; }
+    .svoz-plan-rz-select option.svoz-plan-rz-opt--has-ride {
+        background-color: #fff8e8;
+        color: #5c4200;
+        font-weight: 600;
+    }
+    .svoz-plan-rz-select option.svoz-plan-rz-opt--multi-slot {
+        background-color: #fff3eb;
+        color: #6a3920;
+    }
+    .svoz-plan-rz-select option.svoz-plan-rz-opt--has-ride.svoz-plan-rz-opt--multi-slot {
+        background-color: #ffeedc;
+        color: #4a3520;
+    }
+    .svoz-plan-rz-legend {
+        font-size: 0.82rem;
+        line-height: 1.45;
+        margin: 0 0 12px;
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: linear-gradient(180deg, #f8fcf8 0%, #f2f9f4 100%);
+        border: 1px solid #bfd0bc;
+        color: var(--color-muted, #486356);
+        max-width: 960px;
+    }
+    .svoz-plan-rz-note {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+        margin: 0;
+        padding: 6px 8px;
+        border-radius: 8px;
+        border: 1px solid var(--color-border);
+        font: inherit;
+        font-size: 0.8rem;
+        line-height: 1.35;
+        box-sizing: border-box;
+    }
+    .svoz-plan-rz-note::placeholder { color: var(--color-muted); opacity: 0.85; }
+    .svoz-plan-empty-msg {
+        margin: 0;
+        padding: 14px 4px 4px;
+        max-width: 42rem;
+    }
+    .svoz-plan-warnings {
+        margin: 8px 0 32px;
+        padding: 0 16px 16px;
+        background: #fffbeb;
+        border: 2px solid #d4b896;
+        border-left: 6px solid #9a7300;
+        border-radius: var(--radius, 12px);
+        box-shadow: 0 4px 14px rgba(106, 82, 32, 0.12);
+        overflow: hidden;
+    }
+    .svoz-plan-warnings.svoz-plan-warnings--fully-resolved {
+        display: none;
+    }
+    tr.svoz-plan-gap-row--hidden-by-plan {
+        display: none;
+    }
+    .svoz-plan-warnings > strong {
+        display: block;
+        margin: 0 -16px 12px -16px;
+        padding: 13px 16px 12px;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #5c4818;
+        background: linear-gradient(180deg, #fff4d6 0%, #ffeec9 100%);
+        border-bottom: 1px solid #e8d4a8;
+    }
+    .svoz-plan-warnings .svoz-plan-warnings-intro {
+        margin: 0 0 16px;
+        font-size: 0.9rem;
+    }
+    .svoz-plan-warnings-yards {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+    }
+    .svoz-plan-warnings-yard {
+        border: 2px solid #b5d0bc;
+        border-radius: var(--radius, 12px);
+        border-left: 6px solid #2d6a3a;
+        background: var(--color-surface);
+        box-shadow: 0 2px 10px rgba(32, 72, 40, 0.08);
+        overflow: hidden;
+    }
+    .svoz-plan-warnings-yard__head {
+        padding: 10px 14px 9px;
+        background: linear-gradient(180deg, #f4faf4 0%, #eef6ef 100%);
+        border-bottom: 1px solid var(--color-border);
+    }
+    .svoz-plan-warnings-yard__title {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #204828;
+        line-height: 1.35;
+    }
+    .svoz-plan-warnings-yard__body {
+        padding: 0 10px 10px;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .svoz-plan-warnings table {
+        border-collapse: collapse;
+        width: 100%;
+        max-width: 100%;
+        font-size: 0.9rem;
+    }
+    .svoz-plan-warnings th,
+    .svoz-plan-warnings td {
+        border: 1px solid var(--color-border);
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: middle;
+    }
+    .svoz-plan-warnings th {
+        background: #fff4d6;
+        font-weight: 600;
+        color: #5c4818;
+        white-space: nowrap;
+    }
+    .svoz-plan-warnings td.svoz-plan-warnings__action {
+        white-space: nowrap;
+    }
+    .svoz-plan-warnings .svoz-plan-gap-ack button {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+    }
+    .svoz-plan-acks {
+        background: #f0f7ff;
+        border: 1px solid #b8d4f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        margin-bottom: 16px;
+        font-size: 0.9rem;
+    }
+    .svoz-plan-acks table {
+        border-collapse: collapse;
+        margin-top: 8px;
+        width: max-content;
+        max-width: 100%;
+    }
+    .svoz-plan-acks td {
+        border: 1px solid var(--color-border);
+        padding: 6px 10px;
+        text-align: left;
+    }
+    .svoz-plan-acks th {
+        background: #e8f0fa;
+        font-weight: 600;
+    }
+    .svoz-plan-acks .svoz-plan-revoke {
+        font-size: 0.85rem;
+        padding: 5px 10px;
+    }
+    .svoz-plan-ratio-wrap--hidden {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card svoz-dispatch-plan-card">
+    <h1 style="margin-top: 0;">Plán svozů — řidiči a vozidla u sběrných dvorů</h1>
+    <p class="dash-muted" style="margin-top: 0;">
+        Zde stanovíte přiřazení <strong>řidiče a RZ vozidla ke každému sběrnému dvoru</strong> za zvolený den.
+        Vyberte <strong>den realizace</strong> (stejné datum jako <code>target_date</code> požadavků na dashboardu).
+        Každý <strong>sběrný dvůr</strong> má vlastní blok; v tabulce jsou jen druhy vozidel z matice v číselníku.
+        U každého slotu zvolte <strong>řidiče</strong> a <strong>RZ vozidla</strong> (povinné při vyplněném řidiči; podle druhu vozidla u řádku; u řidiče s přiřazenými RZ se kontroluje shoda).
+        Volitelně vyplňte <strong>poznámku k vozidlu</strong> u slotu. U RZ v nabídce je uveden typ z profilu vozidla (pokud je vyplněn).
+        <strong>Výjimky</strong> (řádky matice s vypnutým běžným svozem v číselníku) plánujte v samostatné tabulce pod běžným svozem — podle konkrétního odpadu/koncovky, ne podle dvora v matici požadavku.
+        Potvrzení „OK bez řidičů“ lze v sekci níže zrušit — znovu se zobrazí upozornění.
+        U běžného svozu (B1–B4) se požadavky přiřazují podle poměru podílů — poměr se aktivuje až od minimálního počtu požadavků, který nastavíte u každého sběrného dvora v hlavičce jeho bloku (výchozí 5); pod tímto prahem jde vše prvnímu řidiči. U malého počtu kontejnerů se aktivní poměr zaokrouhlí na celá čísla (např. 2:1 při 2 kontejnerech → 1:1). Při 2–4 řidičích nastavte poměr mezi sloty B1–B4 (např. 2:1:1 nebo vlastní 5:2:1). <strong>Výjimky matice</strong> poměr nepoužívají.
+        Kompatibilita druhů (např. Hák (H) a tří nápravové (3H)) se nastavuje v <strong>Číselníky → Druhy vozidla</strong>.
+    </p>
+
+    <form method="get" class="dash-date-toolbar" style="margin-bottom: 16px; align-items: center;">
+        <label for="id_plan_date_pick" class="dash-muted" style="font-weight: 600;">Datum</label>
+        <input id="id_plan_date_pick" class="dash-date-toolbar__picker" type="date" name="date" value="{{ plan_date|date:'Y-m-d' }}">
+        <button type="submit" class="btn secondary">Zobrazit</button>
+        <a class="btn secondary" href="{% url 'core:dashboard' %}?date={{ plan_date|date:'Y-m-d' }}">Dashboard (tentýž den)</a>
+    </form>
+
+    <p class="svoz-plan-rz-legend" aria-label="Nápověda k barvám RZ v nabídce">
+        <strong>RZ v rozbalovací nabídce:</strong>
+        předpona <code>[průvodka]</code> = na tento den už existuje jízda (průvodka) s touto RZ;
+        <code>[více slotů]</code> = stejná RZ je přiřazena ve více slotech plánu.
+        Položku lze vždy zvolit — jde jen o vizuální upozornění (barvy u <code>&lt;option&gt;</code> nemusí v každém prohlížeči fungovat; platí předpona a nápověda po najetí myší).
+    </p>
+
+    {% if plan_gap_items %}
+    <div class="svoz-plan-warnings" id="svoz-plan-warnings-root">
+        <strong>Upozornění k plánu</strong>
+        <p class="dash-muted svoz-plan-warnings-intro">
+            Kombinace níže nemá v plánu vyplněné řidiče (fond pro daný dvůr, druh vozidla a skupinu běžný svoz / výjimky).
+            Jde-li o záměrný stav, použijte <strong>Potvrdit výjimku</strong> — stejné potvrzení lze později zrušit v tabulce pod tímto blokem.
+        </p>
+        {% regroup plan_gap_items by subject_profile_id as plan_gap_yard_groups %}
+        <div class="svoz-plan-warnings-yards">
+            {% for yard_group in plan_gap_yard_groups %}
+            <section class="svoz-plan-warnings-yard" aria-labelledby="svoz-plan-gap-yard-{{ yard_group.grouper }}">
+                <header class="svoz-plan-warnings-yard__head">
+                    <h3 class="svoz-plan-warnings-yard__title" id="svoz-plan-gap-yard-{{ yard_group.grouper }}">{{ yard_group.list.0.yard_name }}</h3>
+                </header>
+                <div class="svoz-plan-warnings-yard__body">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Druh vozidla</th>
+                                <th>Skupina v plánu</th>
+                                <th>Akce</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in yard_group.list %}
+                            <tr
+                                {% if item.gap %}
+                                class="svoz-plan-gap-row svoz-plan-gap-row--pool"
+                                data-gap-yard="{{ item.gap.subject_profile_id }}"
+                                data-gap-vk="{{ item.gap.vehicle_kind_id }}"
+                                data-gap-row-kind="{{ item.gap.row_kind }}"
+                                {% else %}
+                                class="svoz-plan-gap-row svoz-plan-gap-row--open-tasks"
+                                {% endif %}
+                            >
+                                <td>{{ item.vehicle_kind_label }}</td>
+                                <td>{{ item.plan_group_label }}</td>
+                                <td class="svoz-plan-warnings__action">
+                                    {% if item.gap %}
+                                    <form method="post" class="svoz-plan-gap-ack" style="display: inline; margin: 0;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="plan_date" value="{{ plan_date|date:'Y-m-d' }}">
+                                        <input type="hidden" name="ack_pool_gap" value="1">
+                                        <input type="hidden" name="subject_profile_id" value="{{ item.gap.subject_profile_id }}">
+                                        <input type="hidden" name="vehicle_kind_id" value="{{ item.gap.vehicle_kind_id }}">
+                                        <input type="hidden" name="row_kind" value="{{ item.gap.row_kind }}">
+                                        <button type="submit" class="btn secondary">Potvrdit výjimku (OK bez řidičů)</button>
+                                    </form>
+                                    {% else %}
+                                    <span class="dash-muted" title="{{ item.text }}">Doplňte řidiče u otevřených úkolů.</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% if plan_pool_acks %}
+    <div class="svoz-plan-acks">
+        <strong>Potvrzené výjimky (OK bez řidičů)</strong>
+        <span class="dash-muted"> — zrušením se znovu zobrazí upozornění u příslušného bloku.</span>
+        <table>
+            <thead>
+                <tr>
+                    <th>Dvůr</th>
+                    <th>Druh vozidla</th>
+                    <th>Řádek plánu</th>
+                    <th>Potvrdil</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ack in plan_pool_acks %}
+                <tr>
+                    <td>{{ ack.subject_profile.company_name }}</td>
+                    <td>{% if ack.vehicle_kind %}{{ ack.vehicle_kind.display_label }}{% else %}—{% endif %}</td>
+                    <td>{{ ack.get_row_kind_display }}</td>
+                    <td>{% if ack.acknowledged_by %}{{ ack.acknowledged_by.get_full_name|default:ack.acknowledged_by.username }}{% else %}—{% endif %}</td>
+                    <td>
+                        <form method="post" action="" style="display: inline; margin: 0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="plan_date" value="{{ plan_date|date:'Y-m-d' }}">
+                            <input type="hidden" name="ack_id" value="{{ ack.pk }}">
+                            <button type="submit" name="revoke_pool_ack" value="1" class="btn secondary svoz-plan-revoke">Zrušit potvrzení</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <form id="svoz-dispatch-plan-form" method="post" class="form-grid">
+        {% csrf_token %}
+        <input type="hidden" name="plan_date" value="{{ plan_date|date:'Y-m-d' }}">
+
+        <div class="svoz-plan-table-wrap">
+            {% for block in yard_blocks %}
+            <section class="svoz-plan-yard-card" aria-labelledby="svoz-yard-title-{{ block.yard.pk }}">
+                <header class="svoz-plan-yard-card__head">
+                    <h2 class="svoz-plan-yard-card__title" id="svoz-yard-title-{{ block.yard.pk }}">{{ block.yard.company_name }}</h2>
+                    <div class="svoz-plan-yard-card__meta">
+                        {% if block.yard.yard_svoz_dispatch_group %}
+                        <span>Skupina dispečinku: <strong>{{ block.yard.yard_svoz_dispatch_group }}</strong></span>
+                        {% endif %}
+                        {% if block.exception_badge_summary %}
+                        <span class="svoz-plan-yard-card__badge svoz-plan-yard-card__badge--full">{{ block.exception_badge_summary }}</span>
+                        {% else %}
+                        <span class="svoz-plan-yard-card__badge">Běžný svoz (B1–B4)</span>
+                        {% endif %}
+                    </div>
+                    <div class="svoz-plan-yard-ratio-threshold">
+                        <label for="id_ratio_min_{{ block.yard.pk }}">Min. požadavků pro poměr</label>
+                        <input
+                            type="number"
+                            id="id_ratio_min_{{ block.yard.pk }}"
+                            name="ratio_min_{{ block.yard.pk }}"
+                            class="svoz-plan-yard-ratio-min"
+                            data-yard="{{ block.yard.pk }}"
+                            min="1"
+                            max="99"
+                            step="1"
+                            value="{{ block.ratio_min_containers }}"
+                            title="Pod tímto počtem otevřených požadavků na daný den se úkoly přiřadí jen prvnímu řidiči (B1). Uloží se spolu s plánem."
+                        >
+                        <small>Pod limitem jde vše na B1; limit platí pro celý tento dvůr.</small>
+                    </div>
+                </header>
+                <div class="svoz-plan-table-wrap-inner">
+                    {% with n=block.kind_sections|length %}
+                    {% if n == 0 %}
+                    <p class="svoz-plan-empty-msg dash-muted">
+                        V číselníku nejsou u tohoto dvora řádky matice se zapnutým svozem a druhem vozidla — není co plánovat.
+                    </p>
+                    {% else %}
+                    <table class="table svoz-plan-yard-table">
+                        <thead>
+                            <tr>
+                                <th class="svoz-plan-th-kind">Druh vozidla</th>
+                                <th class="svoz-plan-th-group" colspan="4">Běžný svoz</th>
+                            </tr>
+                            <tr>
+                                <th></th>
+                                {% for i in "0123" %}
+                                <th class="svoz-plan-th-slot">B{{ forloop.counter }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for section in block.kind_sections %}
+                            <tr class="svoz-plan-kind-row" data-yard="{{ block.yard.pk }}" data-vk="{{ section.vehicle_kind.pk }}">
+                                <td class="svoz-plan-kind-cell">
+                                    <span class="svoz-plan-kind-short">{{ section.vehicle_kind.display_label }}</span>
+                                    <p class="dash-muted svoz-plan-ratio-inactive-hint" style="font-size:0.82rem; margin:6px 0 0;{% if not section.ratio_inactive_hint %} display:none;{% endif %}">{{ section.ratio_inactive_hint }}</p>
+                                    <div class="svoz-plan-ratio-wrap{% if not section.ratio_ui_visible %} svoz-plan-ratio-wrap--hidden{% endif %}" style="margin-top:8px;" data-yard="{{ block.yard.pk }}" data-vk="{{ section.vehicle_kind.pk }}" data-custom-value="{{ section.ratio_custom_value }}" data-last-driver-count="{{ section.filled_driver_count }}" data-open-task-count="{{ section.open_task_count }}" data-ratio-min="{{ section.ratio_min_containers }}">
+                                        <label class="dash-muted svoz-plan-ratio-slot-label" style="font-size:0.82rem; display:block; margin-bottom:4px;">Podíl {{ section.ratio_slot_label }}</label>
+                                        <select name="ratio_{{ block.yard.pk }}_{{ section.vehicle_kind.pk }}" class="svoz-plan-ratio-select" title="Poměr rozdělení úkolů mezi řidiče">
+                                            {% for preset in section.ratio_presets %}
+                                            <option value="{{ preset.value }}" {% if section.assignment_ratio == preset.value %}selected{% endif %}>{{ preset.label }}</option>
+                                            {% endfor %}
+                                            <option value="{{ section.ratio_custom_value }}" {% if section.ratio_is_custom %}selected{% endif %}>Vlastní…</option>
+                                        </select>
+                                        <input
+                                            type="text"
+                                            name="ratio_custom_{{ block.yard.pk }}_{{ section.vehicle_kind.pk }}"
+                                            class="svoz-plan-ratio-custom"
+                                            value="{% if section.ratio_is_custom %}{{ section.assignment_ratio }}{% endif %}"
+                                            placeholder="např. 5:2:1"
+                                            maxlength="32"
+                                            autocomplete="off"
+                                            style="margin-top:6px; width:100%; box-sizing:border-box; {% if not section.ratio_is_custom %}display:none;{% endif %}"
+                                            title="Vlastní poměr — čísla oddělená dvojtečkou"
+                                        >
+                                        <p class="dash-muted svoz-plan-ratio-hint" style="font-size:0.82rem; margin:6px 0 0;{% if not section.effective_ratio_hint %} display:none;{% endif %}">{{ section.effective_ratio_hint }}</p>
+                                        {% if section.tasks_preview %}
+                                        <div class="svoz-plan-slot-matrix-hint dash-muted" style="margin-top:6px; max-width:none;">
+                                            {% for line in section.tasks_preview %}
+                                            <span class="svoz-plan-slot-matrix-hint__task">{{ line }}</span>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                                {% for slot in section.slots %}
+                                <td class="svoz-plan-slot-cell">
+                                    <div class="svoz-plan-slot-stack">
+                                        <select name="drv_{{ block.yard.pk }}_{{ section.vehicle_kind.pk }}_{{ slot.index }}" class="svoz-plan-driver-select" title="Běžný svoz, řidič {{ forloop.counter }}">
+                                            <option value="">— řidič —</option>
+                                            {% for d in section.drivers %}
+                                            <option value="{{ d.pk }}" {% if slot.driver_id == d.pk %}selected{% endif %}>
+                                                {{ d.last_name }} {{ d.first_name }}{% if d.personal_number %} ({{ d.personal_number }}){% endif %}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <select name="vrz_{{ block.yard.pk }}_{{ section.vehicle_kind.pk }}_{{ slot.index }}" class="svoz-plan-rz-select" title="RZ vozidla (B{{ forloop.counter }})">
+                                            <option value="">— RZ —</option>
+                                            {% for rz in section.vehicle_rzs %}
+                                            {% include "waste_docs/partials/svoz_dispatch_plan_rz_option.html" with rz=rz selected_rz_pk=slot.vehicle_rz_id %}
+                                            {% endfor %}
+                                        </select>
+                                        <input type="text" name="vrzn_{{ block.yard.pk }}_{{ section.vehicle_kind.pk }}_{{ slot.index }}" class="svoz-plan-rz-note" maxlength="200" placeholder="Poznámka k vozidlu" value="{{ slot.vehicle_rz_note|default:'' }}" autocomplete="off" title="Volitelná poznámka dispečera u tohoto slotu">
+                                        <p class="svoz-plan-planned-label">Naplánováno</p>
+                                    </div>
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% if block.exception_pair_sections %}
+                    <h3 class="svoz-plan-exception-title">Výjimky — řádky matice požadavku</h3>
+                    <p class="dash-muted svoz-plan-exception-intro" style="font-size:0.88rem; margin:0 0 10px;">
+                        Řádky z číselníku F/P s vypnutým běžným svozem a vyplněným slotem V1–V4 (např. Matrace u H).
+                        Běžný svoz (např. Lisovací na 3H) plánujete v horní tabulce u příslušného druhu vozidla — B1–B4.
+                    </p>
+                    <table class="table svoz-plan-yard-table svoz-plan-exception-table">
+                        <thead>
+                            <tr>
+                                <th>Řádek matice</th>
+                                <th class="svoz-plan-th-kind">Druh vozidla</th>
+                                <th>Slot</th>
+                                <th colspan="3">Řidič a vozidlo</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for group in block.exception_groups %}
+                            <tr class="svoz-plan-exception-vk-group">
+                                <td colspan="5"><strong>{{ group.group_title }}</strong></td>
+                            </tr>
+                            {% for ep in group.sections %}
+                            <tr>
+                                <td class="svoz-plan-exception-label-cell">
+                                    <strong>{{ ep.label }}</strong>
+                                    {% if ep.tasks_preview %}
+                                    <div class="svoz-plan-slot-matrix-hint dash-muted" style="margin-top:6px; max-width:none;">
+                                        {% for line in ep.tasks_preview %}
+                                        <span class="svoz-plan-slot-matrix-hint__task">{{ line }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </td>
+                                <td class="svoz-plan-kind-cell"><span class="svoz-plan-kind-short">{{ ep.vehicle_kind.display_label }}</span></td>
+                                <td class="svoz-plan-exception-slot-cell">{% if ep.slot %}<span title="Slot výjimky pro {{ ep.vehicle_kind.display_label }}">V{{ ep.slot }}</span>{% else %}<span class="dash-muted" title="Doplňte slot v číselníku F/P">—</span>{% endif %}</td>
+                                <td class="svoz-plan-slot-cell" colspan="3" style="padding:8px;">
+                                    <div class="svoz-plan-slot-stack svoz-plan-slot-stack--inline">
+                                        <select name="expair_drv_{{ block.yard.pk }}_{{ ep.pair_id }}" class="svoz-plan-driver-select" title="Výjimka — {{ ep.label }}">
+                                            <option value="">— řidič —</option>
+                                            {% for d in ep.drivers %}
+                                            <option value="{{ d.pk }}" {% if ep.driver_id == d.pk %}selected{% endif %}>
+                                                {{ d.last_name }} {{ d.first_name }}{% if d.personal_number %} ({{ d.personal_number }}){% endif %}
+                                            </option>
+                                            {% endfor %}
+                                        </select>
+                                        <select name="expair_vrz_{{ block.yard.pk }}_{{ ep.pair_id }}" class="svoz-plan-rz-select" title="RZ — {{ ep.label }}">
+                                            <option value="">— RZ —</option>
+                                            {% for rz in ep.vehicle_rzs %}
+                                            {% include "waste_docs/partials/svoz_dispatch_plan_rz_option.html" with rz=rz selected_rz_pk=ep.vehicle_rz_id %}
+                                            {% endfor %}
+                                        </select>
+                                        <input type="text" name="expair_vrzn_{{ block.yard.pk }}_{{ ep.pair_id }}" class="svoz-plan-rz-note" maxlength="200" placeholder="Poznámka" value="{{ ep.vehicle_rz_note|default:'' }}" autocomplete="off">
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% endif %}
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </section>
+            {% empty %}
+            <p class="dash-muted" style="padding: 16px;">Žádné subjekty označené jako sběrný dvůr v číselníku.</p>
+            {% endfor %}
+        </div>
+
+        <div class="form-actions" style="margin-top: 16px;">
+            <button type="submit" class="btn">Uložit plán</button>
+        </div>
+    </form>
+</div>
+{{ svoz_ratio_config|json_script:"svoz-ratio-config" }}
+<script>
+(function () {
+    var planDateKey = "{{ plan_date|date:'Y-m-d' }}";
+    var PLAN_DRAFT_STORAGE_KEY = "svoz_dispatch_plan_draft_" + planDateKey;
+    var planFormEl = document.getElementById("svoz-dispatch-plan-form");
+    var svozRatioConfigEl = document.getElementById("svoz-ratio-config");
+    var svozRatioConfig = { customValue: "__custom__", presets: {}, defaults: {}, slotLabels: {} };
+    if (svozRatioConfigEl) {
+        try {
+            svozRatioConfig = JSON.parse(svozRatioConfigEl.textContent);
+        } catch (eCfg) {
+            /* */
+        }
+    }
+
+    function persistSvozPlanDraftSync() {
+        if (!planFormEl) {
+            return;
+        }
+        try {
+            var data = Object.create(null);
+            planFormEl
+                .querySelectorAll(
+                    "select.svoz-plan-driver-select, select.svoz-plan-rz-select, input.svoz-plan-rz-note, select.svoz-plan-ratio-select, input.svoz-plan-ratio-custom"
+                )
+                .forEach(function (el) {
+                    if (el.name) {
+                        data[el.name] = el.value;
+                    }
+                });
+            sessionStorage.setItem(PLAN_DRAFT_STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+            /* sessionStorage nedostupné */
+        }
+    }
+
+    function restoreSvozPlanDraft() {
+        if (!planFormEl) {
+            return;
+        }
+        var raw;
+        try {
+            raw = sessionStorage.getItem(PLAN_DRAFT_STORAGE_KEY);
+        } catch (e) {
+            return;
+        }
+        if (!raw) {
+            return;
+        }
+        var data;
+        try {
+            data = JSON.parse(raw);
+        } catch (e2) {
+            return;
+        }
+        if (!data || typeof data !== "object") {
+            return;
+        }
+        Object.keys(data).forEach(function (name) {
+            var el = planFormEl.elements[name];
+            if (!el) {
+                return;
+            }
+            if (el.length && !el.tagName) {
+                el = el[0];
+            }
+            if (!el || typeof el.value === "undefined") {
+                return;
+            }
+            var v = data[name];
+            if (typeof v !== "string") {
+                return;
+            }
+            el.value = v;
+        });
+    }
+
+    (function initSvozPlanDraftPersistence() {
+        try {
+            var sp = new URLSearchParams(window.location.search);
+            if (sp.get("plan_saved") === "1") {
+                try {
+                    sessionStorage.removeItem(PLAN_DRAFT_STORAGE_KEY);
+                } catch (e0) {
+                    /* */
+                }
+                sp.delete("plan_saved");
+                var q = sp.toString();
+                try {
+                    window.history.replaceState(
+                        null,
+                        "",
+                        window.location.pathname + (q ? "?" + q : "") + window.location.hash
+                    );
+                } catch (e1) {
+                    /* */
+                }
+            }
+        } catch (e) {
+            /* */
+        }
+        if (!planFormEl) {
+            return;
+        }
+        restoreSvozPlanDraft();
+        refreshAllRatioWraps();
+        var persistTimer = null;
+        function schedulePersist() {
+            if (persistTimer) {
+                clearTimeout(persistTimer);
+            }
+            persistTimer = setTimeout(function () {
+                persistTimer = null;
+                persistSvozPlanDraftSync();
+            }, 200);
+        }
+        planFormEl.addEventListener("input", schedulePersist);
+        planFormEl.addEventListener("change", schedulePersist);
+        document.addEventListener(
+            "submit",
+            function (e) {
+                var f = e.target;
+                if (f && f.nodeName === "FORM" && f !== planFormEl) {
+                    persistSvozPlanDraftSync();
+                }
+            },
+            true
+        );
+    })();
+
+    function optionValues(select) {
+        var opts = select.options;
+        var out = {};
+        for (var i = 0; i < opts.length; i++) {
+            if (opts[i].value) {
+                out[opts[i].value] = true;
+            }
+        }
+        return out;
+    }
+
+    function isPoolGapCoveredByForm(yardId, vkId, rowKind) {
+        var y = String(yardId);
+        var v = String(vkId);
+        var rk = (rowKind || "standard").toString();
+        var prefix = rk === "exception" ? "exdrv" : "drv";
+        var re = new RegExp("^" + prefix + "_" + y + "_" + v + "_\\d+$");
+        var form = document.getElementById("svoz-dispatch-plan-form");
+        if (!form) {
+            return false;
+        }
+        var covered = false;
+        form.querySelectorAll("select.svoz-plan-driver-select").forEach(function (sel) {
+            if (!sel.name || !re.test(sel.name)) {
+                return;
+            }
+            var st = sel.closest(".svoz-plan-slot-stack");
+            if (!st) {
+                return;
+            }
+            var rzEl = st.querySelector("select.svoz-plan-rz-select");
+            if (sel.value && rzEl && rzEl.value) {
+                covered = true;
+            }
+        });
+        return covered;
+    }
+
+    function refreshSvozPlanGapRows() {
+        var root = document.getElementById("svoz-plan-warnings-root");
+        if (!root) {
+            return;
+        }
+        root.querySelectorAll("tr.svoz-plan-gap-row--pool").forEach(function (tr) {
+            var y = tr.getAttribute("data-gap-yard");
+            var v = tr.getAttribute("data-gap-vk");
+            var rk = tr.getAttribute("data-gap-row-kind");
+            if (!y || !v) {
+                return;
+            }
+            var covered = isPoolGapCoveredByForm(y, v, rk);
+            tr.classList.toggle("svoz-plan-gap-row--hidden-by-plan", covered);
+        });
+        var anyVisible = root.querySelector("tbody tr:not(.svoz-plan-gap-row--hidden-by-plan)");
+        root.classList.toggle("svoz-plan-warnings--fully-resolved", !anyVisible);
+    }
+
+    function updatePlannedVisual(stack) {
+        var td = stack.closest("td.svoz-plan-slot-cell");
+        if (!td) {
+            return;
+        }
+        var driver = stack.querySelector("select.svoz-plan-driver-select");
+        var rz = stack.querySelector("select.svoz-plan-rz-select");
+        if (!driver || !rz) {
+            return;
+        }
+        var planned = !!(driver.value && rz.value);
+        td.classList.toggle("svoz-plan-slot-cell--planned", planned);
+        td.title = planned
+            ? "Řidič i RZ jsou vyplněni — po kliknutí na „Uložit plán“ se zapíše do databáze."
+            : "";
+        refreshSvozPlanGapRows();
+    }
+
+    /** Paměť jen pro tuto stránku: řidič → naposledy zvolené RZ (kdekoli v plánu). */
+    var globalDriverRz = Object.create(null);
+    function syncRatioCustomWrap(wrap) {
+        var sel = wrap.querySelector(".svoz-plan-ratio-select");
+        var custom = wrap.querySelector(".svoz-plan-ratio-custom");
+        var customVal = wrap.getAttribute("data-custom-value") || svozRatioConfig.customValue || "__custom__";
+        if (!sel || !custom) {
+            return;
+        }
+        var show = sel.value === customVal;
+        custom.style.display = show ? "block" : "none";
+    }
+
+    function countUniqueDrivers(yardId, vkId) {
+        if (!planFormEl) {
+            return 0;
+        }
+        var re = new RegExp("^drv_" + yardId + "_" + vkId + "_\\d+$");
+        var seen = Object.create(null);
+        var count = 0;
+        planFormEl.querySelectorAll("select.svoz-plan-driver-select").forEach(function (sel) {
+            if (!sel.name || !re.test(sel.name)) {
+                return;
+            }
+            var v = sel.value;
+            if (!v || seen[v]) {
+                return;
+            }
+            seen[v] = true;
+            count += 1;
+        });
+        return count;
+    }
+
+    function rebuildRatioSelect(wrap, driverCount) {
+        var sel = wrap.querySelector(".svoz-plan-ratio-select");
+        if (!sel || driverCount < 2) {
+            return;
+        }
+        var slotKey = String(Math.min(driverCount, 4));
+        var presets = svozRatioConfig.presets[slotKey] || [];
+        var prevVal = sel.value;
+        var customVal = wrap.getAttribute("data-custom-value") || svozRatioConfig.customValue || "__custom__";
+        var defaultVal = svozRatioConfig.defaults[slotKey] || "1:1";
+        var customInput = wrap.querySelector(".svoz-plan-ratio-custom");
+
+        while (sel.firstChild) {
+            sel.removeChild(sel.firstChild);
+        }
+        presets.forEach(function (preset) {
+            var opt = document.createElement("option");
+            opt.value = preset;
+            opt.textContent = preset.replace(/:/g, " : ");
+            sel.appendChild(opt);
+        });
+        var customOpt = document.createElement("option");
+        customOpt.value = customVal;
+        customOpt.textContent = "Vlastní…";
+        sel.appendChild(customOpt);
+
+        if (prevVal === customVal) {
+            sel.value = customVal;
+        } else if (presets.indexOf(prevVal) >= 0) {
+            sel.value = prevVal;
+        } else if (customInput && customInput.value && prevVal === customInput.value) {
+            sel.value = customVal;
+        } else if (presets.indexOf(defaultVal) >= 0) {
+            sel.value = defaultVal;
+        } else if (presets.length) {
+            sel.value = presets[0];
+        } else {
+            sel.value = defaultVal;
+        }
+        syncRatioCustomWrap(wrap);
+    }
+
+    function parseRatioParts(ratioRaw) {
+        var parts = [];
+        (ratioRaw || "").split(":").forEach(function (chunk) {
+            var text = (chunk || "").trim();
+            if (!/^\d+$/.test(text)) {
+                return;
+            }
+            var value = parseInt(text, 10);
+            if (value >= 1) {
+                parts.push(value);
+            }
+        });
+        return parts;
+    }
+
+    function resolveRatioLabelFromWrap(wrap) {
+        var sel = wrap.querySelector(".svoz-plan-ratio-select");
+        var custom = wrap.querySelector(".svoz-plan-ratio-custom");
+        if (!sel) {
+            return "";
+        }
+        var customVal = wrap.getAttribute("data-custom-value") || svozRatioConfig.customValue || "__custom__";
+        if (sel.value === customVal) {
+            return ((custom && custom.value) || "").trim();
+        }
+        return (sel.value || "").trim();
+    }
+
+    function effectiveIntegerQuotas(weights, totalTasks) {
+        var n = weights.length;
+        if (!n || totalTasks <= 0) {
+            return weights.map(function () { return 0; });
+        }
+        var safeWeights = weights.map(function (w) { return Math.max(1, parseInt(w, 10) || 1); });
+        var weightSum = safeWeights.reduce(function (a, b) { return a + b; }, 0);
+        if (weightSum <= 0) {
+            return weights.map(function () { return 0; });
+        }
+        var raw = safeWeights.map(function (w) { return totalTasks * w / weightSum; });
+        var floors = raw.map(function (x) { return Math.floor(x); });
+        var quotas = floors.slice();
+        var remainder = totalTasks - quotas.reduce(function (a, b) { return a + b; }, 0);
+        if (remainder <= 0) {
+            return quotas;
+        }
+        var fractions = raw.map(function (x, i) {
+            return [x - floors[i], -safeWeights[i], i];
+        });
+        fractions.sort(function (a, b) {
+            if (b[0] !== a[0]) return b[0] - a[0];
+            if (b[1] !== a[1]) return b[1] - a[1];
+            return a[2] - b[2];
+        });
+        for (var j = 0; j < remainder && j < fractions.length; j += 1) {
+            quotas[fractions[j][2]] += 1;
+        }
+        return quotas;
+    }
+
+    function effectiveRatioHintText(weights, totalTasks, ratioLabel) {
+        if (totalTasks <= 0 || weights.length < 2) {
+            return "";
+        }
+        var effective = effectiveIntegerQuotas(weights, totalTasks).join(":");
+        var effectiveDisplay = effective.replace(/:/g, " : ");
+        if (effective === ratioLabel) {
+            return "Dnes " + totalTasks + " kontejnerů → rozdělení " + effectiveDisplay;
+        }
+        var ratioDisplay = ratioLabel.replace(/:/g, " : ");
+        return (
+            "Dnes " + totalTasks + " kontejnerů → rozdělení " + effectiveDisplay +
+            " (z poměru " + ratioDisplay + ")"
+        );
+    }
+
+    function updateEffectiveRatioHint(wrap, driverCount) {
+        var hintEl = wrap.querySelector(".svoz-plan-ratio-hint");
+        if (!hintEl) {
+            return;
+        }
+        var openCount = parseInt(wrap.getAttribute("data-open-task-count") || "0", 10);
+        var ratioMin = parseInt(wrap.getAttribute("data-ratio-min") || "5", 10);
+        if (driverCount < 2 || openCount < ratioMin) {
+            hintEl.style.display = "none";
+            hintEl.textContent = "";
+            return;
+        }
+        var ratioLabel = resolveRatioLabelFromWrap(wrap);
+        var parts = parseRatioParts(ratioLabel);
+        if (parts.length !== driverCount) {
+            hintEl.style.display = "none";
+            hintEl.textContent = "";
+            return;
+        }
+        var text = effectiveRatioHintText(parts, openCount, ratioLabel);
+        if (!text) {
+            hintEl.style.display = "none";
+            hintEl.textContent = "";
+            return;
+        }
+        hintEl.style.display = "";
+        hintEl.textContent = text;
+    }
+
+    function syncRatioWrapVisibility(wrap, driverCount) {
+        var lastCount = parseInt(wrap.getAttribute("data-last-driver-count") || "0", 10);
+        var ratioUiVisible = driverCount >= 2;
+        wrap.classList.toggle("svoz-plan-ratio-wrap--hidden", !ratioUiVisible);
+        if (!ratioUiVisible) {
+            updateEffectiveRatioHint(wrap, driverCount);
+            return;
+        }
+        var slotKey = String(Math.min(driverCount, 4));
+        var label = wrap.querySelector(".svoz-plan-ratio-slot-label");
+        if (label) {
+            label.textContent = "Podíl " + (svozRatioConfig.slotLabels[slotKey] || "");
+        }
+        if (lastCount !== driverCount) {
+            rebuildRatioSelect(wrap, driverCount);
+            wrap.setAttribute("data-last-driver-count", String(driverCount));
+        }
+        updateEffectiveRatioHint(wrap, driverCount);
+    }
+
+    function refreshAllRatioWraps() {
+        var yardsSeen = Object.create(null);
+        document.querySelectorAll(".svoz-plan-ratio-wrap").forEach(function (wrap) {
+            var yardId = wrap.getAttribute("data-yard");
+            var vkId = wrap.getAttribute("data-vk");
+            if (!yardId || !vkId) {
+                return;
+            }
+            syncRatioWrapVisibility(wrap, countUniqueDrivers(yardId, vkId));
+            if (!yardsSeen[yardId]) {
+                yardsSeen[yardId] = true;
+                var ratioMin = parseInt(wrap.getAttribute("data-ratio-min") || "5", 10);
+                updateRatioInactiveHintsForYard(yardId, ratioMin);
+            }
+        });
+    }
+
+    function updateRatioInactiveHintsForYard(yardId, ratioMin) {
+        document.querySelectorAll('.svoz-plan-kind-row[data-yard="' + yardId + '"]').forEach(function (row) {
+            var vkId = row.getAttribute("data-vk");
+            var hint = row.querySelector(".svoz-plan-ratio-inactive-hint");
+            if (!hint) {
+                return;
+            }
+            var wrap = row.querySelector(".svoz-plan-ratio-wrap");
+            var openCount = wrap ? parseInt(wrap.getAttribute("data-open-task-count") || "0", 10) : 0;
+            var driverCount = countUniqueDrivers(yardId, vkId);
+            if (driverCount < 2 || openCount >= ratioMin) {
+                hint.style.display = "none";
+                hint.textContent = "";
+            } else {
+                hint.style.display = "";
+                hint.textContent =
+                    "Méně než " + ratioMin + " požadavků (" + openCount + ") — poměr neaktivní, vše přiřadí B1.";
+            }
+        });
+    }
+
+    function syncYardRatioThreshold(yardId) {
+        var input = document.querySelector('.svoz-plan-yard-ratio-min[data-yard="' + yardId + '"]');
+        if (!input) {
+            return;
+        }
+        var ratioMin = parseInt(input.value || "5", 10);
+        if (!ratioMin || ratioMin < 1) {
+            ratioMin = 5;
+        }
+        document.querySelectorAll('.svoz-plan-ratio-wrap[data-yard="' + yardId + '"]').forEach(function (wrap) {
+            wrap.setAttribute("data-ratio-min", String(ratioMin));
+        });
+        updateRatioInactiveHintsForYard(yardId, ratioMin);
+        document.querySelectorAll('.svoz-plan-ratio-wrap[data-yard="' + yardId + '"]').forEach(function (wrap) {
+            var vkId = wrap.getAttribute("data-vk");
+            syncRatioWrapVisibility(wrap, countUniqueDrivers(yardId, vkId));
+        });
+    }
+
+    document.querySelectorAll(".svoz-plan-yard-ratio-min").forEach(function (input) {
+        input.addEventListener("input", function () {
+            var yardId = input.getAttribute("data-yard");
+            if (yardId) {
+                syncYardRatioThreshold(yardId);
+            }
+            persistSvozPlanDraftSync();
+        });
+        input.addEventListener("change", function () {
+            var yardId = input.getAttribute("data-yard");
+            if (yardId) {
+                syncYardRatioThreshold(yardId);
+            }
+            persistSvozPlanDraftSync();
+        });
+    });
+
+    document.querySelectorAll(".svoz-plan-ratio-wrap").forEach(function (wrap) {
+        var sel = wrap.querySelector(".svoz-plan-ratio-select");
+        if (!sel) {
+            return;
+        }
+        sel.addEventListener("change", function () {
+            syncRatioCustomWrap(wrap);
+            var yardId = wrap.getAttribute("data-yard");
+            var vkId = wrap.getAttribute("data-vk");
+            if (yardId && vkId) {
+                updateEffectiveRatioHint(wrap, countUniqueDrivers(yardId, vkId));
+            }
+            persistSvozPlanDraftSync();
+        });
+        syncRatioCustomWrap(wrap);
+        var custom = wrap.querySelector(".svoz-plan-ratio-custom");
+        if (custom) {
+            custom.addEventListener("input", function () {
+                var yardId = wrap.getAttribute("data-yard");
+                var vkId = wrap.getAttribute("data-vk");
+                if (yardId && vkId) {
+                    updateEffectiveRatioHint(wrap, countUniqueDrivers(yardId, vkId));
+                }
+                persistSvozPlanDraftSync();
+            });
+        }
+    });
+
+    refreshAllRatioWraps();
+    var stacks = document.querySelectorAll(".svoz-plan-slot-stack");
+
+    function remember(driverId, rzId) {
+        if (driverId && rzId) {
+            globalDriverRz[driverId] = rzId;
+        }
+    }
+
+    stacks.forEach(function (stack) {
+        var driver = stack.querySelector("select.svoz-plan-driver-select");
+        var rz = stack.querySelector("select.svoz-plan-rz-select");
+        if (!driver || !rz) {
+            return;
+        }
+        if (driver.value && rz.value) {
+            remember(driver.value, rz.value);
+        }
+    });
+
+    stacks.forEach(function (stack) {
+        var driver = stack.querySelector("select.svoz-plan-driver-select");
+        var rz = stack.querySelector("select.svoz-plan-rz-select");
+        if (!driver || !rz) {
+            return;
+        }
+        if (driver.value && !rz.value) {
+            var g = globalDriverRz[driver.value];
+            if (g && optionValues(rz)[g]) {
+                rz.value = g;
+            }
+        }
+    });
+
+    stacks.forEach(function (stack) {
+        var driver = stack.querySelector("select.svoz-plan-driver-select");
+        var rz = stack.querySelector("select.svoz-plan-rz-select");
+        if (!driver || !rz) {
+            return;
+        }
+
+        rz.addEventListener("change", function () {
+            remember(driver.value, rz.value);
+            updatePlannedVisual(stack);
+        });
+
+        driver.addEventListener("focus", function () {
+            this.dataset.svozPrevDriver = this.value;
+        });
+
+        driver.addEventListener("change", function () {
+            var prevD = driver.dataset.svozPrevDriver || "";
+            var prevRz = rz.value;
+            if (prevD && prevRz) {
+                globalDriverRz[prevD] = prevRz;
+            }
+            var newD = driver.value;
+            if (!newD) {
+                rz.value = "";
+                updatePlannedVisual(stack);
+                refreshAllRatioWraps();
+                return;
+            }
+            var rem = globalDriverRz[newD];
+            if (rem && optionValues(rz)[rem]) {
+                rz.value = rem;
+            } else {
+                rz.value = "";
+            }
+            updatePlannedVisual(stack);
+            refreshAllRatioWraps();
+        });
+
+        function clearSlotInvalid() {
+            var td = stack.closest("td.svoz-plan-slot-cell");
+            if (td) {
+                td.classList.remove("svoz-plan-slot-cell--invalid");
+            }
+        }
+        driver.addEventListener("change", clearSlotInvalid);
+        rz.addEventListener("change", clearSlotInvalid);
+
+        updatePlannedVisual(stack);
+    });
+    refreshSvozPlanGapRows();
+
+    if (planFormEl) {
+        planFormEl.addEventListener("submit", function (e) {
+            persistSvozPlanDraftSync();
+            document.querySelectorAll("td.svoz-plan-slot-cell--invalid").forEach(function (td) {
+                td.classList.remove("svoz-plan-slot-cell--invalid");
+            });
+            var firstBad = null;
+            document.querySelectorAll(".svoz-plan-slot-stack").forEach(function (stack) {
+                var driver = stack.querySelector("select.svoz-plan-driver-select");
+                var rz = stack.querySelector("select.svoz-plan-rz-select");
+                if (!driver || !rz) {
+                    return;
+                }
+                if (driver.value && !rz.value) {
+                    var td = stack.closest("td.svoz-plan-slot-cell");
+                    if (td) {
+                        td.classList.add("svoz-plan-slot-cell--invalid");
+                    }
+                    if (!firstBad) {
+                        firstBad = stack;
+                    }
+                }
+            });
+            if (firstBad) {
+                e.preventDefault();
+                persistSvozPlanDraftSync();
+                window.alert(
+                    "Plán nelze uložit: u každého vybraného řidiče musíte zvolit také RZ vozidla. " +
+                        "Doplňte chybějící vozidla v označených polích."
+                );
+                firstBad.scrollIntoView({ behavior: "smooth", block: "center" });
+            }
+        });
+    }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Úprava druhu vozidla{% else %}Nový druh vozidla{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Druh vozidla</h1>
+    <p class="dash-muted" style="margin-top:0;">
+        Nastavte název, zkratku a volitelně <strong>nadřazený druh</strong> (strom síly vozidel).
+        Které druhy smí konkrétní odpad u subjektu nastavíte v <strong>Úpravě subjektu</strong>
+        u páru odpad + koncovka (pole „Druhy vozidla (svoz)“).
+    </p>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="field-row">
+            <label for="{{ form.name.id_for_label }}">{{ form.name.label }}</label>
+            <div class="field-input">{{ form.name }}{{ form.name.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.shortcut.id_for_label }}">{{ form.shortcut.label }}</label>
+            <div class="field-input">{{ form.shortcut }}{{ form.shortcut.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.parent_kind.id_for_label }}">{{ form.parent_kind.label }}</label>
+            <div class="field-input">
+                {{ form.parent_kind }}
+                {% if form.parent_kind.help_text %}<small>{{ form.parent_kind.help_text }}</small>{% endif %}
+                {{ form.parent_kind.errors }}
+            </div>
+        </div>
+        <button type="submit" class="btn">Uložit</button>
+        <a class="btn secondary" href="{% url 'catalogs:vehicle_kind_list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

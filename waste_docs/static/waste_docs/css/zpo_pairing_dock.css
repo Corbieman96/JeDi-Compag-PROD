@@ -1,0 +1,87 @@
+.zpo-pairing-dock {
+    position: fixed;
+    right: 14px;
+    bottom: 72px;
+    z-index: 8000;
+    width: min(96vw, 900px);
+    display: none;
+    box-shadow: 0 14px 36px rgba(32, 72, 40, 0.22);
+    border-radius: var(--radius, 12px);
+    border: 1px solid var(--color-border, #d8e3d8);
+    background: var(--color-surface, #fff);
+    overflow: hidden;
+}
+.zpo-pairing-dock.is-visible { display: block; }
+.zpo-pairing-dock.is-collapsed .zpo-pairing-dock__inner { display: none; }
+.zpo-pairing-dock__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 12px;
+    background: linear-gradient(90deg, #245f33 0%, #2d7c42 100%);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.92rem;
+}
+.zpo-pairing-dock__head button {
+    background: rgba(255,255,255,0.18);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-weight: 600;
+}
+.zpo-pairing-dock__inner {
+    display: flex;
+    align-items: stretch;
+    max-height: 46vh;
+}
+.zpo-pairing-dock__zpo {
+    flex: 1 1 58%;
+    min-width: 0;
+    background: #f6faf6;
+    border-right: 1px solid var(--color-border, #d8e3d8);
+}
+.zpo-pairing-dock__detail {
+    flex: 0 0 42%;
+    max-width: 340px;
+    align-self: flex-end;
+    padding: 10px 12px;
+    font-size: 0.86rem;
+    overflow: auto;
+    max-height: 46vh;
+}
+.zpo-pairing-dock__frame {
+    width: 100%;
+    height: 42vh;
+    min-height: 200px;
+    border: 0;
+    display: block;
+    background: #fff;
+}
+.zpo-pairing-dock__img {
+    width: 100%;
+    height: auto;
+    max-height: 42vh;
+    object-fit: contain;
+    display: block;
+    background: #fff;
+}
+.zpo-pairing-dock__table { width: 100%; border-collapse: collapse; }
+.zpo-pairing-dock__table th,
+.zpo-pairing-dock__table td {
+    text-align: left;
+    padding: 4px 6px;
+    border-bottom: 1px solid #e4ebe4;
+    vertical-align: top;
+}
+.zpo-pairing-dock__table th {
+    color: #264e2d;
+    font-weight: 600;
+    width: 42%;
+    white-space: nowrap;
+}
+.zpo-pairing-dock__muted { margin: 8px; color: #5f6f64; font-size: 0.9rem; }
+@media print { .zpo-pairing-dock { display: none !important; } }

@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Názvy F/P osob{% endblock %}
+
+{% block extra_head %}
+<style>
+    .pruvodky-pagination-inner {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 8px;
+        font-size: 0.95rem;
+    }
+    .pruvodky-pagination-inner .btn.pruvodky-page-num {
+        padding: 5px 10px;
+        font-size: 0.85rem;
+        min-width: 2.2rem;
+        text-align: center;
+    }
+    .pruvodky-page-ellipsis {
+        padding: 0 4px;
+        color: var(--color-muted, #5f6f64);
+        user-select: none;
+    }
+    .pruvodky-page-current {
+        display: inline-block;
+        padding: 5px 10px;
+        font-weight: 700;
+        border-radius: 10px;
+        background: #eef6ef;
+        color: #264e2d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Názvy F/P osob</h1>
+    <p>Subjekt obsahuje IČO, společnost, adresy. U každého subjektu se zadávají <strong>řádky: druh odpadu + koncovka</strong> (průvodka pak nabídne jen tyto kombinace). Prázdná tabulka = bez omezení.</p>
+    <a class="btn" href="{% url 'catalogs:name_create' %}">Nový subjekt</a>
+    <a class="btn secondary" href="{% url 'catalogs:name_pio_search' %}">Vyhledat PIO</a>
+</div>
+
+<div class="card">
+    <form method="get" class="actions" style="margin-bottom:10px;" id="name-subject-filter-form" action="{% url 'catalogs:name_list' %}">
+        <input type="hidden" name="page" value="1">
+        <input type="hidden" name="per_page" value="{{ per_page }}">
+        <input type="search" name="q" id="name-subject-q" value="{{ q|default:'' }}" placeholder="Hledat: název, IČO, adresa, odpad, koncovka" autocomplete="off">
+        <button type="submit" class="btn">Hledat</button>
+        {% if q %}
+            <a class="btn secondary" href="{% url 'catalogs:name_list' %}?per_page={{ per_page }}">Vyčistit</a>
+        {% endif %}
+    </form>
+    <table>
+        <thead>
+            <tr>
+                <th>Název F/P osoby</th>
+                <th>IČO</th>
+                <th>Společnost</th>
+                <th>Obec</th>
+                <th title="Globální vypnutí systémového generování ZPO u subjektu">ZPO vypnuto</th>
+                <th>Páry odpad → koncovka</th>
+                <th>Adresa provozovny</th>
+                <th>Adresa plnění</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody id="name-subject-tbody">
+            {% for item in items %}
+            <tr>
+                <td>{{ item.name.value }}</td>
+                <td>{{ item.ico.value|default:"-" }}</td>
+                <td>{{ item.company_name }}</td>
+                <td>{% if item.is_municipality %}Ano{% else %}Ne{% endif %}</td>
+                <td>{% if item.zpo_vypnuto %}Ano{% else %}Ne{% endif %}</td>
+                <td>
+                    {% if item.waste_suffix_pairs.count %}
+                        {% for p in item.waste_suffix_pairs.all %}
+                            {% if forloop.counter <= 6 %}
+                                <div><small>{{ p.waste_type }} → {{ p.suffix.value }}</small></div>
+                            {% endif %}
+                        {% endfor %}
+                        {% if item.waste_suffix_pairs.count > 6 %}
+                            <small>… +{{ item.waste_suffix_pairs.count|add:"-6" }} dalších</small>
+                        {% endif %}
+                    {% else %}
+                        <small>— bez omezení (žádné řádky)</small>
+                    {% endif %}
+                </td>
+                <td>{{ item.facility_address.value|default:"-" }}</td>
+                <td>{{ item.fulfillment_address.value|default:"-" }}</td>
+                <td class="actions">
+                    <a class="btn" href="{% url 'catalogs:name_edit' item.pk %}">Upravit</a>
+                    {% if role_access.is_admin %}
+                    <a class="btn danger" href="{% url 'catalogs:name_delete' item.pk %}">Smazat</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="9">Zatím bez subjektů.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="pruvodky-list-footer" style="margin-top:14px; display:flex; flex-wrap:wrap; align-items:center; gap:12px 20px; justify-content:space-between;">
+        <form method="get" class="pruvodky-per-page-form" style="display:flex; align-items:center; gap:8px; margin:0;">
+            {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+            <input type="hidden" name="page" value="1">
+            <label style="margin:0; display:inline-flex; align-items:center; gap:8px; font-size:0.95rem;">
+                Řádků na stránku
+                <select name="per_page" onchange="this.form.submit()" style="width:auto; max-width:100px;">
+                    {% for n in per_page_choices %}
+                        <option value="{{ n }}" {% if per_page == n %}selected{% endif %}>{{ n }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </form>
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="pruvodky-pagination" aria-label="Stránkování" style="display:flex; flex-direction:column; gap:12px; align-items:flex-start; max-width:100%;">
+                <div class="pruvodky-pagination-inner">
+                    <a class="btn secondary" style="padding:7px 12px; font-size:0.9rem;" href="?page=1&amp;per_page={{ per_page }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}">První</a>
+                    {% if page_obj.has_previous %}
+                        <a class="btn secondary" style="padding:7px 12px; font-size:0.9rem;" href="?page={{ page_obj.previous_page_number }}&amp;per_page={{ per_page }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}">Předchozí</a>
+                    {% endif %}
+                    {% for nav in elided_pages %}
+                        {% if nav.ellipsis %}
+                            <span class="pruvodky-page-ellipsis" aria-hidden="true">…</span>
+                        {% elif nav.number == page_obj.number %}
+                            <span class="pruvodky-page-current" title="Aktuální stránka">{{ nav.number }}</span>
+                        {% else %}
+                            <a class="btn secondary pruvodky-page-num" href="?page={{ nav.number }}&amp;per_page={{ per_page }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}">{{ nav.number }}</a>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                        <a class="btn secondary" style="padding:7px 12px; font-size:0.9rem;" href="?page={{ page_obj.next_page_number }}&amp;per_page={{ per_page }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}">Další</a>
+                    {% endif %}
+                    <a class="btn secondary" style="padding:7px 12px; font-size:0.9rem;" href="?page={{ page_obj.paginator.num_pages }}&amp;per_page={{ per_page }}{% if q %}&amp;q={{ q|urlencode }}{% endif %}">Poslední ({{ page_obj.paginator.num_pages }})</a>
+                </div>
+                <div style="display:flex; flex-wrap:wrap; align-items:center; gap:12px;">
+                    <span><small>Stránka <strong>{{ page_obj.number }}</strong> z {{ page_obj.paginator.num_pages }} · celkem záznamů {{ page_obj.paginator.count }}</small></span>
+                    <form method="get" class="pruvodky-page-jump" style="display:inline-flex; align-items:center; gap:8px; margin:0; flex-wrap:wrap;">
+                        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+                        <input type="hidden" name="per_page" value="{{ per_page }}">
+                        <label style="margin:0; display:inline-flex; align-items:center; gap:6px; font-size:0.9rem;">
+                            Přejít na
+                            <input type="number" name="page" min="1" max="{{ page_obj.paginator.num_pages }}" value="{{ page_obj.number }}" required style="width:4.75rem; max-width:120px;">
+                        </label>
+                        <button type="submit" class="btn secondary" style="padding:7px 12px; font-size:0.85rem;">OK</button>
+                    </form>
+                </div>
+            </nav>
+        {% else %}
+            <span style="font-size:0.95rem; color:var(--color-muted, #5f6f64);"><small>Celkem záznamů: {{ page_obj.paginator.count }}</small></span>
+        {% endif %}
+    </div>
+</div>
+<script>
+(function () {
+    var form = document.getElementById("name-subject-filter-form");
+    var input = document.getElementById("name-subject-q");
+    if (!form || !input) return;
+    var debounceMs = 420;
+    var t;
+    input.addEventListener("input", function () {
+        clearTimeout(t);
+        t = setTimeout(function () {
+            if (typeof form.requestSubmit === "function") {
+                form.requestSubmit();
+            } else {
+                form.submit();
+            }
+        }, debounceMs);
+    });
+})();
+</script>
+{% endblock %}

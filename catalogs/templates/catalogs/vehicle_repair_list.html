@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Evidence oprav — {{ profile.rz.value }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Evidence oprav — {{ profile.rz.value }}</h1>
+    {% if profile.vehicle_type %}
+    <p style="margin-top:0;">{{ profile.vehicle_type }}</p>
+    {% endif %}
+    <div class="actions">
+        <a class="btn" href="{% url 'catalogs:vehicle_rz_repair_create' profile.pk %}">Přidat opravu</a>
+        <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_edit' profile.pk %}">Zpět na RZ</a>
+        <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_list' %}">Seznam vozidel</a>
+    </div>
+</div>
+
+<div class="card">
+    <form method="get" class="form-grid" style="margin-bottom:1rem;">
+        <div class="field-row">
+            <label for="id_month">Měsíc</label>
+            <div class="field-input">
+                <select name="month" id="id_month" title="Měsíc evidence oprav">
+                    {% for m in month_choices %}
+                    <option value="{{ m }}"{% if m == month %} selected{% endif %} title="{{ m }}">{{ m }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="field-row">
+            <label for="id_year">Rok</label>
+            <div class="field-input">
+                <select name="year" id="id_year" title="Rok evidence oprav">
+                    {% for y in year_choices %}
+                    <option value="{{ y }}"{% if y == year %} selected{% endif %} title="{{ y }}">{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn secondary">Zobrazit</button>
+        </div>
+    </form>
+
+    <p><strong>Součet hodin za {{ month }}/{{ year }}:</strong> {{ hours_sum }} h</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Datum</th>
+                <th>Hodiny</th>
+                <th>Poznámka</th>
+                <th>Akce</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.repair_date|date:"d.m.Y" }}</td>
+                <td>{{ item.hours }}</td>
+                <td>{{ item.note|default:"—" }}</td>
+                <td class="actions">
+                    <a class="btn" href="{% url 'catalogs:vehicle_rz_repair_edit' profile.pk item.pk %}">Upravit</a>
+                    <a class="btn danger" href="{% url 'catalogs:vehicle_rz_repair_delete' profile.pk item.pk %}">Smazat</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">Za tento měsíc zatím žádné opravy.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

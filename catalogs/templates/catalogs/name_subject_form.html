@@ -1,0 +1,486 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{% if is_edit %}Úprava subjektu{% else %}Nový subjekt{% endif %}{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="{% static 'catalogs/css/name_subject_form.css' %}">
+<script src="{% static 'core/js/fulfillment_address_field.js' %}"></script>
+<script src="{% static 'catalogs/js/name_subject_waste_combo.js' %}"></script>
+<script src="{% static 'catalogs/js/pair_fulfillment_address_field.js' %}"></script>
+<script src="{% static 'catalogs/js/name_subject_pairs_formset.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+{% include "catalogs/partials/name_subject_form_header.html" %}
+{% include "catalogs/partials/name_subject_form_fields.html" %}
+{% include "catalogs/partials/name_subject_form_pairs_wrapper.html" %}
+{% include "catalogs/partials/name_subject_form_footer.html" %}
+
+{{ zpo_url_by_id|json_script:"name-subject-zpo-urls" }}
+<div
+    id="name-subject-zpo-config"
+    hidden
+    data-options-url="{% url 'catalogs:zpo_options_json' %}"
+    data-inline-url="{% url 'catalogs:zpo_inline_create' %}"
+    data-auto-zpo-by-waste="{{ is_edit|yesno:'true,false' }}"
+></div>
+
+<div id="name-subject-zpo-inline-modal" class="map-modal" aria-hidden="true">
+    <div class="map-modal__card" style="max-width: 520px">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px">
+            <h2 style="margin: 0; font-size: 1.1rem">Nové ZPO do knihovny</h2>
+            <button type="button" class="btn secondary" data-zpo-modal-close>Zavřít</button>
+        </div>
+        <p><small>Soubor se uloží do <a href="{% url 'catalogs:zpo_list' %}">Knihovny ZPO</a> a hned ho vyberete u tohoto páru.</small></p>
+        <form id="name-subject-zpo-inline-form" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="waste_type" id="zpo-inline-waste" value="" />
+            <input type="hidden" name="suffix" id="zpo-inline-suffix" value="" />
+            <div class="field-row" style="margin-bottom: 10px">
+                <label for="zpo-inline-label">Popisek</label>
+                <div class="field-input">
+                    <input type="text" name="label" id="zpo-inline-label" maxlength="200" required class="form-control" style="width: 100%" />
+                </div>
+            </div>
+            <div class="field-row" style="margin-bottom: 10px">
+                <label for="zpo-inline-file">Soubor (PDF, JPG, PNG)</label>
+                <div class="field-input">
+                    <input type="file" name="file" id="zpo-inline-file" accept=".pdf,.jpg,.jpeg,.png" required />
+                </div>
+            </div>
+            <div class="form-actions" style="margin-top: 12px">
+                <button type="submit" class="btn">Uložit a vybrat</button>
+                <button type="button" class="btn secondary" data-zpo-modal-close>Zrušit</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script src="{% static 'catalogs/js/zpo_pair_library.js' %}"></script>
+
+{{ waste_type_combo_meta|json_script:"name-subject-waste-meta" }}
+<div id="name-subject-app-map-defaults" hidden data-lat="{{ app_default_map_lat_js }}" data-lng="{{ app_default_map_lng_js }}"></div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const appMapDefaultsEl = document.getElementById("name-subject-app-map-defaults");
+        function appDefaultMapLat() {
+            const raw = appMapDefaultsEl && appMapDefaultsEl.dataset.lat ? String(appMapDefaultsEl.dataset.lat) : "";
+            const v = Number.parseFloat(raw.replace(",", "."));
+            return Number.isFinite(v) ? v : 49.8175;
+        }
+        function appDefaultMapLng() {
+            const raw = appMapDefaultsEl && appMapDefaultsEl.dataset.lng ? String(appMapDefaultsEl.dataset.lng) : "";
+            const v = Number.parseFloat(raw.replace(",", "."));
+            return Number.isFinite(v) ? v : 15.473;
+        }
+
+        const icoInput = document.getElementById("id_ico_value");
+        const nameInput = document.getElementById("id_name_value");
+        const facilityInput = document.getElementById("id_facility_address_value");
+        const fulfillmentInput = document.getElementById("id_fulfillment_address_value");
+        const fulfillmentOrpInput = document.getElementById("id_fulfillment_orp");
+        const fulfillmentIczujInput = document.getElementById("id_fulfillment_iczuj");
+        const fulfillmentLatInput = document.getElementById("id_fulfillment_latitude");
+        const fulfillmentLngInput = document.getElementById("id_fulfillment_longitude");
+        const aresBtn = document.getElementById("ares-load-btn");
+        let facilityDebounceTimer = null;
+
+        if (window.CzechPhoneInput) {
+            window.CzechPhoneInput.bind(document.getElementById("id_contact_phone"));
+        }
+
+        function normalizeAddress(value) {
+            let text = (value || "").trim().replace(/\s+/g, " ");
+            if (!text) return "";
+            text = text.replace(/\s*,\s*/g, ", ").replace(/ ,/g, ",").replace(/,,/g, ",");
+            let m = text.match(/^(\d+[a-zA-Z]?)\s+(.+?)(?:\s+\d{5})?$/);
+            if (m) {
+                return `${m[2].trim()} ${m[1]}`.trim();
+            }
+            m = text.match(/^(.+?)\s+(\d+[a-zA-Z]?)(?:\s+\d{5})?$/);
+            if (m) {
+                return `${m[1].trim()} ${m[2]}`.trim();
+            }
+            return text.replace(/(^[,\s]+|[,\s]+$)/g, "");
+        }
+
+        function fillDatalist(listId, values) {
+            const list = document.getElementById(listId);
+            list.innerHTML = "";
+            values.forEach((value) => {
+                const option = document.createElement("option");
+                option.value = value;
+                list.appendChild(option);
+            });
+        }
+
+        async function fetchSuggestions(query, listId) {
+            if (!query || query.length < 3) {
+                fillDatalist(listId, []);
+                return;
+            }
+            const response = await fetch(`/catalogs/name/address-suggestions/?q=${encodeURIComponent(query)}`);
+            const payload = await response.json();
+            fillDatalist(listId, payload.data || []);
+        }
+
+        if (facilityInput) {
+            facilityInput.setAttribute("list", "facility-address-suggestions");
+            facilityInput.addEventListener("input", () => {
+                clearTimeout(facilityDebounceTimer);
+                facilityDebounceTimer = setTimeout(() => {
+                    fetchSuggestions(facilityInput.value, "facility-address-suggestions");
+                }, 300);
+            });
+            facilityInput.addEventListener("blur", () => {
+                facilityInput.value = normalizeAddress(facilityInput.value);
+                if (typeof window.syncPioFacilityMirrorFromCanon === "function") {
+                    window.syncPioFacilityMirrorFromCanon();
+                }
+            });
+        }
+
+        if (aresBtn) {
+            aresBtn.addEventListener("click", async () => {
+                const ico = (icoInput.value || "").trim();
+                if (!ico) {
+                    alert("Zadejte IČO.");
+                    return;
+                }
+                const response = await fetch(`/catalogs/name/ares-lookup/?ico=${encodeURIComponent(ico)}`);
+                const payload = await response.json();
+                if (!payload.ok) {
+                    alert(payload.error || "Nepodařilo se načíst ARES data.");
+                    return;
+                }
+                const data = payload.data || {};
+                const icoFromAres = String(data.ico || ico).replace(/\D/g, "").slice(0, 8);
+                if (icoFromAres.length === 8) {
+                    icoInput.value = icoFromAres;
+                }
+                if (data.company_name && !nameInput.value) {
+                    nameInput.value = data.company_name;
+                }
+                if (data.address && !facilityInput.value) {
+                    facilityInput.value = normalizeAddress(data.address);
+                    if (typeof window.syncPioFacilityMirrorFromCanon === "function") {
+                        window.syncPioFacilityMirrorFromCanon();
+                    }
+                }
+            });
+        }
+
+        async function updateFulfillmentAdminUnits(ctx) {
+            if (!fulfillmentOrpInput || !fulfillmentIczujInput) return;
+            const address = (ctx && ctx.address ? ctx.address : (fulfillmentInput ? fulfillmentInput.value : "")).trim();
+            const lat = (ctx && ctx.lat ? ctx.lat : (fulfillmentLatInput ? fulfillmentLatInput.value : "")).trim();
+            const lng = (ctx && ctx.lng ? ctx.lng : (fulfillmentLngInput ? fulfillmentLngInput.value : "")).trim();
+            if (!address && !(lat && lng)) return;
+            const params = new URLSearchParams();
+            if (address) params.set("q", address);
+            if (lat) params.set("lat", lat);
+            if (lng) params.set("lng", lng);
+            try {
+                const response = await fetch(
+                    `{% url 'catalogs:name_address_admin_units' %}?${params.toString()}`
+                );
+                if (!response.ok) return;
+                const payload = await response.json();
+                if (!payload.ok || !payload.data) return;
+                if (payload.data.orp) {
+                    fulfillmentOrpInput.value = payload.data.orp;
+                }
+                if (payload.data.iczuj) {
+                    fulfillmentIczujInput.value = String(payload.data.iczuj);
+                }
+            } catch (error) {}
+        }
+
+        if (window.FulfillmentAddressField) {
+        window.FulfillmentAddressField.initNameSubjectFulfillmentField({
+            inputId: "id_fulfillment_address_value",
+            datalistId: "fulfillment-address-suggestions",
+            mapButtonId: "map-open-btn",
+            latInputId: "id_fulfillment_latitude",
+            lngInputId: "id_fulfillment_longitude",
+            suggestionsUrl: "{% url 'catalogs:name_address_suggestions' %}",
+            geocodeUrl: "{% url 'catalogs:name_address_geocode' %}",
+            reverseGeocodeUrl: "{% url 'catalogs:name_address_reverse_geocode' %}",
+            defaultLat: String(appDefaultMapLat()),
+            defaultLng: String(appDefaultMapLng()),
+            onAddressChange: updateFulfillmentAdminUnits
+        });
+        }
+
+        if (fulfillmentInput) {
+            fulfillmentInput.addEventListener("blur", () => updateFulfillmentAdminUnits());
+            fulfillmentInput.addEventListener("change", () => updateFulfillmentAdminUnits());
+            if (fulfillmentInput.value.trim()) {
+                updateFulfillmentAdminUnits();
+            }
+        }
+
+        if (window.CzechPhoneInput && document.getElementById("id_pio_officer_phone")) {
+            window.CzechPhoneInput.bind(document.getElementById("id_pio_officer_phone"));
+        }
+
+        let pioMirrorDebounceTimer = null;
+        const pioFacilityMirror = document.getElementById("pio-facility-input");
+
+        window.syncPioFacilityMirrorFromCanon = function syncPioFacilityMirrorFromCanon() {
+            if (!pioFacilityMirror || !facilityInput) return;
+            if (document.activeElement === pioFacilityMirror) return;
+            pioFacilityMirror.value = facilityInput.value || "";
+        };
+
+        if (pioFacilityMirror && facilityInput) {
+            pioFacilityMirror.setAttribute("list", "facility-address-suggestions");
+
+            syncPioFacilityMirrorFromCanon();
+
+            facilityInput.addEventListener("input", window.syncPioFacilityMirrorFromCanon);
+            facilityInput.addEventListener("change", window.syncPioFacilityMirrorFromCanon);
+
+            pioFacilityMirror.addEventListener("input", function () {
+                facilityInput.value = pioFacilityMirror.value;
+                clearTimeout(pioMirrorDebounceTimer);
+                pioMirrorDebounceTimer = setTimeout(function () {
+                    fetchSuggestions(pioFacilityMirror.value || facilityInput.value, "facility-address-suggestions");
+                }, 300);
+            });
+            pioFacilityMirror.addEventListener("blur", function () {
+                pioFacilityMirror.value = normalizeAddress(pioFacilityMirror.value || "");
+                facilityInput.value = pioFacilityMirror.value;
+            });
+            pioFacilityMirror.addEventListener("change", function () {
+                facilityInput.value = pioFacilityMirror.value;
+            });
+        }
+
+        (function initPioOutsideMap() {
+            const btn = document.getElementById("pio-outside-map-btn");
+            const latIn = document.getElementById("id_pio_outside_map_lat");
+            const lngIn = document.getElementById("id_pio_outside_map_lng");
+            const orpIn = document.getElementById("id_pio_outside_map_orp");
+            const iczIn = document.getElementById("id_pio_outside_map_iczuj");
+            if (!btn || !window.MapModal) return;
+            function parseCoord(v, fb) {
+                const n = Number.parseFloat(String(v || "").replace(",", "."));
+                return Number.isFinite(n) ? n : fb;
+            }
+            btn.addEventListener("click", async function () {
+                let lat = parseCoord(fulfillmentLatInput ? fulfillmentLatInput.value : "", appDefaultMapLat());
+                let lng = parseCoord(fulfillmentLngInput ? fulfillmentLngInput.value : "", appDefaultMapLng());
+                const adr = fulfillmentInput ? (fulfillmentInput.value || "").trim() : "";
+                if (adr.length >= 3) {
+                    try {
+                        const g = await fetch("{% url 'catalogs:name_address_geocode' %}?q=" + encodeURIComponent(adr));
+                        const p = await g.json();
+                        if (p.ok && p.data) {
+                            lat = parseCoord(p.data.lat, lat);
+                            lng = parseCoord(p.data.lng, lng);
+                        }
+                    } catch (e) {}
+                }
+                window.MapModal.open({
+                    lat,
+                    lng,
+                    onSave: async function (point) {
+                        if (latIn) latIn.value = point.lat.toFixed(7);
+                        if (lngIn) lngIn.value = point.lng.toFixed(7);
+                        const params = new URLSearchParams();
+                        if (adr) params.set("q", adr);
+                        params.set("lat", point.lat);
+                        params.set("lng", point.lng);
+                        try {
+                            const resp = await fetch("{% url 'catalogs:name_address_admin_units' %}?" + params.toString());
+                            const payload = await resp.json();
+                            if (payload.ok && payload.data) {
+                                if (orpIn && payload.data.orp) orpIn.value = String(payload.data.orp);
+                                if (iczIn && payload.data.iczuj) iczIn.value = String(payload.data.iczuj);
+                            }
+                        } catch (e) {}
+                    },
+                });
+            });
+        })();
+        const pioWasteRoot = document.getElementById("pio-subject-block");
+        if (pioWasteRoot) window.jedisInitWasteCombosIn(pioWasteRoot);
+        (function flushWasteCombosBeforeSave() {
+            const form = document.querySelector("form.name-subject-form");
+            if (!form) return;
+            form.addEventListener(
+                "submit",
+                function () {
+                    form.querySelectorAll(".name-subject-waste-combo .waste-combo-q").forEach(function (el) {
+                        el.blur();
+                    });
+                },
+                true
+            );
+        })();
+        (function initNameSubjectWasteCombosPage() {
+            const listRoot = document.querySelector(".name-subject-pairs__list");
+            if (listRoot) window.jedisInitWasteCombosIn(listRoot);
+        })();
+        const subjectFormForPairs = document.querySelector("form.name-subject-form");
+        if (subjectFormForPairs && window.jedisInitPairFulfillmentSafe) {
+            window.jedisInitPairFulfillmentSafe(subjectFormForPairs);
+        }
+    });
+</script>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.querySelector("form.name-subject-form");
+        if (!form) return;
+        form.querySelectorAll("label[for]").forEach(function (lab) {
+            if (lab.hasAttribute("data-no-tooltip-sync")) return;
+            const id = lab.getAttribute("for");
+            if (!id) return;
+            const el = document.getElementById(id);
+            if (!el || el.type === "hidden") return;
+            const title = (el.getAttribute("title") || "").trim();
+            if (title) lab.setAttribute("title", title);
+        });
+    });
+</script>
+{% if is_edit %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("saved") === "1") {
+            const y = sessionStorage.getItem("jedis_name_subject_scroll");
+            if (y !== null && y !== "") {
+                const top = parseInt(y, 10);
+                if (!Number.isNaN(top)) {
+                    window.scrollTo(0, top);
+                }
+                sessionStorage.removeItem("jedis_name_subject_scroll");
+            }
+            params.delete("saved");
+            const qs = params.toString();
+            const clean = window.location.pathname + (qs ? "?" + qs : "") + window.location.hash;
+            window.history.replaceState(null, "", clean);
+        }
+        const formEl = document.querySelector("form.name-subject-form");
+        if (formEl) {
+            formEl.addEventListener("submit", function () {
+                sessionStorage.setItem("jedis_name_subject_scroll", String(window.scrollY));
+            });
+        }
+    });
+</script>
+{% endif %}
+{% if role_access.can_export_name_subject_pio_profile %}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var excelBtn = document.getElementById("pio-profile-excel-btn");
+        var excelForm = document.getElementById("jedis-user-pio-excel-form");
+        if (!excelBtn || !excelForm) return;
+        var SNAP = [
+            ["facility_address_value", "id_facility_address_value"],
+            ["fulfillment_address_value", "id_fulfillment_address_value"],
+            ["fulfillment_orp", "id_fulfillment_orp"],
+            ["fulfillment_iczuj", "id_fulfillment_iczuj"],
+            ["ico_value", "id_ico_value"],
+            ["name_value", "id_name_value"],
+            ["pio_officer_name", "id_pio_officer_name"],
+            ["pio_officer_phone", "id_pio_officer_phone"],
+            ["pio_officer_email", "id_pio_officer_email"],
+            ["pio_waste_type", "id_pio_waste_type"],
+            ["pio_suffix", "id_pio_suffix"],
+            ["pio_outside_map_orp", "id_pio_outside_map_orp"],
+            ["pio_outside_map_iczuj", "id_pio_outside_map_iczuj"]
+        ];
+        excelBtn.addEventListener("click", function () {
+            document.querySelectorAll(".name-subject-waste-combo .waste-combo-q").forEach(function (el) {
+                el.blur();
+            });
+            function jedisCollectUserPioExportMissing() {
+                var missing = [];
+                var nameEl = document.getElementById("id_pio_officer_name");
+                if (!nameEl || !(String(nameEl.value || "").trim())) {
+                    missing.push("PIO — jméno odpovědné osoby");
+                }
+                var phoneEl = document.getElementById("id_pio_officer_phone");
+                var digits = String((phoneEl && phoneEl.value) ? phoneEl.value : "").replace(/\D/g, "");
+                if (digits.length < 9) {
+                    missing.push("PIO — telefon osoby");
+                }
+                var mailEl = document.getElementById("id_pio_officer_email");
+                var em = mailEl && mailEl.value ? String(mailEl.value).trim() : "";
+                if (!em || em.indexOf("@") === -1) {
+                    missing.push("PIO — e-mail");
+                }
+                var wtEl = document.getElementById("id_pio_waste_type");
+                var sufEl = document.getElementById("id_pio_suffix");
+                if (!wtEl || !String(wtEl.value || "").trim()) {
+                    missing.push("PIO — druh odpadu");
+                }
+                if (!sufEl || !String(sufEl.value || "").trim()) {
+                    missing.push("PIO — koncovka");
+                }
+                return missing;
+            }
+            var miss = jedisCollectUserPioExportMissing();
+            if (miss.length) {
+                alert(
+                    "Nelze vygenerovat PIO — v sekci PIO je nutné vyplnit:\\n\\n" +
+                        miss.join("; ") +
+                        "."
+                );
+                return;
+            }
+            excelForm.querySelectorAll('input[type="hidden"]:not([name="csrfmiddlewaretoken"])').forEach(function (el) {
+                el.remove();
+            });
+            SNAP.forEach(function (pair) {
+                var input = document.createElement("input");
+                input.type = "hidden";
+                input.name = pair[0];
+                var v = "";
+                if (pair[0] === "facility_address_value") {
+                    var mir = document.getElementById("pio-facility-input");
+                    var canon = document.getElementById("id_facility_address_value");
+                    if (mir && (mir.value || "").trim()) {
+                        v = mir.value;
+                    } else if (canon) {
+                        v = String(canon.value != null ? canon.value : "");
+                    }
+                } else {
+                    var src = document.getElementById(pair[1]);
+                    v = src ? String(src.value != null ? src.value : "") : "";
+                }
+                input.value = v;
+                excelForm.appendChild(input);
+            });
+            excelForm.submit();
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}
+
+{% block extra_footer_js %}
+<script>
+    (function () {
+        function bootPairFulfillment() {
+            const subjectForm = document.querySelector("form.name-subject-form");
+            if (!subjectForm) return;
+            if (window.jedisInitNameSubjectPairsFormset) {
+                window.jedisInitNameSubjectPairsFormset(subjectForm);
+            }
+            if (window.jedisInitPairFulfillmentSafe) {
+                window.jedisInitPairFulfillmentSafe(subjectForm);
+            }
+        }
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", bootPairFulfillment);
+        } else {
+            bootPairFulfillment();
+        }
+    })();
+</script>
+{% endblock %}

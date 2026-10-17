@@ -1,0 +1,92 @@
+/* Panel požadavků pro dispatch — dashboard i formulář nové jízdy */
+
+.dash-cr-dispatch-panel {
+    margin-bottom: 14px;
+    padding: 8px 10px;
+    border: 1px solid #86b6ff;
+    border-radius: 8px;
+    background: #eef5ff;
+}
+
+.dash-cr-dispatch-panel--inline {
+    margin: 12px 0 0;
+    padding: 12px 14px;
+}
+
+.dash-cr-dispatch-panel__title {
+    margin: 0 0 8px;
+    font-weight: 600;
+    color: var(--color-text);
+    font-size: inherit;
+}
+
+.dash-cr-dispatch-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.dash-cr-dispatch-item {
+    margin-bottom: 6px;
+}
+
+.dash-cr-dispatch-item:last-child {
+    margin-bottom: 0;
+}
+
+.dash-cr-dispatch-item__line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15em 0.35em;
+    line-height: 1.45;
+}
+
+.dash-cr-dispatch-item__id {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+.dash-cr-dispatch-item__sep {
+    flex: 0 0 auto;
+}
+
+.dash-cr-dispatch-item__core {
+    flex: 1 1 12rem;
+    min-width: 0;
+}
+
+.dash-cr-dispatch-item__recurrence {
+    display: inline-block;
+    margin-left: 0.35em;
+    padding: 1px 7px;
+    border-radius: 999px;
+    border: 1px solid #9bb8e8;
+    background: #dfeaff;
+    color: #1d4f91;
+    font-size: 0.78em;
+    font-weight: 700;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+.dash-cr-dispatch-item__meta {
+    flex: 0 1 auto;
+    white-space: nowrap;
+    font-size: 0.88em;
+}
+
+.dash-cr-dispatch-item__meta a {
+    font-weight: 600;
+}
+
+.dash-cr-dispatch-panel__hint {
+    margin: 10px 0 0;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+}
+
+.dash-cr-dispatch-panel__empty {
+    margin: 0;
+    color: var(--color-muted);
+}

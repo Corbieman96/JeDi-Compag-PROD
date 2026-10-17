@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat položku{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat položku</h1>
+    <p>Číselník: {{ label }}</p>
+    <p>Hodnota: <strong>{{ item.value }}</strong></p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:list' slug %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+/* Přehled /catalogs/ — dvousloupcová mřížka číselníků */
+.catalog-index__section {
+    margin-bottom: 22px;
+}
+
+.catalog-index__section:last-child {
+    margin-bottom: 0;
+}
+
+.catalog-index__section-title {
+    margin: 0 0 10px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    background: linear-gradient(90deg, #eef6ef 0%, #e4f0e6 100%);
+    color: #264e2d;
+    font-size: 0.92rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.catalog-index__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    align-items: stretch;
+}
+
+@media (max-width: 768px) {
+    .catalog-index__grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.catalog-index__item {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--color-border, #d8e3d8);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #fbfcfa 0%, #f6faf6 100%);
+}
+
+.catalog-index__label {
+    font-weight: 600;
+    color: #204828;
+    font-size: 0.98rem;
+    line-height: 1.35;
+}
+
+.catalog-index__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.catalog-index__actions .btn {
+    padding: 7px 12px;
+    font-size: 0.88rem;
+}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Sběrný dvůr — výběr{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 720px;">
+    <h1>Sběrný dvůr</h1>
+    <p class="dash-muted" style="margin-top:0;">Subjekt: <strong>{{ subject.company_name }}</strong></p>
+
+    {% if no_paths %}
+    <p style="line-height: 1.55;">V číselníku F/P u tohoto subjektu zatím <strong>není nastavena žádná dostupná cesta</strong> — v úpravě subjektu zapněte <strong>Povolit průvodku z dvora</strong> a/nebo <strong>Povolit matici požadavků</strong>.</p>
+    <p><a class="btn secondary" href="{% url 'catalogs:name_edit' subject.pk %}">Otevřít úpravu subjektu v číselníku</a></p>
+    {% else %}
+    <p style="margin-bottom: 1.25rem;">Zvolte, co chcete zadat:</p>
+    <div style="display: grid; gap: 14px;">
+        {% if has_pruvodka %}
+        <a class="btn" href="{% url 'waste_docs:yard_ride_create' %}" style="display:block; text-align:center; padding: 14px 18px; font-size: 1.05rem;">
+            Založit průvodku
+            <span class="dash-muted" style="display:block; font-size:0.82rem; font-weight:400; margin-top:6px;">Výběr RZ vozidla → založení průvodky a tisk</span>
+        </a>
+        {% endif %}
+        {% if has_svoz %}
+        <a class="btn secondary" href="{% url 'waste_docs:svoz_request' %}" style="display:block; text-align:center; padding: 14px 18px; font-size: 1.05rem;">
+            Hlášení ze sběrného dvoru
+            <span class="dash-muted" style="display:block; font-size:0.82rem; font-weight:400; margin-top:6px;">Požadavek na svoz — kontejnery předá dispečerovi</span>
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

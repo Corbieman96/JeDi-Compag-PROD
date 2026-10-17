@@ -1,0 +1,27 @@
+<div class="card">
+    <h2>Popelář — výpočet hodin a nákladů</h2>
+    <div class="reports-kpi-grid" style="margin-top:0.75rem;">
+        <div class="reports-kpi">
+            <div class="reports-kpi__value">{{ summary.popelar.days }}</div>
+            <div class="reports-kpi__label">Dní Popelář</div>
+        </div>
+        <div class="reports-kpi">
+            <div class="reports-kpi__value">{{ summary.popelar.hours }}</div>
+            <div class="reports-kpi__label">Hodin</div>
+        </div>
+        <div class="reports-kpi">
+            <div class="reports-kpi__value">{{ summary.popelar.rate_czk }}</div>
+            <div class="reports-kpi__label">Sazba Kč/h</div>
+        </div>
+        <div class="reports-kpi">
+            <div class="reports-kpi__value">{{ summary.popelar.total_czk }}</div>
+            <div class="reports-kpi__label">Celkem Kč</div>
+        </div>
+    </div>
+    <p class="reports-kpi__hint" style="margin-top:0.75rem;">
+        Výpočet: dny Popelář (půlden = 0,5) × {{ summary.popelar.hours_per_day }} h/den × sazba.
+        {% if summary.popelar.rate_czk == 0 %}
+        Sazba je 0 — nastavte ji v Nastavení, jinak zůstane částka 0 Kč.
+        {% endif %}
+    </p>
+</div>

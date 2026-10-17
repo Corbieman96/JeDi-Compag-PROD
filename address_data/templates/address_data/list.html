@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Adresní číselník{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Adresní číselník (offline)</h1>
+    <p>Import z RÚIAN (ČÚZK) ukládá adresy do <strong>addresses.sqlite3</strong> ve formátu <em>ulice, číslo popisné, obec</em>.</p>
+    <form method="post" style="margin-bottom:12px;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="bootstrap_regions">
+        <button class="btn" type="submit">Načíst adresy — Středočeský kraj a sousední kraje (RÚIAN)</button>
+    </form>
+    <p><small>Načte {{ ruian_regions|length }} krajů: {% for region in ruian_regions %}{{ region }}{% if not forloop.last %}, {% endif %}{% endfor %}.</small></p>
+    <p><small>Import může trvat <strong>desítky minut až hodiny</strong> (cca 1,5–2,5 mil. adres). Doporučujeme terminál místo tlačítka v prohlížeči.</small></p>
+    <form method="post" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:12px;">
+        {% csrf_token %}
+        <span>
+            <label for="id_osm_query">Doplnit z OpenStreetMap (CZ)</label>
+            <input id="id_osm_query" type="text" name="osm_query" placeholder="Např. Mladá Boleslav nebo Palackého 68, Brno" required>
+        </span>
+        <span>
+            <label for="id_osm_limit">Počet</label>
+            <input id="id_osm_limit" type="number" name="osm_limit" value="1000" min="1" max="5000" style="max-width:120px;">
+        </span>
+        <button class="btn secondary" type="submit">Načíst z OSM</button>
+    </form>
+    <form method="get" style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;">
+        <span>
+            <label for="id_q">Hledat (celá adresa)</label>
+            <input id="id_q" type="text" name="q" value="{{ q }}" placeholder="Např. Rostkov, 1, Chocnějovice">
+        </span>
+        <span>
+            <label for="id_city">Město</label>
+            <input id="id_city" type="text" name="city" value="{{ city }}" placeholder="Např. Chocnějovice">
+        </span>
+        <span>
+            <label for="id_street">Ulice</label>
+            <input id="id_street" type="text" name="street" value="{{ street }}" placeholder="Např. Rostkov">
+        </span>
+        <span>
+            <label for="id_house_number">Číslo popisné</label>
+            <input id="id_house_number" type="text" name="house_number" value="{{ house_number }}" placeholder="Např. 1">
+        </span>
+        <button class="btn secondary" type="submit">Hledat</button>
+        <a class="btn secondary" href="{% url 'address_data:list' %}">Vyčistit filtry</a>
+        <a class="btn" href="{% url 'address_data:create' %}">Nová adresa</a>
+    </form>
+</div>
+
+<div class="card">
+    <table>
+        <thead>
+            <tr><th>Město</th><th>Ulice</th><th>Číslo popisné</th><th>Souřadnice</th><th>Akce</th></tr>
+        </thead>
+        <tbody>
+            {% for item in items %}
+            <tr>
+                <td>{{ item.city|default:"-" }}</td>
+                <td>{{ item.street|default:"-" }}</td>
+                <td>{{ item.house_number|default:"-" }}</td>
+                <td>{{ item.lat }}, {{ item.lng }}</td>
+                <td><a class="btn danger" href="{% url 'address_data:delete' item.pk %}">Smazat</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">Adresář je prázdný. Naimportujte kraje z RÚIAN nebo přidejte položky ručně.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

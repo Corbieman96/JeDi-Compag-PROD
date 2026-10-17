@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat činnost{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat činnost</h1>
+    <p>{{ item.name }}</p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:activity_list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

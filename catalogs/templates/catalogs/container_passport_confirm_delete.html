@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat pasport kontejneru{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat pasport kontejneru</h1>
+    <p>{{ item.container_number }} — {{ item.vehicle_kind.name }} ({{ item.vehicle_kind.shortcut }})</p>
+    {% if item.pruvodky.exists %}
+    <p style="color:#a61c1c;"><strong>Pozor:</strong> existují jízdy vázané na tento pasport. Po smazání zůstanou bez vazby.</p>
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:container_passport_list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

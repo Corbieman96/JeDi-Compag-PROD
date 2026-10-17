@@ -1,0 +1,147 @@
+{% extends "base.html" %}
+
+{% block title %}Správa série #{{ root.pk }} | JeDiS{% endblock %}
+
+{% block content %}
+<section class="card">
+    <p style="margin:0 0 12px;">
+        <a href="{% url 'waste_docs:customer_request_detail' root.pk %}">← Detail kořene #{{ root.pk }}</a>
+        ·
+        <a class="btn danger" href="{% url 'customer_request_recurrence_series:cancel_range' root.pk %}">Smazat sérii (rozsah)</a>
+    </p>
+    <h2 style="margin-top:0;">Správa opakované série #{{ root.pk }}</h2>
+    <p class="dash-muted" style="margin:0 0 16px;">
+        {{ series_label|default:"—" }}
+        · otevřené {{ open_count }} · zmrazené {{ frozen_count }}
+    </p>
+
+    <h3>Výskyty</h3>
+    <p class="dash-muted" style="margin:0 0 8px;">Zaškrtněte otevřené termíny pro akce „vybrané“. Zmrazené (jízda / done / planned) nelze měnit.</p>
+    <table class="table" style="width:100%; margin-bottom:24px;">
+        <thead>
+            <tr>
+                <th></th>
+                <th>Datum</th>
+                <th>#</th>
+                <th>Stav</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in occurrence_rows %}
+            <tr>
+                <td>
+                    {% if row.is_open %}
+                    <input type="checkbox" name="occurrence_ids" value="{{ row.item.pk }}" class="series-occ-check">
+                    {% endif %}
+                </td>
+                <td>{{ row.item.target_date|date:"j. n. Y" }}</td>
+                <td>
+                    {% if row.is_root %}<strong>#{{ row.item.pk }}</strong> (kořen){% else %}#{{ row.item.pk }}{% endif %}
+                </td>
+                <td>
+                    {{ row.item.get_status_display }}
+                    {% if row.is_open %}
+                    <span class="dash-muted">· otevřený</span>
+                    {% else %}
+                    <span class="dash-muted">· zmrazený</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'waste_docs:customer_request_detail' row.item.pk %}">Detail</a>
+                    {% if row.item.planned_pruvodka_id %}
+                    · <a href="{% url 'waste_docs:detail' row.item.planned_pruvodka_id %}">Jízda #{{ row.item.planned_pruvodka_id }}</a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="dash-muted">Žádné výskyty.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p style="margin:0 0 24px;">
+        <button type="button" class="btn secondary" id="series-select-open">Vybrat všechna otevřená</button>
+        <button type="button" class="btn secondary" id="series-clear-selection">Zrušit výběr</button>
+    </p>
+
+    <div id="series-actions">
+        <h3>Upravit pravidelnost</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="definition">
+            {{ definition_form.as_p }}
+            <button class="btn" type="submit">Uložit pravidelnost</button>
+        </form>
+
+        <h3 style="margin-top:24px;">Propagovat obsah z kořene</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="propagate">
+            <p class="dash-muted">Bez výběru = všechna otevřená. S výběrem = jen zaškrtnuté.</p>
+            <div class="series-selected-ids-slot"></div>
+            <button class="btn secondary" type="submit">Propagovat</button>
+        </form>
+
+        <h3 style="margin-top:24px;">Posunout termíny</h3>
+        <form method="post">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="shift">
+            {{ shift_form.as_p }}
+            <div class="series-selected-ids-slot"></div>
+            <button class="btn secondary" type="submit">Posunout</button>
+        </form>
+
+        <h3 style="margin-top:24px;">Zrušit vybrané</h3>
+        <form method="post" onsubmit="return confirm('Zrušit vybrané otevřené termíny?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancel_selected">
+            {{ cancel_selected_form.reason.label_tag }} {{ cancel_selected_form.reason }}
+            <div class="series-selected-ids-slot"></div>
+            <div style="margin-top:8px;">
+                <button class="btn danger" type="submit">Zrušit vybrané</button>
+            </div>
+        </form>
+
+        <h3 style="margin-top:24px;">Zrušit všechna otevřená</h3>
+        <form method="post" onsubmit="return confirm('Zrušit všechna otevřená (volitelně od data)?');">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="cancel_all">
+            {{ cancel_all_form.as_p }}
+            <button class="btn danger" type="submit">Zrušit otevřená</button>
+        </form>
+    </div>
+</section>
+<script>
+(function () {
+    var checks = Array.prototype.slice.call(document.querySelectorAll(".series-occ-check"));
+    function selectedValues() {
+        return checks.filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+    }
+    function syncHidden() {
+        var vals = selectedValues();
+        document.querySelectorAll(".series-selected-ids-slot").forEach(function (slot) {
+            slot.innerHTML = "";
+            vals.forEach(function (v) {
+                var inp = document.createElement("input");
+                inp.type = "hidden";
+                inp.name = "occurrence_ids";
+                inp.value = v;
+                slot.appendChild(inp);
+            });
+        });
+    }
+    checks.forEach(function (c) { c.addEventListener("change", syncHidden); });
+    var selAll = document.getElementById("series-select-open");
+    var clr = document.getElementById("series-clear-selection");
+    if (selAll) selAll.addEventListener("click", function () {
+        checks.forEach(function (c) { c.checked = true; });
+        syncHidden();
+    });
+    if (clr) clr.addEventListener("click", function () {
+        checks.forEach(function (c) { c.checked = false; });
+        syncHidden();
+    });
+    syncHidden();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Úprava opravy{% else %}Nová oprava{% endif %} — {{ profile.rz.value }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Úprava opravy{% else %}Nová oprava{% endif %}</h1>
+    <p style="margin-top:0;">RZ: <strong>{{ profile.rz.value }}</strong></p>
+    <form method="post" class="form-grid" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <div class="field-row">
+            <label for="{{ form.repair_date.id_for_label }}">{{ form.repair_date.label }}</label>
+            <div class="field-input">{{ form.repair_date }}{{ form.repair_date.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.hours.id_for_label }}">{{ form.hours.label }}</label>
+            <div class="field-input">{{ form.hours }}{{ form.hours.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.note.id_for_label }}">{{ form.note.label }}</label>
+            <div class="field-input">{{ form.note }}{{ form.note.errors }}</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_repair_list' profile.pk %}">Zpět na evidence</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

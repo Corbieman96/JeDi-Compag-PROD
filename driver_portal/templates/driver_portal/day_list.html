@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Portál řidiče — {{ day|date:"d.m.Y" }}{% endblock %}
+{% block extra_head %}
+<style>
+    .driver-day-rides { border: 1px solid var(--color-border); border-radius: 10px; overflow: hidden; background: var(--color-surface); }
+    .driver-day-rides__head {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(88px, 110px) minmax(100px, 120px);
+        gap: 0 12px;
+        align-items: center;
+        padding: 11px 12px;
+        background: #eef6ef;
+        color: #264e2d;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    .driver-day-rides__row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(88px, 110px) minmax(100px, 120px);
+        gap: 0 12px;
+        align-items: center;
+        padding: 11px 12px;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .driver-day-rides__row:last-child { border-bottom: none; }
+    .driver-day-rides__cell small { margin-top: 2px; }
+    .driver-day-rides__cell--action { justify-self: end; }
+    .driver-day-rides__cell--action .btn { white-space: nowrap; }
+    @media (max-width: 720px) {
+        .driver-day-rides__head { display: none; }
+        .driver-day-rides__row {
+            grid-template-columns: 1fr;
+            gap: 10px;
+            padding: 14px 14px;
+        }
+        .driver-day-rides__cell--main { order: 1; }
+        .driver-day-rides__cell--status { order: 2; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .driver-day-rides__cell--status::before {
+            content: "Stav";
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--color-muted);
+        }
+        .driver-day-rides__cell--action { order: 3; justify-self: stretch; }
+        .driver-day-rides__cell--action .btn { display: block; width: 100%; text-align: center; padding: 12px 14px; }
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Jízdy — {{ day|date:"d.m.Y" }}</h1>
+    <p style="color:var(--color-muted);">Řidič: {{ driver.last_name }} {{ driver.first_name }} ({{ driver.personal_number }})</p>
+    <form method="get" class="form-grid" style="max-width:400px;margin-bottom:16px;">
+        <label for="id_date">Datum</label>
+        <div class="input-with-actions">
+            <input type="date" id="id_date" name="date" value="{{ day|date:'Y-m-d' }}">
+            <button type="submit" class="btn">Načíst</button>
+        </div>
+    </form>
+</div>
+{% if not rides %}
+<div class="card"><p>Dnes nemáte přiřazené žádné jízdy.</p></div>
+{% else %}
+<div class="card" style="padding:0;">
+    <div class="driver-day-rides" role="table" aria-label="Seznam jízd">
+        <div class="driver-day-rides__head" role="row">
+            <span role="columnheader">Číslo / adresa</span>
+            <span role="columnheader">Stav</span>
+            <span role="columnheader" class="driver-day-rides__cell--action"></span>
+        </div>
+        {% for r in rides %}
+        <div class="driver-day-rides__row" role="row">
+            <div class="driver-day-rides__cell driver-day-rides__cell--main" role="cell">
+                {% if r.snd_cislo_listu %}<code>{{ r.snd_cislo_listu }}</code><br>{% endif %}
+                {% if r.address_snapshot %}
+                <small><a href="https://www.google.com/maps/search/?api=1&query={{ r.address_snapshot|urlencode }}" target="_blank" rel="noopener noreferrer" title="Mapa">{{ r.address_snapshot }}</a></small>
+                {% elif r.address %}
+                <small><a href="https://www.google.com/maps/search/?api=1&query={{ r.address.value|urlencode }}" target="_blank" rel="noopener noreferrer" title="Mapa">{{ r.address.value }}</a></small>
+                {% else %}
+                <small>—</small>
+                {% endif %}
+            </div>
+            <div class="driver-day-rides__cell driver-day-rides__cell--status" role="cell">{% if r.driver_completed_at %}dokončeno{% else %}aktivní{% endif %}</div>
+            <div class="driver-day-rides__cell driver-day-rides__cell--action" role="cell"><a class="btn" href="{% url 'driver_portal:ride_detail' r.pk %}">Otevřít</a></div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

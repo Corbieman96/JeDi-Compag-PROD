@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat opravu — {{ profile.rz.value }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat opravu</h1>
+    <p>RZ: <strong>{{ profile.rz.value }}</strong></p>
+    <p>
+        Datum: {{ repair.repair_date|date:"d.m.Y" }} ·
+        Hodiny: {{ repair.hours }} ·
+        {{ repair.note|default:"bez poznámky" }}
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-actions">
+            <button type="submit" class="btn danger">Smazat</button>
+            <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_repair_list' profile.pk %}">Zpět</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

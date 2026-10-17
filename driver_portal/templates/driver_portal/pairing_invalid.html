@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Propojení nelze provést{% endblock %}
+{% block content %}
+<div class="card">
+    <h1>Propojení nelze provést</h1>
+    {% if token %}
+    <p style="font-size:1.1rem;font-weight:700;text-align:center;letter-spacing:0.06em;">Kód pozvánky: <span style="font-family:Consolas,monospace;">{{ token.display_code }}</span></p>
+    {% endif %}
+    {% if reason == "missing" %}
+    <p>Odkaz z QR kódu je neplatný nebo pozvánka už neexistuje.</p>
+    {% elif reason == "inactive" %}
+    <p>Tato pozvánka je <strong>pozastavená nebo zrušená</strong>. Kontaktujte administrátora pro nový QR kód.</p>
+    {% elif reason == "role" %}
+    <p>Váš účet nemá roli „Řidič“. Propojení QR funguje jen pro řidičské účty.</p>
+    {% elif reason == "driver_taken" %}
+    <p>Tento profil řidiče je v databázi stále přiřazen k jinému účtu (<strong>{{ other_username }}</strong>).</p>
+    <p>Stačí jen <strong>zrušit propojení u řidiče v číselníku</strong>: otevřete úpravu tohoto řidiče → sekce „Portál řidiče — propojený účet“ → <strong>Odebrat propojení portálu</strong>. Tím se uvolní QR pro nového řidiče. (Úprava jen uživatele bez tohoto kroku problém nevyřeší.)</p>
+    {% elif reason == "already_other_driver" %}
+    <div style="background:var(--color-surface-muted, #f4f4f4); padding:16px; border-radius:8px; margin:16px 0;">
+        <p style="margin:0 0 8px;"><strong>Tento QR odkaz je pro řidiče:</strong><br>
+        {{ token.driver.last_name }} {{ token.driver.first_name }}
+        <span style="color:var(--color-muted);">(osobní číslo {{ token.driver.personal_number }})</span></p>
+        {% if linked_driver %}
+        <p style="margin:0;"><strong>Váš účet <em>{{ request.user.username }}</em> je teď v portálu jako:</strong><br>
+        {{ linked_driver.last_name }} {{ linked_driver.first_name }}
+        <span style="color:var(--color-muted);">({{ linked_driver.personal_number }})</span></p>
+        {% endif %}
+    </div>
+    <p>Jeden přihlášený účet může mít v telefonu jen jednoho řidiče. Chcete-li se přes tento QR připojit k <strong>tomuto novému</strong> řidiči, odhlaste se a přihlaste jiným účtem (nebo nechte dispečink zrušit staré propojení u vašeho účtu v administraci).</p>
+    <form method="post" action="{% url 'driver_portal:pair_logout_retry' token.secret %}" style="margin-top:20px;">
+        {% csrf_token %}
+        <button type="submit" class="btn" style="padding:14px 22px;">Odhlásit se a pokračovat s tímto odkazem</button>
+    </form>
+    <p style="color:var(--color-muted); font-size:0.9rem; margin-top:16px;">Po kliknutí se smaže i zapamatované přihlášení z odkazu u tohoto prohlížeče; pak uvidíte obrazovku pro přihlášení už k řidiči z <em>tohoto</em> QR.</p>
+    {% else %}
+    <p>Neznámá chyba.</p>
+    {% endif %}
+</div>
+{% endblock %}

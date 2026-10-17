@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Přihlášení a párování{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;margin:0 auto;">
+    <h1 style="text-align:center;">Portál řidiče</h1>
+    <p style="text-align:center;font-size:1.35rem;font-weight:700;letter-spacing:0.08em;color:var(--color-primary-dark);margin:16px 0 8px;">Kód pozvánky</p>
+    <p style="text-align:center;font-size:2rem;font-weight:800;letter-spacing:0.12em;margin:0 0 16px;font-family:Consolas,monospace;">{{ token.display_code }}</p>
+    <p style="color:var(--color-muted);text-align:center;margin-bottom:20px;">Opište kód z dispečinku (musí souhlasit s tím u QR). <strong>Nepotřebujete heslo</strong> — odkaz z QR je spolu s kódem dostatečně bezpečný. Stejný odkaz později z nástěnky nebo záložky může portál otevřít sám.</p>
+    <p style="text-align:center;margin-bottom:8px;"><strong>{{ token.driver.last_name }} {{ token.driver.first_name }}</strong><br><span style="color:var(--color-muted);">osobní číslo {{ token.driver.personal_number }}</span></p>
+
+    {% if role_error %}
+    <div class="form-errors"><p>Účet navázaný na tohoto řidiče nemá roli „Řidič“. Kontaktujte administrátora.</p></div>
+    {% endif %}
+    {% if code_error %}
+    <div class="form-errors"><p>Kód pozvánky nesouhlasí s tím u dispečinku. Zkontrolujte ho a zkuste znovu.</p></div>
+    {% endif %}
+
+    <form method="post" class="form-grid" style="max-width:100%;">
+        {% csrf_token %}
+        <div class="field-row">
+            <label for="id_display_code">Opište kód pozvánky</label>
+            <div class="field-input"><input type="text" name="display_code" id="id_display_code" inputmode="text" autocomplete="off" autocapitalize="characters" required placeholder="např. ABCD-1234" spellcheck="false" autofocus></div>
+        </div>
+        <div class="form-actions" style="justify-content:center;">
+            <button type="submit" class="btn" style="padding:14px 22px;font-size:1.05rem;">Přihlásit se a otevřít portál</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_edit %}Úprava RZ{% else %}Nové RZ{% endif %}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>{% if is_edit %}Úprava RZ{% else %}Nové RZ{% endif %}</h1>
+    <form method="post" class="form-grid form-grid--wide">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <h2 class="form-section-title">Základní údaje</h2>
+        <div class="field-row">
+            {{ form.rz_value.label_tag }}
+            <div class="field-input">{{ form.rz_value }}{{ form.rz_value.errors }}</div>
+        </div>
+        <div class="field-row">
+            {{ form.vehicle_type.label_tag }}
+            <div class="field-input">{{ form.vehicle_type }}{{ form.vehicle_type.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.has_trailer.id_for_label }}">{{ form.has_trailer.label }}</label>
+            <div class="field-input field-input--checkbox-narrow">{{ form.has_trailer }}{{ form.has_trailer.errors }}</div>
+        </div>
+        <div class="field-row">
+            <label for="{{ form.has_crane.id_for_label }}">{{ form.has_crane.label }}</label>
+            <div class="field-input field-input--checkbox-narrow">{{ form.has_crane }}{{ form.has_crane.errors }}</div>
+        </div>
+        <div class="field-row">
+            {{ form.vehicle_kinds.label_tag }}
+            <div class="field-input">
+                {{ form.vehicle_kinds }}
+                <small>Výběr více položek: podržte Ctrl (Cmd).</small>
+                {{ form.vehicle_kinds.errors }}
+            </div>
+        </div>
+
+        <h2 class="form-section-title">Rychle přidat druh vozidla</h2>
+        <div class="field-row">
+            <label for="quick-kind-name">Název druhu</label>
+            <div class="field-input"><input type="text" id="quick-kind-name" placeholder="Např. Nákladní vozidlo"></div>
+        </div>
+        <div class="field-row">
+            <label for="quick-kind-shortcut">Zkratka</label>
+            <div class="field-input"><input type="text" id="quick-kind-shortcut" placeholder="Např. NV"></div>
+        </div>
+        <div class="field-row">
+            <label></label>
+            <div class="field-input"><button type="button" class="btn secondary" id="add-kind-btn">Přidat druh vozidla</button></div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            {% if is_edit and item %}
+            <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_repair_list' item.pk %}">Evidence oprav</a>
+            {% endif %}
+            <a class="btn secondary" href="{% url 'catalogs:vehicle_rz_list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btn = document.getElementById("add-kind-btn");
+    const nameEl = document.getElementById("quick-kind-name");
+    const shortcutEl = document.getElementById("quick-kind-shortcut");
+    const select = document.getElementById("id_vehicle_kinds");
+    if (!btn || !nameEl || !shortcutEl || !select) return;
+
+    function getCsrf() {
+        const el = document.querySelector("input[name='csrfmiddlewaretoken']");
+        return el ? el.value : "";
+    }
+
+    btn.addEventListener("click", async function () {
+        const name = (nameEl.value || "").trim();
+        const shortcut = (shortcutEl.value || "").trim();
+        if (!name || !shortcut) {
+            alert("Vyplňte název i zkratku druhu vozidla.");
+            return;
+        }
+        const body = new URLSearchParams({ name, shortcut, csrfmiddlewaretoken: getCsrf() });
+        const response = await fetch("{% url 'catalogs:vehicle_kind_create_ajax' %}", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: body.toString(),
+        });
+        const payload = await response.json();
+        if (!payload.ok) {
+            alert(payload.error || "Nepodařilo se přidat druh vozidla.");
+            return;
+        }
+        const option = document.createElement("option");
+        option.value = payload.data.id;
+        option.textContent = payload.data.label;
+        option.selected = true;
+        select.appendChild(option);
+        nameEl.value = "";
+        shortcutEl.value = "";
+    });
+});
+</script>
+{% endblock %}

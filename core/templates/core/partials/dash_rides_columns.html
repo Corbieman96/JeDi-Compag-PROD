@@ -1,0 +1,77 @@
+{# Sloupce podle druhu vozidla — řidič a Co (odkaz na jízdu / subjekt) #}
+{% if ride_group_columns %}
+<div class="dash-rides-columns__scroll">
+    {% for col in ride_group_columns %}
+    <div class="dash-rides-columns__col">
+        <h3 class="dash-rides-columns__col-title">{{ col.kind.name }}<small>{{ col.kind.shortcut }}</small></h3>
+        {% for group in col.groups %}
+        <article class="dash-rides-columns__vehicle">
+            <header class="dash-rides-columns__vehicle-head">
+                <strong class="dash-rides-columns__rz">{{ group.vehicle_rz }}</strong>
+                <span class="dash-rides-columns__driver dash-muted">{{ group.driver_last_name|default:"—" }}</span>
+                <span class="dash-rides-columns__vehicle-meta">{{ group.status }} · {{ group.count_meta }}</span>
+            </header>
+            <ul class="dash-rides-columns__ride-list">
+                {% for ride in group.items %}
+                {% include "core/partials/dash_rides_modal_ride_row.html" %}
+                {% endfor %}
+                {% if group.is_plan_only %}
+                <li class="dash-muted" style="list-style: none; padding: 8px 0 0; font-size: 0.85rem; margin: 0;">
+                    Jen plán svozů — průvodka vznikne po úkolu ze sběrného dvora.
+                </li>
+                {% endif %}
+            </ul>
+            <div class="dash-rides-columns__vehicle-actions">
+                <a class="btn secondary" style="padding:6px 10px; font-size:0.8rem;" href="{% url 'core:dashboard' %}?date={{ selected_date_iso }}&ride_group={{ group.key|urlencode }}">Dashboard detail</a>
+                {% if group.vehicle_rz_id and not group.is_plan_only %}
+                <a
+                    class="dash-print-link"
+                    style="font-size:0.75rem;"
+                    href="{% url 'waste_docs:ride_print_bundle' %}?date={{ group.drive_date|date:'Y-m-d' }}&vehicle_rz_id={{ group.vehicle_rz_id }}{% if group.print_pks %}&pks={{ group.print_pks }}{% endif %}"
+                >Tisk</a>
+                {% endif %}
+            </div>
+        </article>
+        {% empty %}
+        <p class="dash-muted dash-rides-columns__empty">—</p>
+        {% endfor %}
+    </div>
+    {% endfor %}
+    {% if ride_groups_uncategorized %}
+    <div class="dash-rides-columns__col dash-rides-columns__col--other">
+        <h3 class="dash-rides-columns__col-title">Ostatní<small>bez druhu / bez RZ</small></h3>
+        {% for group in ride_groups_uncategorized %}
+        <article class="dash-rides-columns__vehicle">
+            <header class="dash-rides-columns__vehicle-head">
+                <strong class="dash-rides-columns__rz">{{ group.vehicle_rz }}</strong>
+                <span class="dash-rides-columns__driver dash-muted">{{ group.driver_last_name|default:"—" }}</span>
+                <span class="dash-rides-columns__vehicle-meta">{{ group.status }} · {{ group.count_meta }}</span>
+            </header>
+            <ul class="dash-rides-columns__ride-list">
+                {% for ride in group.items %}
+                {% include "core/partials/dash_rides_modal_ride_row.html" %}
+                {% endfor %}
+                {% if group.is_plan_only %}
+                <li class="dash-muted" style="list-style: none; padding: 8px 0 0; font-size: 0.85rem; margin: 0;">
+                    Jen plán svozů — průvodka vznikne po úkolu ze sběrného dvora.
+                </li>
+                {% endif %}
+            </ul>
+            <div class="dash-rides-columns__vehicle-actions">
+                <a class="btn secondary" style="padding:6px 10px; font-size:0.8rem;" href="{% url 'core:dashboard' %}?date={{ selected_date_iso }}&ride_group={{ group.key|urlencode }}">Dashboard detail</a>
+                {% if group.vehicle_rz_id and not group.is_plan_only %}
+                <a
+                    class="dash-print-link"
+                    style="font-size:0.75rem;"
+                    href="{% url 'waste_docs:ride_print_bundle' %}?date={{ group.drive_date|date:'Y-m-d' }}&vehicle_rz_id={{ group.vehicle_rz_id }}{% if group.print_pks %}&pks={{ group.print_pks }}{% endif %}"
+                >Tisk</a>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% else %}
+<p class="dash-muted" style="margin:0;">Nejsou definované druhy vozidel — <a href="{% url 'catalogs:vehicle_kind_list' %}">číselník druhů</a>.</p>
+{% endif %}

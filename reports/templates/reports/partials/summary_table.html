@@ -1,0 +1,22 @@
+{% if rows %}
+<table class="reports-table">
+    <thead>
+        <tr>
+            <th>{{ label_col|default:"Položka" }}</th>
+            <th>Počet</th>
+            {% if show_share %}<th>Podíl</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for row in rows %}
+        <tr>
+            <td>{{ row.label }}</td>
+            <td>{{ row.count }}</td>
+            {% if show_share %}<td>{% if row.share_pct is not None %}{{ row.share_pct }} %{% else %}—{% endif %}</td>{% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="reports-empty">Žádná data pro zvolené období.</p>
+{% endif %}

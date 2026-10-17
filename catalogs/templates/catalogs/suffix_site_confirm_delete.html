@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Smazat koncovku{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Smazat koncovku</h1>
+    <p>{{ item.name }} ({{ item.suffix.value }})</p>
+    <form method="post">
+        {% csrf_token %}
+        <button class="btn danger" type="submit">Smazat</button>
+        <a class="btn secondary" href="{% url 'catalogs:suffix_list' %}">Zpět</a>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{# selected_color — volitelný slug; výchozí yellow #}
+<fieldset class="day-rem-color-picker" style="border: 0; margin: 0 0 12px; padding: 0;">
+    <legend style="display: block; margin-bottom: 6px; font-size: 0.95rem;">Barva v panelu</legend>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px 12px;">
+        {% for opt in day_reminder_card_color_options %}
+        <label
+            class="day-rem-color-picker__option"
+            title="{{ opt.label }}"
+            style="display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.88rem;"
+        >
+            <input
+                type="radio"
+                name="card_color"
+                value="{{ opt.slug }}"
+                {% if selected_color|default:"yellow" == opt.slug %}checked{% endif %}
+            />
+            <span
+                aria-hidden="true"
+                style="display: inline-block; width: 1.35rem; height: 1.35rem; border-radius: 4px; background: {{ opt.background }}; border: 2px solid {{ opt.border }};"
+            ></span>
+            <span>{{ opt.label }}</span>
+        </label>
+        {% endfor %}
+    </div>
+    <small class="dash-muted" style="display: block; margin-top: 6px; font-size: 0.85rem;">
+        Barva karty v panelu „Poslední úkoly / poznámky“. Vyřešené poznámky se zobrazí zeleně.
+    </small>
+</fieldset>

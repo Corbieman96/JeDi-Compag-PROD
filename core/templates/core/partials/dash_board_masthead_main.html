@@ -1,0 +1,126 @@
+        <div class="dash-board__masthead-main">
+            <div class="dash-board__masthead-row">
+                <div class="dash-board__masthead-row-left">
+                    <h1 class="dash-board__title">JeDiS{% if jedis_version %}<span class="dash-board__title-version" title="Verze aplikace">· {{ jedis_version }}</span>{% endif %}</h1>
+                    <div class="dash-date-toolbar">
+                        <a class="btn secondary" href="{% url 'core:dashboard' %}?date={{ prev_date|date:'Y-m-d' }}" title="Předchozí den" aria-label="Předchozí den">←</a>
+                        <a class="btn secondary" href="{% url 'core:dashboard' %}" title="Dnešek">Dnes</a>
+                        <a class="btn secondary" href="{% url 'core:dashboard' %}?date={{ next_date|date:'Y-m-d' }}" title="Následující den" aria-label="Následující den">→</a>
+                        <div class="dash-date-toolbar__calendar-col">
+                            <span class="dash-date-toolbar__weekday">{{ selected_date|date:"l" }}</span>
+                            <div class="dash-date-toolbar__calendar-row">
+                                <label class="dash-muted" for="dash-date-picker" style="margin:0;">Kalendář:</label>
+                                <input type="date" id="dash-date-picker" class="dash-date-toolbar__picker" value="{{ selected_date_iso }}">
+                            </div>
+                        </div>
+                        {% if customer_request_closure.can_toggle %}
+                        <form method="post" action="{% url 'waste_docs:customer_request_closure_toggle' %}" style="display:inline;margin:0;">
+                            {% csrf_token %}
+                            <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                            <button
+                                type="submit"
+                                id="dash-cr-day-closure-btn"
+                                class="btn secondary{% if customer_request_closure.is_closed %} dash-cr-closure-active{% endif %}"
+                                title="{% if customer_request_closure.status_note %}{{ customer_request_closure.status_note }}{% else %}Ručně uzavřít nebo otevřít zadávání požadavků pro vybraný den{% endif %}"
+                            >{{ customer_request_closure.toggle_label }}</button>
+                        </form>
+                        {% else %}
+                        <span
+                            id="dash-cr-day-closure-btn"
+                            class="btn secondary{% if customer_request_closure.is_closed %} dash-cr-closure-active{% endif %}"
+                            style="cursor:default;"
+                            title="{% if customer_request_closure.status_note %}{{ customer_request_closure.status_note }}{% else %}Stav zadávání požadavků pro vybraný den{% endif %}"
+                        >{{ customer_request_closure.status_label }}</span>
+                        {% endif %}
+                        {% if customer_request_closure.auto_ui_refresh_at %}
+                        <script>
+                        (function () {
+                            var at = Date.parse("{{ customer_request_closure.auto_ui_refresh_at|escapejs }}");
+                            if (!at || isNaN(at)) return;
+                            var delay = at - Date.now() + 400;
+                            var minDelay = 2000;
+                            var maxDelay = 12 * 60 * 60 * 1000;
+                            if (delay < minDelay || delay > maxDelay) return;
+                            var key = "jedis_cr_closure_refresh_{{ selected_date_iso }}";
+                            try {
+                                if (sessionStorage.getItem(key) === "1") return;
+                            } catch (e) {}
+                            window.setTimeout(function () {
+                                try { sessionStorage.setItem(key, "1"); } catch (e) {}
+                                if (document.visibilityState === "hidden") {
+                                    document.addEventListener("visibilitychange", function onVis() {
+                                        if (document.visibilityState === "visible") {
+                                            document.removeEventListener("visibilitychange", onVis);
+                                            window.location.reload();
+                                        }
+                                    });
+                                    return;
+                                }
+                                window.location.reload();
+                            }, delay);
+                        })();
+                        </script>
+                        {% endif %}
+                        {% if customer_request_kind_closure.chips %}
+                        <button
+                            type="button"
+                            id="dash-cr-kind-closure-open"
+                            class="btn secondary{% if customer_request_kind_closure.has_any_closed %} dash-cr-closure-active{% endif %}"
+                            title="{{ customer_request_kind_closure.button_title }}"
+                            aria-expanded="false"
+                            aria-controls="dash-cr-kind-closure-panel"
+                        >{{ customer_request_kind_closure.button_label }} ▾</button>
+                        {% endif %}
+                        {% if role_access.can_see_all_waste_docs %}
+                        <a
+                            class="btn secondary{% if dispatch_plan_needs_attention %} dash-svoz-plan-needs-attention{% endif %}"
+                            href="{% url 'waste_docs:svoz_dispatch_plan' %}?date={{ selected_date_iso }}"
+                            title="{% if dispatch_plan_needs_attention %}Plán svozů pro tento den není kompletně vyplněný nebo potvrzený.{% else %}Denní přiřazení řidičů ke sběrným dvorům pro zobrazený den realizace{% endif %}"
+                        >Plán svozů</a>
+                        {% endif %}
+                    </div>
+                    {% if customer_request_kind_closure.chips %}
+                    <div
+                        id="dash-cr-kind-closure-panel"
+                        class="dash-cr-kind-closure-panel"
+                        hidden
+                    >
+                        <span class="dash-muted dash-cr-kind-closure-panel__hint">Uzávěrka druhů pro {{ selected_date|date:"j. n. Y" }}:</span>
+                        <span class="dash-cr-kind-closure-panel__chips">
+                            {% for chip in customer_request_kind_closure.chips %}
+                                {% if customer_request_kind_closure.can_toggle %}
+                                <form method="post" action="{% url 'waste_docs:customer_request_kind_closure_toggle' %}" class="dash-cr-kind-closure-panel__form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="date" value="{{ selected_date_iso }}">
+                                    <input type="hidden" name="vehicle_kind_id" value="{{ chip.kind_id }}">
+                                    <button
+                                        type="submit"
+                                        class="btn secondary dash-cr-kind-closure-panel__chip{% if chip.is_closed %} dash-cr-closure-active{% endif %}"
+                                        title="{{ chip.title }}"
+                                    >{{ chip.shortcut }}</button>
+                                </form>
+                                {% else %}
+                                    {% if chip.is_closed %}
+                                    <span
+                                        class="btn secondary dash-cr-kind-closure-panel__chip dash-cr-closure-active"
+                                        style="cursor:default;"
+                                        title="{{ chip.label }} — uzavřeno"
+                                    >{{ chip.shortcut }}</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% endfor %}
+                        </span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="dash-board__masthead-row-tools">
+                    {% include "core/partials/dash_board_masthead_flash.html" %}
+                    {% include "core/partials/dash_board_masthead_alerts.html" %}
+                </div>
+            </div>
+            <p class="dash-board__meta">
+                <strong>{{ selected_date|date:"l j. n. Y" }}</strong> —
+                Jízd tento den: <strong>{{ docs_count }}</strong>
+                · Vygenerováno: <strong>{{ generated_count }}</strong>
+            </p>
+        </div>

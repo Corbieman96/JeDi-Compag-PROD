@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<style>
+.reports-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+.reports-card {
+    border: 1px solid var(--border, #d8e6d8);
+    border-radius: 8px;
+    padding: 16px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.reports-card h2 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary, #2d6a2d);
+}
+.reports-card p {
+    margin: 0;
+    flex: 1;
+    color: #444;
+    font-size: 0.95rem;
+}
+.reports-card__kpi {
+    font-weight: 600;
+    color: var(--primary, #2d6a2d);
+    font-size: 0.9rem;
+}
+.reports-date-filter__form {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+}
+.reports-date-filter__hint {
+    margin: 8px 0 0;
+}
+.reports-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.reports-kpi {
+    border: 1px solid var(--border, #d8e6d8);
+    border-radius: 8px;
+    padding: 12px;
+    background: #f8fbf8;
+}
+.reports-kpi__value {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--primary, #2d6a2d);
+}
+.reports-kpi__label {
+    font-size: 0.85rem;
+    color: #555;
+}
+.reports-table {
+    width: 100%;
+}
+.reports-empty {
+    color: #666;
+    font-style: italic;
+}
+</style>
+
+<div class="card">
+    <h1>Reporty</h1>
+    <p>Statistické přehledy provozu — jízdy, svozy, řidiči, požadavky a tisk.</p>
+    {% include "reports/partials/date_filter.html" %}
+</div>
+
+<div class="reports-kpi-grid">
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ hub.rides_total }}</div>
+        <div class="reports-kpi__label">Jízdy v období</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ hub.rides_generated_pct }} %</div>
+        <div class="reports-kpi__label">Vygenerované jízdy</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ hub.svoz_unresolved_queue }}</div>
+        <div class="reports-kpi__label">Svoz ve frontě (≤ dnes)</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ hub.customer_requests_created }}</div>
+        <div class="reports-kpi__label">Nové požadavky</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ hub.invoice_queue_count }}</div>
+        <div class="reports-kpi__label">Fronta záloh</div>
+    </div>
+</div>
+
+<div class="reports-hub-grid">
+    {% for card in cards %}
+    <article class="reports-card">
+        <h2>{{ card.title }}</h2>
+        {% if card.kpi_hint %}
+        <p class="reports-card__kpi">{{ card.kpi_hint }}</p>
+        {% endif %}
+        <p>{{ card.description }}</p>
+        <a class="btn" href="{{ card.href }}">Otevřít report</a>
+    </article>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,91 @@
+{% if preview_access %}
+<div class="user-access-preview card">
+    <h2 class="user-access-preview__title">Náhled přístupu</h2>
+    <p class="user-access-preview__lead">Po uložení uvidí uživatel <strong class="user-access-preview__name">{{ target_user.username }}</strong> v horní liště:</p>
+    <ul class="user-access-preview__list">
+        <li>
+            <span class="user-access-preview__label">Požadavky</span>
+            {% if preview_access.show_customer_requests_nav %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+        <li>
+            <span class="user-access-preview__label">Schvalování záloh</span>
+            {% if preview_access.show_invoice_queue_nav %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+        <li>
+            <span class="user-access-preview__label">Číselníky</span>
+            {% if preview_access.show_catalogs_nav %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+        <li>
+            <span class="user-access-preview__label">Nastavení</span>
+            {% if preview_access.show_settings_nav %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+        <li>
+            <span class="user-access-preview__label">Adresy (offline)</span>
+            {% if preview_access.show_address_data_nav %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+        <li>
+            <span class="user-access-preview__label">Reporty</span>
+            {% if preview_access.show_reports_nav %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+        {% if preview_access.is_admin %}
+        <li>
+            <span class="user-access-preview__label">Hromadné smazání jízd</span>
+            {% if preview_access.can_delete_all_pruvodky %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+        {% endif %}
+        <li>
+            <span class="user-access-preview__label">Založit novou jízdu</span>
+            {% if preview_access.can_create_pruvodka %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+        <li>
+            <span class="user-access-preview__label">Denní poznámky na dashboardu</span>
+            {% if preview_access.can_manage_dashboard_notes %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">upravit smí</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">jen číst</span>
+            {% endif %}
+        </li>
+        <li>
+            <span class="user-access-preview__label">PIO — profilová šablona u subjektu F/P</span>
+            {% if preview_access.can_export_name_subject_pio_profile %}
+                <span class="user-access-preview__badge user-access-preview__badge--yes">ano</span>
+            {% else %}
+                <span class="user-access-preview__badge user-access-preview__badge--no">ne</span>
+            {% endif %}
+        </li>
+    </ul>
+    <p class="user-access-preview__hint">Úpravy uložených jízd řídí zaškrtnutí níže a role. Denní poznámky nastavte v sekci „Dashboard“. U menu a číselníků použijte „Dědit z role“, aby se chování odvozovalo od zvolené role výše.</p>
+</div>
+{% endif %}

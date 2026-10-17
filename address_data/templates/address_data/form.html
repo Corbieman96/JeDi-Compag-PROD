@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Nová adresa{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Nová adresa</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-grid">
+            <div class="field-row">
+                {{ form.city.label_tag }}
+                <div class="field-input">{{ form.city }}{{ form.city.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.street.label_tag }}
+                <div class="field-input">{{ form.street }}{{ form.street.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.house_number.label_tag }}
+                <div class="field-input">{{ form.house_number }}{{ form.house_number.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.postal_code.label_tag }}
+                <div class="field-input">{{ form.postal_code }}{{ form.postal_code.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.lat.label_tag }}
+                <div class="field-input">{{ form.lat }}{{ form.lat.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.lng.label_tag }}
+                <div class="field-input">{{ form.lng }}{{ form.lng.errors }}</div>
+            </div>
+            <div class="field-row">
+                {{ form.label.label_tag }}
+                <div class="field-input">
+                    {{ form.label }}{{ form.label.errors }}
+                    <small>Můžete nechat vyplněné; při uložení se vytvoří ze struktury ulice + číslo + město.</small>
+                </div>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button class="btn" type="submit">Uložit</button>
+            <a class="btn secondary" href="{% url 'address_data:list' %}">Zpět</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

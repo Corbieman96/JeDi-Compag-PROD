@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}PIO — archiv{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>PIO — archiv</h1>
+    <p>
+    <p>
+        <a class="btn secondary" href="{{ subject_edit_url }}">Zpět na úpravu subjektu</a>
+        {% if role_access.can_export_name_subject_pio_profile %}
+        <a class="btn" href="{% url 'catalogs:name_pair_pio_xlsx' subject.pk pair.pk %}">Vygenerovat PIO (profilová šablona)</a>
+        {% endif %}
+    </p>
+    <p>
+        <strong>{{ subject.company_name }}</strong>
+        {% if subject.name %}({{ subject.name.value }}){% endif %}<br>
+        <small>Odpad: {{ pair.waste_type }} · Koncovka: {{ pair.suffix.value }}</small>
+    </p>
+    {% if effective_pio %}
+        <p><small>Aktivní PIO u páru (pro tisk jízd): <a href="{{ effective_pio.url }}" target="_blank" rel="noopener">otevřít</a></small></p>
+    {% else %}
+        <p><small>Aktivní PIO u páru není — nahrajte soubor níže nebo v úpravě subjektu u tohoto páru.</small></p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h2>Náhled PIO z profilové šablony</h2>
+    <p><small><strong>Stejný výstup jako tlačítko PIO v úpravě subjektu</strong> (šablona <code>PIO.xlsx</code> / <code>PIO_USER_XLSX_TEMPLATE</code>). Údaje kontaktu z profilu; kód odpadu a koncovka z <strong>tohoto páru</strong>. Dokument doplněte offline a níže nahrajte revizi PDF.</small></p>
+</div>
+
+<div class="card">
+    <h2>Nahrát nové aktivní PIO (PDF / obrázek)</h2>
+    <p><small>Soubor se uloží do archivu a zároveň nastaví jako aktivní u páru (pro tisk u jízd).</small></p>
+    <form method="post" enctype="multipart/form-data" class="form-grid">
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+            <div class="form-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <div class="field-row">
+            {{ form.file.label_tag }}
+            <div class="field-input">{{ form.file }}{{ form.file.errors }}</div>
+        </div>
+        <div class="field-row">
+            {{ form.note.label_tag }}
+            <div class="field-input">{{ form.note }}{{ form.note.errors }}</div>
+        </div>
+        <button type="submit" class="btn">Nahrát</button>
+    </form>
+</div>
+
+<div class="card">
+    <h2>Historie archivovaných souborů</h2>
+    {% if not has_revisions and not legacy_pio %}
+        <p><small>Zatím žádná revize.</small></p>
+    {% else %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Poznámka</th>
+                    <th>Nahrál</th>
+                    <th>Soubor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in revisions %}
+                <tr>
+                    <td>{{ r.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ r.note|default:"—" }}</td>
+                    <td>{% if r.created_by %}{{ r.created_by.get_username }}{% else %}—{% endif %}</td>
+                    <td><a href="{{ r.file.url }}" target="_blank" rel="noopener">Otevřít</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if legacy_pio %}
+            <p style="margin-top:12px;">
+                <small>
+                    Aktivní soubor na páru (ještě nepřesunutý jen do historie):
+                    <a href="{{ legacy_pio.url }}" target="_blank" rel="noopener">otevřít</a>
+                </small>
+            </p>
+            <form
+                method="post"
+                action="{% url 'catalogs:name_pair_pio_archive_active' subject.pk pair.pk %}"
+                style="margin-top:8px"
+                onsubmit="return confirm('Přesunout aktivní PIO do archivu a uvolnit pole pro nový soubor?');"
+            >
+                {% csrf_token %}
+                <button type="submit" class="btn secondary" title="Soubor zůstane v historii archivu, aktivní pole na páru se vyprázdní.">Přesunout aktivní PIO do archivu</button>
+            </form>
+        {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

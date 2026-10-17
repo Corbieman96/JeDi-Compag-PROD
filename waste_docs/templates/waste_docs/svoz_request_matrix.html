@@ -1,0 +1,416 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Hlášení ze sběrného dvoru{% endblock %}
+
+{% block extra_head %}
+<style>
+    .svoz-matrix-container-feedback {
+        font-size: 0.88em;
+        margin-top: 6px;
+        line-height: 1.45;
+        max-width: 320px;
+    }
+    .svoz-matrix-container-feedback.is-error { color: #9b1c1c; }
+    .svoz-matrix-container-feedback.is-ok { color: var(--color-muted); }
+    .svoz-matrix-container-feedback.is-pending { color: var(--color-muted); font-style: italic; }
+    .svoz-matrix-containers.is-invalid {
+        border-color: #c45a5a !important;
+        box-shadow: 0 0 0 2px rgba(196, 90, 90, 0.2);
+    }
+    .svoz-matrix-containers.is-valid {
+        border-color: #7cb88a !important;
+    }
+    .svoz-matrix-containers.is-needs-fix {
+        border-color: #d97706 !important;
+        box-shadow: 0 0 0 2px rgba(217, 119, 6, 0.25);
+        background: #fffbeb;
+    }
+    .svoz-matrix-container-feedback.is-needs-fix {
+        color: #b45309;
+        font-weight: 600;
+    }
+    .svoz-unknown-fix-banner {
+        display: none;
+        margin: 0 0 16px;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 2px solid #d97706;
+        background: #fffbeb;
+        color: #92400e;
+        font-size: 1.05rem;
+        line-height: 1.4;
+    }
+    .svoz-unknown-fix-banner.is-visible { display: block; }
+    .svoz-unknown-fix-banner .svoz-unknown-num {
+        display: block;
+        margin-top: 6px;
+        font-size: 1.75rem;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: #9a3412;
+    }
+    .svoz-unknown-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 12000;
+        background: rgba(20, 40, 28, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+    .svoz-unknown-modal-backdrop[hidden] { display: none !important; }
+    .svoz-unknown-modal {
+        background: #fff;
+        border-radius: 12px;
+        border: 2px solid #c0392b;
+        max-width: 28rem;
+        width: 100%;
+        padding: 20px 22px;
+        box-shadow: 0 12px 40px rgba(0,0,0,0.2);
+    }
+    .svoz-unknown-modal h2 {
+        margin: 0 0 10px;
+        font-size: 1.2rem;
+        color: #9b1c1c;
+    }
+    .svoz-unknown-modal .svoz-unknown-modal-num {
+        display: block;
+        text-align: center;
+        margin: 14px 0;
+        padding: 12px;
+        font-size: 2.1rem;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        color: #9a3412;
+        background: #fff7ed;
+        border-radius: 8px;
+        border: 2px dashed #d97706;
+        word-break: break-all;
+    }
+    .svoz-unknown-modal p { margin: 0 0 10px; line-height: 1.45; }
+    .svoz-unknown-modal-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 18px;
+        justify-content: flex-end;
+    }
+    .svoz-unknown-modal-actions .btn-confirm-yes {
+        background: #2d6a4f !important;
+        border-color: #2d6a4f !important;
+        color: #fff !important;
+    }
+    .svoz-unknown-modal-actions .btn-confirm-no {
+        background: #c0392b !important;
+        border-color: #c0392b !important;
+        color: #fff !important;
+    }
+    .svoz-submission-hazard-badge {
+        display: inline-block;
+        margin-left: 4px;
+        padding: 1px 6px;
+        border-radius: 6px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: #fff0f0;
+        color: #9b1c1c;
+        border: 1px solid #e8b4b4;
+        vertical-align: middle;
+    }
+    .svoz-log-panels {
+        margin-top: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .svoz-log-panel {
+        border: 1px solid var(--color-border);
+        border-radius: 8px;
+        background: var(--color-surface, #fff);
+        overflow: hidden;
+    }
+    .svoz-log-panel > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 10px 12px;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #fff;
+        background: linear-gradient(90deg, var(--color-primary-dark, #1f5d33), var(--color-primary, #2d7c42));
+        user-select: none;
+    }
+    .svoz-log-panel > summary::-webkit-details-marker { display: none; }
+    .svoz-log-panel > summary::before {
+        content: "▸ ";
+        display: inline-block;
+        width: 1em;
+    }
+    .svoz-log-panel[open] > summary::before {
+        content: "▾ ";
+    }
+    .svoz-log-panel__body {
+        padding: 8px 12px 10px;
+    }
+    .svoz-log-panel__body--scroll {
+        max-height: 14rem;
+        overflow-y: auto;
+    }
+    .svoz-log-panel__scroll-note {
+        margin: 8px 0 0;
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+    .svoz-log-panel__hint {
+        margin: 0 0 8px;
+        font-size: 0.85rem;
+        color: var(--color-muted);
+        line-height: 1.4;
+    }
+    .svoz-log-day {
+        margin: 10px 0 4px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--color-muted);
+        text-transform: capitalize;
+    }
+    .svoz-log-day:first-child {
+        margin-top: 0;
+    }
+    .svoz-log-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+    }
+    .svoz-log-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 4px 8px;
+        padding: 4px 0;
+        font-size: 0.88rem;
+        line-height: 1.35;
+        border-bottom: 1px solid rgba(191, 208, 193, 0.45);
+    }
+    .svoz-log-row:last-child {
+        border-bottom: none;
+    }
+    .svoz-log-row__time {
+        flex: 0 0 2.75rem;
+        font-variant-numeric: tabular-nums;
+        color: var(--color-muted);
+        font-size: 0.82rem;
+    }
+    .svoz-log-row__main {
+        flex: 1 1 12rem;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .svoz-log-row__label {
+        font-weight: 700;
+    }
+    .svoz-log-row__containers {
+        color: var(--color-text);
+    }
+    .svoz-log-row__note {
+        color: var(--color-muted);
+        font-size: 0.84rem;
+    }
+    .svoz-log-row__meta {
+        flex: 0 1 auto;
+        margin-left: auto;
+        font-size: 0.82rem;
+        color: var(--color-muted);
+        white-space: nowrap;
+    }
+    .svoz-log-panel--errors > summary {
+        background: linear-gradient(90deg, #7a1f1f, #9b1c1c);
+    }
+    .svoz-error-log-row__msg {
+        display: block;
+        white-space: normal;
+        color: #9b1c1c;
+        font-size: 0.86rem;
+        margin-top: 2px;
+    }
+    .svoz-error-log-row .svoz-log-row__main {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: unset;
+    }
+    @media (max-width: 640px) {
+        .svoz-log-row__meta {
+            flex-basis: 100%;
+            margin-left: 2.75rem;
+            white-space: normal;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 960px;">
+    <h1>Hlášení ze sběrného dvoru</h1>
+    <p class="dash-muted" style="margin-top:0;">Subjekt: <strong>{{ subject.company_name }}</strong></p>
+    <p style="font-size:0.95rem;">U každého odpadu zadejte čísla kontejnerů. Na <strong>jednom řádku</strong> můžete více čísel oddělit <strong>čárkou nebo středníkem</strong> (jeden požadavek). <strong>Každý další řádek</strong> = další samostatný požadavek. Prázdné řádky se ignorují. Požadavky uvidí dispečer <strong>{{ next_target_hint|date:"l j. n. Y" }}</strong>.</p>
+
+    {% if already_submitted_today %}
+    <div class="form-errors" style="margin: 12px 0; padding: 12px 14px; border-radius: 10px; background: #fff8f0; border: 1px solid #e8c9a0;">
+        <p style="margin:0;"><strong>Dnes jste již odeslali hlášení.</strong> Další odeslání matice ze sběrného dvora bude možné zítra.</p>
+        {% if yard_daily_limit_disabled %}
+        <p class="dash-muted" style="margin:8px 0 0;font-size:0.9rem;">Poznámka: denní limit je v <a href="{% url 'core:settings' %}">Nastavení</a> dočasně vypnutý (režim testování), ale dnešní odeslání už proběhlo — obnovte stránku po vypnutí testovacího režimu.</p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {% if not rows %}
+    <div class="dash-muted" style="line-height: 1.55;">
+        <p><strong>Matice je prázdná.</strong></p>
+        {% if matrix_stats.waste_pair_total == 0 %}
+        <p>U tohoto subjektu zatím <strong>nejsou žádné řádky</strong> odpad + koncovka.</p>
+        {% elif matrix_stats.svoz_enabled_count == 0 %}
+        <p>Máte <strong>{{ matrix_stats.waste_pair_total }}</strong> řádků odpad–koncovka, ale <strong>nikde není zapnutý sloupec „Svoz (matice)"</strong>.</p>
+        {% elif matrix_stats.svoz_missing_vehicle_kind > 0 %}
+        <p>U <strong>{{ matrix_stats.svoz_missing_vehicle_kind }}</strong> řádků <strong>chybí druh vozidla</strong>.</p>
+        {% elif matrix_stats.svoz_missing_activity > 0 %}
+        <p>U <strong>{{ matrix_stats.svoz_missing_activity }}</strong> řádků <strong>chybí činnost</strong>.</p>
+        {% endif %}
+        <p><a class="btn secondary" href="{% url 'catalogs:name_edit' subject.pk %}">Otevřít úpravu subjektu v číselníku F/P</a></p>
+    </div>
+    {% else %}
+    {% if already_submitted_today %}
+    <p class="dash-muted">Formulář je pro dnešek uzavřen — viz hláška výše.</p>
+    {% else %}
+    <form method="post" class="form-grid svoz-matrix-form" style="max-width: 100%;"
+          data-validate-url="{% url 'waste_docs:svoz_matrix_validate_container' %}"
+          data-confirmer-label="{{ request.user.get_full_name|default:request.user.username|escape }}">
+        {% csrf_token %}
+        <input type="hidden" name="unknown_passport_confirmed" id="unknown-passport-confirmed" value="">
+        <input type="hidden" name="unknown_passport_confirmer" id="unknown-passport-confirmer" value="{{ request.user.get_full_name|default:request.user.username }}">
+        <div id="svoz-unknown-fix-banner" class="svoz-unknown-fix-banner" role="alert">
+            Hlášení nebylo odesláno. Opravte číslo kontejneru:
+            <span class="svoz-unknown-num" id="svoz-unknown-fix-num"></span>
+        </div>
+        {% if errors %}
+        <div class="form-errors">
+            {% for e in errors %}<p>{{ e }}</p>{% endfor %}
+        </div>
+        {% endif %}
+        <div style="overflow-x: auto;">
+            <table class="name-subject-pairs__table" style="min-width: 640px; width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #eef6ef;">
+                        <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Odpad / koncovka</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Druh vozidla</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Kontejner(y)</th>
+                        <th style="text-align:left; padding: 8px; border-bottom: 1px solid var(--color-border);">Poznámka</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for pair in rows %}
+                    <tr>
+                        <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                            {% if pair.yard_svoz_display_label %}
+                            <strong>{{ pair.yard_svoz_display_label }}</strong>
+                            <br><span class="dash-muted" style="font-size:0.88em;">{{ pair.waste_type.value }}{% if pair.waste_type.code %} ({{ pair.waste_type.code }}){% endif %} · {{ pair.suffix.value }}</span>
+                            {% else %}
+                            <strong>{{ pair.waste_type.value }}</strong>
+                            {% if pair.waste_type.code %}<span class="dash-muted">({{ pair.waste_type.code }})</span>{% endif %}
+                            <br><span class="dash-muted">Koncovka: {{ pair.suffix.value }}</span>
+                            {% endif %}
+                            <input type="hidden" name="pair_pk" value="{{ pair.pk }}">
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                            {% if pair.yard_vehicle_kinds.all %}
+                                {% for vk in pair.yard_vehicle_kinds.all %}{{ vk.display_label }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                            {% elif pair.yard_vehicle_kind %}{{ pair.yard_vehicle_kind }}{% else %}<span class="dash-muted">—</span>{% endif %}
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                            <textarea name="containers_{{ pair.pk }}" rows="3" autocomplete="off"
+                                   class="svoz-matrix-containers"
+                                   data-pair-pk="{{ pair.pk }}"
+                                   placeholder="Jeden požadavek = jedno číslo.&#10;Více čísel: čárka, středník nebo nový řádek.&#10;Např. 215, 218"
+                                   style="width: 100%; max-width: 320px; box-sizing: border-box; padding: 8px; border: 1px solid #bfd0c1; border-radius: 8px; resize: vertical; font: inherit;"
+                                   aria-describedby="svoz-container-feedback-{{ pair.pk }}"></textarea>
+                            <div id="svoz-container-feedback-{{ pair.pk }}" class="svoz-matrix-container-feedback" role="status" aria-live="polite"></div>
+                        </td>
+                        <td style="padding: 8px; border-bottom: 1px solid var(--color-border); vertical-align: top;">
+                            <input type="text" name="note_{{ pair.pk }}" value="" maxlength="200" autocomplete="off"
+                                   placeholder="volitelně"
+                                   style="width: 100%; max-width: 280px; box-sizing: border-box; padding: 8px; border: 1px solid #bfd0c1; border-radius: 8px;">
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div class="form-actions" style="margin-top: 16px;">
+            <button type="submit" class="btn" id="svoz-matrix-submit-btn">Odeslat hlášení dispečerovi</button>
+        </div>
+    </form>
+    <div id="svoz-unknown-modal-backdrop" class="svoz-unknown-modal-backdrop" hidden>
+        <div class="svoz-unknown-modal" role="dialog" aria-modal="true" aria-labelledby="svoz-unknown-modal-title">
+            <h2 id="svoz-unknown-modal-title">Číslo kontejneru není v číselníku</h2>
+            <p>Toto číslo v pasportech kontejnerů <strong>není</strong>. Je asi <strong>špatně zadané</strong>.</p>
+            <span class="svoz-unknown-modal-num" id="svoz-unknown-modal-num"></span>
+            <p id="svoz-unknown-modal-confirm-text">Potvrďte, že zadáváte <strong>opravdu toto číslo</strong>.</p>
+            <div class="svoz-unknown-modal-actions">
+                <button type="button" class="btn btn-confirm-no" id="svoz-unknown-modal-no">Ne — opravit číslo</button>
+                <button type="button" class="btn btn-confirm-yes" id="svoz-unknown-modal-yes">Ano — potvrzuji číslo</button>
+            </div>
+        </div>
+    </div>
+    <script src="{% static 'waste_docs/js/svoz_matrix_container_validate.js' %}?v=20260912-session-msg"></script>
+    {% endif %}
+    {% endif %}
+
+    {% if submission_today or submission_history_by_day %}
+    <div class="svoz-log-panels">
+        {% if submission_today %}
+        <details class="svoz-log-panel svoz-log-panel--today" open>
+            <summary>Dnes odeslané · {{ submission_today|length }} {% if submission_today|length == 1 %}požadavek{% elif submission_today|length >= 2 and submission_today|length <= 4 %}požadavky{% else %}požadavků{% endif %}</summary>
+            <div class="svoz-log-panel__body{% if submission_today|length > 8 %} svoz-log-panel__body--scroll{% endif %}">
+                <p class="svoz-log-panel__hint">
+                    Přehled vidí všichni uživatelé tohoto sběrného dvora. Dispečer požadavky uvidí na dashboardu
+                    {% if next_target_hint %}<strong>{{ next_target_hint|date:"j. n. Y" }}</strong>{% endif %}.
+                </p>
+                {% include "waste_docs/partials/svoz_submission_log_compact.html" with submission_rows=submission_today %}
+                {% if submission_today|length > 8 %}
+                <p class="svoz-log-panel__scroll-note dash-muted">
+                    Celkem {{ submission_today|length }} požadavků — posuňte seznam pro zobrazení všech.
+                </p>
+                {% endif %}
+            </div>
+        </details>
+        {% endif %}
+
+        {% if submission_history_by_day %}
+        <details class="svoz-log-panel svoz-log-panel--history" id="svoz-submission-history">
+            <summary>Historie · posledních 7 dní · {{ history_total_count }} {% if history_total_count == 1 %}záznam{% elif history_total_count >= 2 and history_total_count <= 4 %}záznamy{% else %}záznamů{% endif %}</summary>
+            <div class="svoz-log-panel__body">
+                {% for day, day_rows in submission_history_by_day %}
+                <p class="svoz-log-day">{{ day|date:"l j. n. Y" }}</p>
+                {% include "waste_docs/partials/svoz_submission_log_compact.html" with submission_rows=day_rows %}
+                {% endfor %}
+            </div>
+        </details>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <div class="svoz-log-panels" style="{% if not submission_today and not submission_history_by_day %}margin-top:20px;{% endif %}">
+        <details class="svoz-log-panel svoz-log-panel--errors"{% if submit_error_log_rows %} open{% endif %}>
+            <summary>Chyby odeslání · {{ submit_error_log_rows|length }} {% if submit_error_log_rows|length == 1 %}záznam{% elif submit_error_log_rows|length >= 2 and submit_error_log_rows|length <= 4 %}záznamy{% else %}záznamů{% endif %} · jen tento dvůr</summary>
+            <div class="svoz-log-panel__body{% if submit_error_log_rows|length > 8 %} svoz-log-panel__body--scroll{% endif %}">
+                <p class="svoz-log-panel__hint">
+                    Sem se zapisují chyby při odeslání (špatné číslo kontejneru, duplicita…). Dispečer vidí log tohoto dvora na dashboardu.
+                </p>
+                {% include "waste_docs/partials/svoz_submit_error_log.html" %}
+            </div>
+        </details>
+    </div>
+</div>
+{% endblock %}

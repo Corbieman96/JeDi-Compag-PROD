@@ -1,0 +1,25 @@
+        <h2 class="form-section-title">Povolené odpady a koncovky</h2>
+        <p class="dash-muted name-subject-pairs__legend" style="font-size:0.88rem; margin:0 0 10px; max-width:920px;">
+            <span class="name-subject-pairs__legend-swatch name-subject-pairs__legend-swatch--on" aria-hidden="true"></span> zelený panel = Svoz (matice) zapnutý
+            ·
+            <span class="name-subject-pairs__legend-swatch name-subject-pairs__legend-swatch--off" aria-hidden="true"></span> šedý panel = pouze průvodka / bez matice svozu
+        </p>
+        <div class="name-subject-pairs"
+             data-formset-prefix="{{ formset.prefix }}"
+             data-formset-max="{{ formset.max_num }}"
+             data-address-suggestions-url="{% url 'catalogs:name_address_suggestions' %}"
+             data-address-geocode-url="{% url 'catalogs:name_address_geocode' %}"
+             data-address-reverse-geocode-url="{% url 'catalogs:name_address_reverse_geocode' %}">
+            {{ known_fulfillment_addresses|json_script:"known-fulfillment-addresses" }}
+            {{ formset.management_form }}
+            {% if formset.non_form_errors %}
+                <div class="form-errors">{{ formset.non_form_errors }}</div>
+            {% endif %}
+            <div class="name-subject-pairs__scroll">
+            <div class="name-subject-pairs__list">
+                    {% for f in formset %}
+                {% include "catalogs/partials/name_subject_pair_card.html" with show_dispatch_plan_fields=show_dispatch_plan_fields %}
+                    {% endfor %}
+            </div>
+            </div>
+        </div>

@@ -1,0 +1,13 @@
+
+        <div class="form-actions">
+            <button type="submit" class="btn">Uložit</button>
+            <a class="btn secondary" href="{% url 'catalogs:name_list' %}">Zpět</a>
+        </div>
+    </form>
+
+    {% if role_access.can_export_name_subject_pio_profile %}
+    <form id="jedis-user-pio-excel-form" method="post" action="{{ pio_export_action_url }}" hidden aria-hidden="true">
+        {% csrf_token %}
+    </form>
+    {% endif %}
+</div>

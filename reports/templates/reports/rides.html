@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+{% include "reports/partials/report_styles.html" %}
+
+<div class="card">
+    <h1>Jízdy a průvodky</h1>
+    {% include "reports/partials/date_filter.html" %}
+</div>
+
+<div class="reports-kpi-grid">
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.total }}</div>
+        <div class="reports-kpi__label">Celkem jízd</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.generated_pct }} %</div>
+        <div class="reports-kpi__label">Vygenerováno ({{ summary.generated_count }})</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.archived_count }}</div>
+        <div class="reports-kpi__label">Archivované</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.driver_completed_count }}</div>
+        <div class="reports-kpi__label">Dokončené řidičem</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.zpo_generated_count }}</div>
+        <div class="reports-kpi__label">Se ZPO souborem</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.follow_up_open_count }}</div>
+        <div class="reports-kpi__label">Otevřené návaznosti</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.without_driver_count }}</div>
+        <div class="reports-kpi__label">Bez řidiče</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.without_rz_count }}</div>
+        <div class="reports-kpi__label">Bez RZ</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.from_customer_request_count }}</div>
+        <div class="reports-kpi__label">Z požadavku zákazníka</div>
+    </div>
+    <div class="reports-kpi">
+        <div class="reports-kpi__value">{{ summary.with_container_passport_count }}</div>
+        <div class="reports-kpi__label">S pasportem kontejneru</div>
+    </div>
+</div>
+
+<div class="card">
+    <h2>Podle činnosti</h2>
+    {% with rows=summary.by_activity show_share=True label_col="Činnost" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Podle druhu vozidla</h2>
+    {% with rows=summary.by_vehicle_kind show_share=True label_col="Druh vozidla" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Podle stavu</h2>
+    {% with rows=summary.by_status show_share=True label_col="Stav" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Po dnech</h2>
+    {% with rows=summary.by_day show_share=True label_col="Den" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Top řidiči</h2>
+    {% with rows=summary.top_drivers show_share=True label_col="Řidič" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Top RZ vozidel</h2>
+    {% with rows=summary.top_vehicle_rz show_share=True label_col="RZ" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+
+<div class="card">
+    <h2>Top subjekty (F/P)</h2>
+    {% with rows=summary.top_subjects show_share=True label_col="Subjekt" %}
+    {% include "reports/partials/summary_table.html" %}
+    {% endwith %}
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Runtime data (never commit production/customer data)
+*.sqlite3
+*.sqlite3-*
+media/
+staticfiles/
+logs/
+data/
+.data_target_path.txt
+*.log
+
+# Backups and local analysis
+/Zaloha*/
+/.analysis_logs/
+*.bak.*
+
+# Editor and OS metadata
+.cursor/
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local environment directories used by the takeover workspace
+/JeDis-PROD/
+/JeDis-TEST/
