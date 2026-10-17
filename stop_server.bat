@@ -4,9 +4,8 @@ setlocal ENABLEDELAYEDEXPANSION
 REM ============================================================
 REM JeDiS Server - Zastaveni
 REM ============================================================
-REM Uvicorn s --reload: na portu nasloucha child, rodic znovu spousti
-REM worker -> taskkill jen na PID z netstat nestaci. bere se rodic
-REM a ukoncuje se cely strom (/T).
+REM Uvicorn muze bezet pod CMD nebo dohledovym PowerShell skriptem.
+REM Ukoncuje se proto cely procesni strom rodice (/T).
 REM Get-NetTCPConnection je nezavisly na lokalizaci netstat.
 REM ============================================================
 

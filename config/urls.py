@@ -16,9 +16,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
+from django.contrib.auth.decorators import login_required
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve as static_serve
 
 from users.views_auth import AppLoginView
 
@@ -67,3 +69,18 @@ urlpatterns = [
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+elif settings.SERVE_MEDIA:
+    # Branding is needed before login. All other uploaded/generated files require
+    # an authenticated session when Django serves media without a reverse proxy.
+    urlpatterns += [
+        path(
+            "media/img/<path:path>",
+            static_serve,
+            {"document_root": settings.MEDIA_ROOT / "img"},
+        ),
+        path(
+            "media/<path:path>",
+            login_required(static_serve),
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]

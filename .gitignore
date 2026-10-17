@@ -23,6 +23,7 @@ logs/
 data/
 .data_target_path.txt
 *.log
+/waste_docs/tests/_tmp_*.pdf
 
 # Backups and local analysis
 /Zaloha*/

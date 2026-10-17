@@ -31,6 +31,8 @@ class ProjectEnv:
     debug: bool
     allowed_hosts: list[str]
     jedis_version: str
+    environment: str
+    serve_media: bool
     use_https: bool
     csrf_trusted_origins: list[str]
     secure_ssl_redirect: bool
@@ -47,6 +49,8 @@ class ProjectEnv:
 
         allowed_hosts = env_csv("ALLOWED_HOSTS", default=_DEFAULT_ALLOWED_HOSTS)
         jedis_version = (os.environ.get("JEDIS_VERSION") or "5.0.0").strip()
+        environment = (os.environ.get("JEDIS_ENVIRONMENT") or "PROD").strip().upper()
+        serve_media = env_bool("SERVE_MEDIA", default=debug)
         use_https = env_bool("USE_HTTPS", default=False)
         csrf_trusted_origins = env_csv("CSRF_TRUSTED_ORIGINS")
         secure_ssl_redirect = env_bool("SECURE_SSL_REDIRECT", default=False)
@@ -56,6 +60,8 @@ class ProjectEnv:
             debug=debug,
             allowed_hosts=allowed_hosts,
             jedis_version=jedis_version,
+            environment=environment,
+            serve_media=serve_media,
             use_https=use_https,
             csrf_trusted_origins=csrf_trusted_origins,
             secure_ssl_redirect=secure_ssl_redirect,

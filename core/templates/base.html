@@ -5,7 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <link rel="icon" href="{{ MEDIA_URL }}img/favicon.ico" type="image/x-icon">
-    <title>{% block title %}Jízdy odpadu{% endblock %}</title>
+    <title>{% if jedis_is_test %}[TEST] {% endif %}{% block title %}Jízdy odpadu{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'core/vendor/leaflet/1.9.4/leaflet.css' %}">
     <style>
         :root {
@@ -23,6 +23,15 @@
         * { box-sizing: border-box; }
         html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
         body { font-family: "Segoe UI", Tahoma, Arial, sans-serif; margin: 0; background: linear-gradient(180deg, #f8fbf8 0%, var(--color-bg) 100%); color: var(--color-text); }
+        .environment-banner {
+            background: #b42318;
+            color: #fff;
+            padding: 8px 16px;
+            text-align: center;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            box-shadow: 0 2px 8px rgba(90, 18, 12, 0.25);
+        }
         .topbar {
             background: linear-gradient(90deg, var(--color-primary-dark) 0%, var(--color-primary) 58%, var(--color-accent) 100%);
             color: #fff;
@@ -226,6 +235,9 @@
     {% block extra_head %}{% endblock %}
 </head>
 <body class="{% block body_class %}{% endblock %}">
+    {% if jedis_is_test %}
+    <div class="environment-banner" role="status">TESTOVACÍ PROSTŘEDÍ — DATA NEJSOU PRODUKČNÍ</div>
+    {% endif %}
     {% if request.user.is_authenticated %}
     <div class="jedis-busy-overlay" id="jedis-global-busy" role="status" aria-live="polite">
         <span class="jedis-spinner jedis-spinner--lg" aria-hidden="true"></span>

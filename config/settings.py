@@ -29,6 +29,8 @@ SECRET_KEY = _env.secret_key
 DEBUG = _env.debug
 ALLOWED_HOSTS = _env.allowed_hosts
 JEDIS_VERSION = _env.jedis_version
+JEDIS_ENVIRONMENT = _env.environment
+SERVE_MEDIA = _env.serve_media
 
 _secure = extra_django_settings(_env)
 if _secure:
