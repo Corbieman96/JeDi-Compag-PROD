@@ -62,8 +62,15 @@ switch ($Action) {
         if (-not $RunAsSystem) {
             $credential = Get-Credential -UserName $ServiceUser -Message "Ucet pro obe ulohy JeDiS (doporuceno kvuli MS Excel tisku)"
         }
+        $runtimeIdentity = if ($RunAsSystem) { "NT AUTHORITY\SYSTEM" } else { $credential.UserName }
 
         foreach ($instance in $instances) {
+            $envPath = Join-Path $instance.ProjectRoot ".env"
+            & icacls.exe $envPath "/inheritance:r" "/grant:r" "${runtimeIdentity}:(F)" "*S-1-5-18:(F)" "*S-1-5-32-544:(F)" | Out-Null
+            if ($LASTEXITCODE -ne 0) {
+                throw "Nepodarilo se omezit pristup k $envPath"
+            }
+
             $runner = Join-Path $instance.ProjectRoot "scripts\run_server_task.ps1"
             $arguments = '-NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "{0}" -ProjectRoot "{1}" -PythonExe "{2}"' -f $runner, $instance.ProjectRoot, $pythonExe
             $taskAction = New-ScheduledTaskAction -Execute $powershellExe -Argument $arguments -WorkingDirectory $instance.ProjectRoot
