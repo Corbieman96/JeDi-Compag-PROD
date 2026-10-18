@@ -62,8 +62,27 @@ while ($true) {
     Add-Content -LiteralPath $supervisorLog -Encoding UTF8 -Value "$startedAt start $environment http://${listenHost}:$listenPort"
     Push-Location $ProjectRoot
     try {
-        & $PythonExe -m uvicorn config.asgi:application --app-dir $ProjectRoot --host $listenHost --port $listenPort 1>> $stdoutLog 2>> $stderrLog
-        $exitCode = $LASTEXITCODE
+        # Windows PowerShell 5.1 converts native stderr output into ErrorRecord
+        # objects. With ErrorActionPreference=Stop, Uvicorn's normal startup
+        # messages on stderr terminated the invocation immediately. Start the
+        # native process explicitly so stderr can be logged without being
+        # interpreted as a PowerShell exception.
+        $arguments = @(
+            "-m", "uvicorn", "config.asgi:application",
+            "--app-dir", $ProjectRoot,
+            "--host", $listenHost,
+            "--port", [string]$listenPort
+        )
+        $process = Start-Process `
+            -FilePath $PythonExe `
+            -ArgumentList $arguments `
+            -WorkingDirectory $ProjectRoot `
+            -RedirectStandardOutput $stdoutLog `
+            -RedirectStandardError $stderrLog `
+            -NoNewWindow `
+            -PassThru `
+            -Wait
+        $exitCode = $process.ExitCode
     }
     catch {
         $exitCode = 1
