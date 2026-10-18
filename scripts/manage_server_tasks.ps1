@@ -46,6 +46,37 @@ function Get-TaskStateRows {
     }
 }
 
+function Stop-InstanceRuntime($instance) {
+    Stop-ScheduledTask -TaskName $instance.TaskName -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+
+    # Start-Process can outlive its Scheduled Task host.  The ports below are
+    # dedicated to these instances, so remove a stale Python listener before a
+    # later Start attempts to bind the same address again.
+    $listeners = Get-NetTCPConnection -LocalPort $instance.Port -State Listen -ErrorAction SilentlyContinue
+    foreach ($listener in $listeners) {
+        $process = Get-Process -Id $listener.OwningProcess -ErrorAction SilentlyContinue
+        if (-not $process) {
+            continue
+        }
+        if ($process.ProcessName -notin @("python", "pythonw")) {
+            throw "Port $($instance.Port) pouziva neocekavany proces $($process.ProcessName) (PID $($process.Id))."
+        }
+        Stop-Process -Id $process.Id -Force
+    }
+
+    $deadline = (Get-Date).AddSeconds(10)
+    do {
+        $remaining = Get-NetTCPConnection -LocalPort $instance.Port -State Listen -ErrorAction SilentlyContinue
+        if (-not $remaining) {
+            return
+        }
+        Start-Sleep -Milliseconds 250
+    } while ((Get-Date) -lt $deadline)
+
+    throw "Port $($instance.Port) se nepodarilo uvolnit."
+}
+
 switch ($Action) {
     "Install" {
         Assert-Administrator
@@ -97,7 +128,7 @@ switch ($Action) {
     "Remove" {
         Assert-Administrator
         foreach ($instance in $instances) {
-            Stop-ScheduledTask -TaskName $instance.TaskName -ErrorAction SilentlyContinue
+            Stop-InstanceRuntime $instance
             Unregister-ScheduledTask -TaskName $instance.TaskName -Confirm:$false -ErrorAction SilentlyContinue
             Remove-NetFirewallRule -DisplayName $instance.FirewallRule -ErrorAction SilentlyContinue
         }
@@ -111,8 +142,9 @@ switch ($Action) {
         Get-TaskStateRows | Format-Table -AutoSize
     }
     "Stop" {
+        Assert-Administrator
         foreach ($instance in $instances) {
-            Stop-ScheduledTask -TaskName $instance.TaskName -ErrorAction SilentlyContinue
+            Stop-InstanceRuntime $instance
         }
         Start-Sleep -Seconds 2
         Get-TaskStateRows | Format-Table -AutoSize

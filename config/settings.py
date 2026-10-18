@@ -32,6 +32,13 @@ JEDIS_VERSION = _env.jedis_version
 JEDIS_ENVIRONMENT = _env.environment
 SERVE_MEDIA = _env.serve_media
 
+# Cookies are scoped by host and path, not by TCP port.  PROD and TEST run on
+# the same host, so they must use distinct names to keep login and CSRF state
+# independent in the browser.
+_cookie_namespace = JEDIS_ENVIRONMENT.lower()
+SESSION_COOKIE_NAME = f"jedis_{_cookie_namespace}_sessionid"
+CSRF_COOKIE_NAME = f"jedis_{_cookie_namespace}_csrftoken"
+
 _secure = extra_django_settings(_env)
 if _secure:
     SESSION_COOKIE_SECURE = _secure["SESSION_COOKIE_SECURE"]
@@ -40,7 +47,7 @@ if _secure:
         SECURE_SSL_REDIRECT = _secure["SECURE_SSL_REDIRECT"]
     if "CSRF_TRUSTED_ORIGINS" in _secure:
         CSRF_TRUSTED_ORIGINS = _secure["CSRF_TRUSTED_ORIGINS"]
-del _env, _secure
+del _env, _secure, _cookie_namespace
 
 # Na prostředcích bez „trustworthy“ originu (HTTP na LAN IP) prohlížeč COOP stejně ignoruje a píše do konzole.
 SECURE_CROSS_ORIGIN_OPENER_POLICY = "same-origin" if _https_mode else None
